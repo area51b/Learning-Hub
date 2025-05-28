@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Engineering: Chapter 5 Interactive Summary - Prompt Engineering</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Navigation: Sidebar with 6 links (JS content switching). Goal: Easy access.
+        - Prompt Components (Slide 2): Styled HTML cards for Task Description, Examples, Task Itself. Goal: Clear separation.
+        - Effective Prompt Guidelines (Slide 3): Accordion for each guideline, expanding to show details/examples. Chart.js Radar chart for 'Key Aspects of an Effective Prompt'. Goal: Digestible list & visual summary.
+        - Defensive Prompt Engineering (Slide 4): Accordion for attack types and defense strategies. Goal: Structured information.
+        - Tools & Organization (Slide 5): Cards for tools, versioning (with simple HTML/CSS flow), and evaluation of tools. Goal: Highlight key practices.
+        - All textual content from source.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            background-color: #f0f9ff; /* sky-50 */
+            color: #0369a1; /* sky-700 */
+        }
+        .nav-link.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+            font-weight: 600;
+        }
+        .accordion-header {
+            cursor: pointer;
+        }
+        .accordion-content {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+        .accordion-content.open {
+            display: block;
+            max-height: 1000px; 
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px; 
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; 
+            max-height: 400px;
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 400px;
+                max-width: 500px;
+            }
+        }
+        .prompt-component-card {
+            background-color: #f0f9ff; /* sky-50 */
+            border: 1px solid #bae6fd; /* sky-200 */
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .prompt-component-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+        }
+        .code-example {
+            background-color: #e2e8f0; /* slate-200 */
+            color: #1e293b; /* slate-800 */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85em;
+            display: inline-block;
+        }
+        .version-step {
+            background-color: #f1f5f9; /* slate-100 */
+            border: 1px solid #e2e8f0; /* slate-200 */
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+        .version-arrow {
+            font-size: 1.25rem;
+            color: #94a3b8; /* slate-400 */
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <nav class="w-full md:w-72 bg-white p-6 shadow-lg flex-shrink-0">
+            <h1 class="text-2xl font-bold text-sky-700 mb-6 border-b pb-3">AI Engineering Ch.5</h1>
+            <ul class="space-y-2">
+                <li><a class="nav-link active" data-target="slide1-ch5">1. Intro to Prompt Engineering</a></li>
+                <li><a class="nav-link" data-target="slide2-ch5">2. Prompt Components</a></li>
+                <li><a class="nav-link" data-target="slide3-ch5">3. Effective Prompt Guidelines</a></li>
+                <li><a class="nav-link" data-target="slide4-ch5">4. Defensive Prompting</a></li>
+                <li><a class="nav-link" data-target="slide5-ch5">5. Tools & Organization</a></li>
+                <li><a class="nav-link" data-target="slide6-ch5">6. Conclusion</a></li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            
+            <section id="slide1-ch5" class="content-section active">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Introduction to Prompt Engineering</h2>
+                    <p class="mb-6 text-slate-600">This section introduces Prompt Engineering as a fundamental skill in AI Engineering. It defines the concept, highlights its importance as a primary model adaptation technique, and emphasizes that while accessible, effective prompt engineering requires a systematic and rigorous approach, akin to other engineering disciplines.</p>
+                    <ul class="space-y-3 text-slate-700">
+                        <li><strong class="text-sky-600">Definition:</strong> The process of crafting instructions (prompts) to guide an AI model to generate desired outcomes.</li>
+                        <li><strong class="text-sky-600">Key Adaptation Technique:</strong> It's the easiest and most common method for adapting foundation models without altering their weights. This makes it highly accessible.</li>
+                        <li><strong class="text-sky-600">Importance:</strong> Leveraging the strong base capabilities of Foundation Models (FMs), many applications can be successfully built and tailored solely through effective prompting techniques.</li>
+                        <li><strong class="text-sky-600">Beyond Fiddling:</strong> While it involves iteration and experimentation ("fiddling"), prompt engineering demands rigor, systematic testing, and careful evaluation, much like other established engineering disciplines.</li>
+                        <li><strong class="text-sky-600">Human-to-AI Communication:</strong> Think of prompt engineering as the art and science of effectively communicating your intentions and requirements to AI models to get them to perform specific tasks accurately and reliably.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="slide2-ch5" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Components of a Well-Crafted Prompt</h2>
+                    <p class="mb-6 text-slate-600">A well-designed prompt is crucial for eliciting the desired response from an AI model. This section breaks down the typical structure of an effective prompt into three main components, each playing a distinct role in guiding the model.</p>
+                    <p class="mb-4 text-slate-700">A well-designed prompt typically consists of three main parts to provide clear guidance to the model:</p>
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="prompt-component-card p-6 rounded-lg">
+                            <h3 class="text-xl font-semibold text-sky-700 mb-2">1. Task Description</h3>
+                            <p class="text-sm text-slate-600 mb-2">Clearly defines what the model is expected to do. Sets the overall objective and scope.</p>
+                            <p class="text-xs text-slate-500">Example: "Summarize the following article," "Generate a Python function to calculate Fibonacci numbers."</p>
+                        </div>
+                        <div class="prompt-component-card p-6 rounded-lg">
+                            <h3 class="text-xl font-semibold text-sky-700 mb-2">2. Examples (Few-Shot Learning)</h3>
+                            <p class="text-sm text-slate-600 mb-2">Provides demonstrations of desired input-output pairs. Helps the model understand the pattern, style, and format required.</p>
+                            <p class="text-xs text-slate-500">Crucial for guiding behavior without explicit weight updates, especially for complex or nuanced tasks.</p>
+                        </div>
+                        <div class="prompt-component-card p-6 rounded-lg">
+                            <h3 class="text-xl font-semibold text-sky-700 mb-2">3. The Task Itself</h3>
+                            <p class="text-sm text-slate-600 mb-2">The specific input, data, or query for which the model needs to generate a response.</p>
+                            <p class="text-xs text-slate-500">This is the actual content the model will process based on the description and examples provided.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide3-ch5" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Guidelines for Effective Prompts (Best Practices)</h2>
+                    <p class="mb-6 text-slate-600">Crafting effective prompts is both an art and a science. This section outlines key best practices and guidelines that can significantly improve the quality and reliability of AI model outputs. These techniques help in clearly communicating intent and managing model behavior.</p>
+                    
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="lg:w-3/5">
+                             <h3 class="text-xl font-semibold text-sky-600 mb-4">Key Guidelines (Click to Expand):</h3>
+                            <div id="guidelinesAccordion" class="space-y-2">
+                                </div>
+                        </div>
+                        <div class="lg:w-2/5">
+                            <h3 class="text-xl font-semibold text-sky-600 mb-4 text-center">Key Aspects of an Effective Prompt</h3>
+                            <div class="chart-container bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                <canvas id="effectivePromptChart"></canvas>
+                            </div>
+                            <p class="text-sm text-slate-500 mt-2 text-center">Conceptual: Balancing various prompt qualities.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide4-ch5" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Defensive Prompt Engineering</h2>
+                    <p class="mb-6 text-slate-600">As AI models become more integrated into applications, protecting them from misuse and manipulation is crucial. Defensive prompt engineering involves strategies to safeguard prompts and ensure models behave as intended, even when faced with adversarial inputs. This section covers common threats and defense mechanisms.</p>
+                    <p class="mb-4 text-slate-700"><strong class="text-sky-600">Purpose:</strong> Strategies to protect prompts and models from misuse, manipulation, or unintended behavior.</p>
+                    
+                    <div id="defensiveAccordion" class="space-y-3">
+                        </div>
+                </div>
+            </section>
+
+            <section id="slide5-ch5" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Prompt Engineering Tools & Organization</h2>
+                    <p class="mb-6 text-slate-600">Effective prompt engineering at scale requires more than just individual skill; it necessitates proper tools and organizational practices. This section discusses the types of tools available, the importance of organizing and versioning prompts, and the need to evaluate these tools.</p>
+                    
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="info-card bg-sky-50 border-sky-200 p-4 rounded-lg">
+                            <h3 class="font-semibold text-sky-700 mb-2">🔧 Prompt Engineering Tools</h3>
+                            <p class="text-sm text-slate-600">Platforms and frameworks that assist in creating, testing, managing, and deploying prompts (e.g., prompt IDEs, A/B testing tools for prompts, prompt marketplaces).</p>
+                        </div>
+                        <div class="info-card bg-sky-50 border-sky-200 p-4 rounded-lg">
+                            <h3 class="font-semibold text-sky-700 mb-2">📚 Organize and Version Prompts</h3>
+                            <p class="text-sm text-slate-600 mb-3">Treat prompts as code: version control them, document changes, and maintain a clear repository. Essential for reproducibility, collaboration, and debugging.</p>
+                            <div class="flex items-center space-x-2 text-slate-500">
+                                <div class="version-step">V1.0</div> <span class="version-arrow">→</span>
+                                <div class="version-step">V1.1</div> <span class="version-arrow">→</span>
+                                <div class="version-step">V2.0</div>
+                            </div>
+                        </div>
+                        <div class="info-card bg-sky-50 border-sky-200 p-4 rounded-lg">
+                            <h3 class="font-semibold text-sky-700 mb-2">📊 Evaluation of Prompt Tools</h3>
+                            <p class="text-sm text-slate-600">Just like models, the tools used for prompt engineering should also be evaluated for their effectiveness, ease of use, integration capabilities, and compatibility with your workflow.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide6-ch5" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Conclusion: The Art and Science of Prompt Engineering</h2>
+                    <p class="mb-6 text-slate-600">Chapter 5 underscores prompt engineering as a pivotal skill in the AI engineer's toolkit. It's a discipline that blends creative communication with systematic, scientific rigor to unlock the potential of powerful foundation models.</p>
+                    <ul class="space-y-3 list-disc list-inside text-slate-700">
+                        <li>Prompt engineering is a critical skill for enabling effective interaction with powerful foundation models.</li>
+                        <li>It successfully combines elements of <strong class="text-teal-600">art</strong> (creativity in phrasing, understanding nuance) and <strong class="text-sky-600">science</strong> (systematic experimentation, data-driven evaluation, and iteration).</li>
+                        <li>Mastering prompt structure, adhering to best practices, and implementing defensive strategies are essential for building reliable, safe, and high-performing AI applications.</li>
+                        <li>As AI models continue to evolve and become more sophisticated, the ability to communicate effectively with them through well-engineered prompts will remain a core and increasingly valuable competency for AI engineers.</li>
+                    </ul>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            
+            function showSection(targetId) {
+                contentSections.forEach(section => section.classList.remove('active'));
+                const activeSection = document.getElementById(targetId);
+                if (activeSection) activeSection.classList.add('active');
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.target === targetId) link.classList.add('active');
+                });
+                document.querySelector('main').scrollTop = 0;
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    showSection(this.dataset.target);
+                });
+            });
+
+            function initializeAccordion(containerId, itemsData, itemClasses, headerClasses, contentClasses, arrowClasses) {
+                const accordionContainer = document.getElementById(containerId);
+                if (!accordionContainer) return;
+                accordionContainer.innerHTML = ''; 
+
+                itemsData.forEach(itemData => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = itemClasses || 'accordion-item border border-slate-200 rounded-lg';
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = headerClasses || 'accordion-header bg-slate-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-slate-100 transition';
+                    headerDiv.innerHTML = `<span class="font-medium text-slate-700 text-sm">${itemData.title}</span><span class="arrow ${arrowClasses || 'text-slate-700'} transform transition-transform duration-300 text-sm">▼</span>`;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = contentClasses || 'accordion-content p-3 bg-white rounded-b-lg';
+                    
+                    let contentHTML = `<p class="text-slate-600 text-xs">${itemData.content}</p>`;
+                    if (itemData.example) {
+                        contentHTML += `<div class="mt-2 p-2 bg-sky-50 border border-sky-100 rounded text-xs"><strong class="text-sky-600">Example:</strong> ${itemData.example}</div>`;
+                    }
+                     if (itemData.subpoints) {
+                        contentHTML += '<ul class="list-disc list-inside ml-4 mt-2 space-y-1 text-xs text-slate-500">';
+                        itemData.subpoints.forEach(sub => contentHTML += `<li>${sub}</li>`);
+                        contentHTML += '</ul>';
+                    }
+                    contentDiv.innerHTML = contentHTML;
+                    
+                    itemDiv.appendChild(headerDiv);
+                    itemDiv.appendChild(contentDiv);
+                    accordionContainer.appendChild(itemDiv);
+
+                    headerDiv.addEventListener('click', () => {
+                        const isOpen = contentDiv.classList.contains('open');
+                        if (isOpen) {
+                            contentDiv.classList.remove('open');
+                            contentDiv.style.maxHeight = null;
+                            headerDiv.querySelector('.arrow').classList.remove('rotate-180');
+                        } else {
+                            contentDiv.classList.add('open');
+                            contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
+                            headerDiv.querySelector('.arrow').classList.add('rotate-180');
+                        }
+                    });
+                });
+            }
+
+            const guidelinesData = [
+                { title: 'Be Clear and Specific', content: 'Avoid ambiguity. Clearly state the task, context, and any constraints.', example: 'Instead of "Explain this," use "Summarize this text in three sentences for a high school student."' },
+                { title: 'Define the Output Format Clearly', content: 'Specify the desired structure, such as JSON, bullet points, or a particular style.', example: 'Respond in JSON format: <span class="code-example">{\'summary\': \'...\'}</span>, or "List the key advantages as bullet points."' },
+                { title: 'Provide Examples (Few-Shot Learning)', content: 'Demonstrate the desired input-output behavior with a few examples. This is often more effective than lengthy instructions for teaching style or complex patterns.' },
+                { title: 'Break Down Complex Tasks', content: 'For intricate problems, decompose them into simpler, manageable subtasks. Guide the model through each step sequentially or as part of a larger plan.' },
+                { title: 'Employ Chain-of-Thought (CoT) Reasoning', content: 'Instruct the model to "think step-by-step" or show its reasoning process before giving the final answer. This can significantly improve accuracy for complex reasoning tasks.', example: 'Prompt: "Q: Roger has 5 tennis balls... A: Let\'s think step by step..."' },
+                { title: 'Give the Model Time to "Think"', content: 'For challenging tasks, allow the model to generate intermediate steps, scratchpad thoughts, or outlines before producing the final output. This can improve the quality and coherence of the response.' },
+                { title: 'Iterate on Your Prompts', content: 'Prompt engineering is an iterative process. Experiment with different phrasings, examples, and structures. Evaluate the outputs and refine prompts based on performance.' }
+            ];
+            initializeAccordion('guidelinesAccordion', guidelinesData,
+                'accordion-item border border-teal-200 rounded-lg',
+                'accordion-header bg-teal-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-teal-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-teal-700'
+            );
+
+            const defensiveData = [
+                { title: '🛡️ Proprietary Prompts & Reverse Prompt Engineering', content: 'Protecting your carefully crafted prompts from being easily extracted or reverse-engineered by users or malicious actors. This can involve obfuscation or keeping core prompt logic server-side.'},
+                { title: '🔓 Jailbreaking', content: 'Techniques used by users to bypass a model\'s safety guardrails, ethical alignments, or content restrictions to make it generate undesirable, harmful, or policy-violating content.'},
+                { title: '💉 Prompt Injection', content: 'Malicious inputs designed by users to override or manipulate the original instructions of a prompt. This can lead to the model performing unintended actions, revealing sensitive information, or generating outputs aligned with the attacker\'s goals instead of the developer\'s.'},
+                { 
+                    title: '🛡️ Defenses Against Prompt Attacks', 
+                    content: 'Implementing various strategies to mitigate the risks of prompt-based attacks:',
+                    subpoints: [
+                        '<strong>Input Sanitization:</strong> Filtering or escaping user inputs to remove or neutralize malicious instructions.',
+                        '<strong>Output Filtering:</strong> Post-processing model outputs to check for harmful content or policy violations.',
+                        '<strong>Privilege Separation:</strong> Limiting what the model can access or what actions it can perform based on its output, especially if it interacts with external systems.',
+                        '<strong>Human-in-the-Loop:</strong> Incorporating manual review for sensitive applications or when suspicious activity is detected.',
+                        '<strong>Robust System Prompts:</strong> Designing system prompts that are harder to override and clearly delineate between instructions and user input.'
+                    ]
+                }
+            ];
+            initializeAccordion('defensiveAccordion', defensiveData,
+                'accordion-item border border-rose-200 rounded-lg',
+                'accordion-header bg-rose-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-rose-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-rose-700'
+            );
+            
+            // Chart.js for Effective Prompt Aspects (Slide 3)
+            const effectivePromptCtx = document.getElementById('effectivePromptChart');
+            if (effectivePromptCtx) {
+                new Chart(effectivePromptCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Clarity', 'Specificity', 'Examples (Few-Shot)', 'Format Definition', 'CoT Reasoning', 'Iterative Refinement'],
+                        datasets: [{
+                            label: 'Importance for Effectiveness',
+                            data: [9, 8, 7, 7, 6, 9], // Conceptual values
+                            fill: true,
+                            backgroundColor: 'rgba(20, 184, 166, 0.2)', // teal-500 with opacity
+                            borderColor: 'rgb(20, 184, 166)',
+                            pointBackgroundColor: 'rgb(20, 184, 166)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(20, 184, 166)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        elements: { line: { borderWidth: 2 } },
+                        scales: {
+                            r: {
+                                angleLines: { display: true },
+                                suggestedMin: 0,
+                                suggestedMax: 10,
+                                pointLabels: { font: { size: 9 } },
+                                ticks: { display: true, z:1, backdropPadding:0, stepSize: 2 }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+
+            if (navLinks.length > 0) showSection(navLinks[0].dataset.target);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Engineering: Chapter 8 Interactive Summary - Dataset Engineering</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Navigation: Sidebar with 6 links (JS content switching). Goal: Easy access.
+        - Data Curation (Slide 2): Accordion for "Defining Data Needs" (What, How much, Quality). Sub-list for quality aspects. Goal: Structured info.
+        - Data Synthesis (Slide 3): Styled cards for each technique. Goal: Clear differentiation.
+        - Data Processing (Slide 4): Interactive HTML/CSS step-diagram. Clicking a step shows details. Goal: Visualize process.
+        - Evolving Landscape (Slide 5): Accordion for key aspects. Goal: Digestible points.
+        - Conclusion (Slide 6): Chart.js Doughnut chart for 'Key Takeaways'. Goal: Visual summary.
+        - All textual content from source.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            background-color: #f0f9ff; /* sky-50 */
+            color: #0369a1; /* sky-700 */
+        }
+        .nav-link.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+            font-weight: 600;
+        }
+        .accordion-header {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .accordion-header:hover {
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .accordion-content {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+        .accordion-content.open {
+            display: block;
+            max-height: 1000px; 
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px; 
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; 
+            max-height: 400px;
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .info-card {
+            background-color: #f0fdfa; /* teal-50 */
+            border: 1px solid #99f6e4; /* teal-200 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .info-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.07);
+        }
+        .step-diagram-container {
+            display: flex;
+            overflow-x: auto;
+            padding-bottom: 1rem; /* For scrollbar visibility if needed */
+        }
+        .step-item {
+            flex: 0 0 auto; /* Prevent shrinking, allow natural width */
+            min-width: 120px; /* Minimum width for each step */
+            background-color: #f0f9ff; /* sky-50 */
+            border: 1px solid #bae6fd; /* sky-200 */
+            padding: 0.75rem;
+            margin-right: 0.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+            font-size: 0.875rem;
+        }
+        .step-item:last-child {
+            margin-right: 0;
+        }
+        .step-item:hover, .step-item.active-step {
+            background-color: #e0f2fe; /* sky-100 */
+            transform: scale(1.03);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .step-arrow {
+            align-self: center;
+            font-size: 1.25rem;
+            color: #38bdf8; /* sky-400 */
+            margin-right: 0.5rem;
+            display: none; /* Hidden by default, shown for larger screens */
+        }
+        @media (min-width: 768px) { /* Show arrows on md and up */
+            .step-arrow { display: block; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <nav class="w-full md:w-72 bg-white p-6 shadow-lg flex-shrink-0">
+            <h1 class="text-2xl font-bold text-sky-700 mb-6 border-b pb-3">AI Engineering Ch.8</h1>
+            <ul class="space-y-2">
+                <li><a class="nav-link active" data-target="slide1-ch8">1. Intro to Dataset Engineering</a></li>
+                <li><a class="nav-link" data-target="slide2-ch8">2. Data Curation</a></li>
+                <li><a class="nav-link" data-target="slide3-ch8">3. Data Synthesis Techniques</a></li>
+                <li><a class="nav-link" data-target="slide4-ch8">4. Data Processing</a></li>
+                <li><a class="nav-link" data-target="slide5-ch8">5. Evolving Data Operations</a></li>
+                <li><a class="nav-link" data-target="slide6-ch8">6. Conclusion</a></li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            
+            <section id="slide1-ch8" class="content-section active">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Introduction to Dataset Engineering</h2>
+                    <p class="mb-6 text-slate-600">This section introduces Dataset Engineering as a critical discipline within AI Engineering. It emphasizes the foundational principle that model quality is inextricably linked to data quality and discusses the growing importance and evolving nature of data-related operations in the AI landscape.</p>
+                    <div class="space-y-4 text-slate-700">
+                        <p><strong class="text-sky-600">Core Principle:</strong> The quality of an AI model is fundamentally dependent on the quality of its training data. Even the most advanced model architectures and unlimited compute cannot compensate for poor or insufficient data.</p>
+                        <p><strong class="text-sky-600">The Goal:</strong> To create a dataset that enables the training of the best possible model for a specific task, ideally within an allocated budget and timeframe. This involves more than just collecting data; it's about strategically building and refining it.</p>
+                        <div><strong class="text-sky-600">Growing Importance:</strong>
+                            <ul class="list-disc list-inside ml-6 mt-1 space-y-1 text-sm">
+                                <li>As fewer companies can afford to develop massive foundation models from scratch, high-quality, specialized data becomes a key differentiator for AI performance and competitive advantage.</li>
+                                <li>The increasing demand for vast amounts of data by larger models makes data handling, storage, and processing more challenging, requiring significant investment in talent and infrastructure.</li>
+                            </ul>
+                        </div>
+                        <p><strong class="text-sky-600">Evolution of Data Operations:</strong> Data-related tasks (like labeling, cleaning, and curation) have evolved from side responsibilities handled ad-hoc to dedicated, specialized roles (e.g., data labelers, dataset creators, data quality engineers) integral to AI teams.</p>
+                        <p><strong class="text-sky-600">Chapter Overview:</strong> This chapter provides an overview of the complex data landscape, covering key considerations and techniques for building effective datasets, including data curation, data synthesis, and data processing.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide2-ch8" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Data Curation: What Data Do You Need?</h2>
+                    <p class="mb-6 text-slate-600">Data curation is the active management of data throughout its lifecycle. This section focuses on the initial critical phase: defining data needs. It addresses what kind of data is required, how much is needed, and what constitutes "high-quality" data for a specific AI application, while also acknowledging the challenges involved.</p>
+                    
+                    <h3 class="text-xl font-semibold text-sky-600 mb-3">Defining Data Needs (Click to Expand):</h3>
+                    <div id="dataNeedsAccordion" class="space-y-2">
+                        </div>
+
+                    <div class="mt-6 p-4 bg-rose-50 border border-rose-200 rounded-lg">
+                        <h3 class="text-lg font-semibold text-rose-700 mb-2">Challenges in Curation:</h3>
+                        <p class="text-sm text-slate-600">Sourcing relevant data, ensuring its quality through cleaning and preprocessing, and annotating it accurately (if required for supervised learning) can be extremely time-consuming, resource-intensive, and expensive processes.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide3-ch8" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Data Synthesis Techniques</h2>
+                    <p class="mb-6 text-slate-600">When real-world data is scarce, expensive, or imbalanced, data synthesis techniques can be employed to generate new data. This section explores the purpose of data synthesis and outlines common methods like data augmentation, using generative models, and simulation.</p>
+                    <p class="mb-4 text-slate-700"><strong class="text-sky-600">Purpose:</strong> To generate new data, often to augment existing datasets, address data scarcity for specific classes or scenarios, create specific edge cases for robust testing, or balance imbalanced datasets.</p>
+                    
+                    <div class="grid md:grid-cols-3 gap-6 mb-6">
+                        <div class="info-card">
+                            <h3 class="text-lg font-semibold text-teal-700 mb-2">🔄 Data Augmentation</h3>
+                            <p class="text-sm text-slate-600">Applying various transformations to existing data points to create new, varied examples. For images: rotation, scaling, cropping, flipping, color jittering. For text: paraphrasing, synonym replacement, back-translation, adding noise.</p>
+                        </div>
+                        <div class="info-card">
+                            <h3 class="text-lg font-semibold text-teal-700 mb-2">🤖 Generative Models</h3>
+                            <p class="text-sm text-slate-600">Using AI models themselves (like Generative Adversarial Networks - GANs, Variational Autoencoders - VAEs, or other generative Foundation Models) to create synthetic data that mimics the statistical properties and characteristics of real data.</p>
+                        </div>
+                        <div class="info-card">
+                            <h3 class="text-lg font-semibold text-teal-700 mb-2">💻 Simulation</h3>
+                            <p class="text-sm text-slate-600">Creating data through computer simulations, especially useful for environments where real-world data collection is difficult, costly, or dangerous (e.g., robotics, autonomous driving, physics experiments, financial modeling).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <h3 class="text-lg font-semibold text-amber-700 mb-2">Considerations for Synthetic Data:</h3>
+                        <p class="text-sm text-slate-600">Synthetic data must be carefully validated to ensure it maintains fidelity to the real-world distribution, is relevant to the task, and doesn't inadvertently introduce new biases, artifacts, or privacy concerns. The quality of synthetic data is paramount.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide4-ch8" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Data Processing</h2>
+                    <p class="mb-6 text-slate-600">Data processing involves transforming raw, often messy, data into a clean, structured, and suitable format for model training and inference. This section outlines the key steps in this crucial pipeline and emphasizes its iterative nature.</p>
+                    <p class="mb-4 text-slate-700"><strong class="text-sky-600">Purpose:</strong> To transform raw data into a format that is clean, consistent, and optimized for consumption by AI models during training and inference.</p>
+                    
+                    <h3 class="text-xl font-semibold text-sky-600 mb-3">Key Steps (Click a step for details):</h3>
+                    <div class="step-diagram-container mb-4" id="dataProcessingSteps">
+                        </div>
+                    <div id="stepDetail" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 hidden min-h-[50px]">
+                        Select a step to see its description.
+                    </div>
+
+                    <p class="mt-6 text-sm text-slate-700"><strong class="text-teal-600">Iterative Process:</strong> Data processing is rarely a one-off task. It often requires experimentation, refinement, and iteration based on initial model performance, error analysis, and evolving data understanding. The pipeline may need adjustments as new data sources are added or issues are discovered.</p>
+                </div>
+            </section>
+
+            <section id="slide5-ch8" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">The Evolving Landscape of Data Operations</h2>
+                    <p class="mb-6 text-slate-600">The field of data operations for AI is rapidly evolving, moving from ad-hoc tasks to specialized, critical functions. This section discusses this shift, the emergence of dedicated roles, the increasing complexity of the data landscape, and the non-linear nature of modern data workflows.</p>
+                    
+                    <div id="evolvingDataOpsAccordion" class="space-y-3">
+                        </div>
+                </div>
+            </section>
+
+            <section id="slide6-ch8" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Conclusion: Data as a Differentiator</h2>
+                    <p class="mb-6 text-slate-600">Chapter 8 firmly establishes that high-quality data and effective dataset engineering are not just important but are paramount to the success of AI applications. In an era of powerful foundation models, data has become a key strategic asset and differentiator.</p>
+                    
+                    <div class="flex flex-col lg:flex-row gap-8 items-center">
+                        <div class="lg:w-2/3">
+                            <h3 class="text-xl font-semibold text-sky-600 mb-3">Key Takeaways:</h3>
+                            <ul class="list-disc list-inside space-y-2 text-slate-700 text-sm">
+                                <li>High-quality, relevant data is the absolute foundation for training effective and reliable AI models.</li>
+                                <li>Dataset engineering is a complex, iterative, and multi-faceted process involving careful curation, strategic synthesis, and meticulous processing.</li>
+                                <li>Dedicated roles, specialized skills, and significant investments in data operations are becoming essential for organizations serious about AI.</li>
+                                <li>In an environment where many companies might leverage similar foundation models, superior data quality and unique datasets can provide a significant and sustainable competitive differentiator.</li>
+                            </ul>
+                            <p class="mt-4 text-slate-700 font-semibold"><strong class="text-teal-600">Strategic Imperative:</strong> Organizations must prioritize and invest in robust dataset engineering practices, tools, and talent to unlock the full potential of their AI initiatives and build lasting value.</p>
+                        </div>
+                        <div class="lg:w-1/3">
+                             <h3 class="text-xl font-semibold text-sky-600 mb-4 text-center">Core Pillars of Dataset Engineering</h3>
+                            <div class="chart-container bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                <canvas id="takeawaysChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            
+            function showSection(targetId) {
+                contentSections.forEach(section => section.classList.remove('active'));
+                const activeSection = document.getElementById(targetId);
+                if (activeSection) activeSection.classList.add('active');
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.target === targetId) link.classList.add('active');
+                });
+                document.querySelector('main').scrollTop = 0;
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    showSection(this.dataset.target);
+                });
+            });
+
+            // Generic Accordion Initializer
+            function initializeAccordion(containerId, itemsData, itemClasses, headerClasses, contentClasses, arrowClasses) {
+                const accordionContainer = document.getElementById(containerId);
+                if (!accordionContainer) return;
+                accordionContainer.innerHTML = ''; 
+
+                itemsData.forEach(itemData => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = itemClasses || 'accordion-item border border-slate-200 rounded-lg';
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = headerClasses || 'accordion-header bg-slate-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-slate-100 transition';
+                    headerDiv.innerHTML = `<span class="font-medium text-slate-700 text-sm">${itemData.title}</span><span class="arrow ${arrowClasses || 'text-slate-700'} transform transition-transform duration-300 text-sm">▼</span>`;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = contentClasses || 'accordion-content p-3 bg-white rounded-b-lg';
+                    
+                    let contentHTML = `<p class="text-slate-600 text-xs">${itemData.content}</p>`;
+                     if (itemData.subpoints) {
+                        contentHTML += '<ul class="list-disc list-inside ml-4 mt-2 space-y-1 text-xs text-slate-500">';
+                        itemData.subpoints.forEach(sub => contentHTML += `<li>${sub}</li>`);
+                        contentHTML += '</ul>';
+                    }
+                    contentDiv.innerHTML = contentHTML;
+                    
+                    itemDiv.appendChild(headerDiv);
+                    itemDiv.appendChild(contentDiv);
+                    accordionContainer.appendChild(itemDiv);
+
+                    headerDiv.addEventListener('click', () => {
+                        const isOpen = contentDiv.classList.contains('open');
+                        if (isOpen) {
+                            contentDiv.classList.remove('open');
+                            contentDiv.style.maxHeight = null;
+                            headerDiv.querySelector('.arrow').classList.remove('rotate-180');
+                        } else {
+                            contentDiv.classList.add('open');
+                            contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
+                            headerDiv.querySelector('.arrow').classList.add('rotate-180');
+                        }
+                    });
+                });
+            }
+
+            const dataNeedsData = [
+                { title: 'What data?', content: 'Identify the specific types of data (text, images, structured, etc.) relevant to your application\'s domain and the task the AI model needs to perform.' },
+                { title: 'How much?', content: 'Determine the optimal quantity of data required. This often involves considering scaling laws, the complexity of the task, and budget constraints for data acquisition and labeling.' },
+                { 
+                    title: 'Data Quality', 
+                    content: 'What does it mean for data to be "high quality" for your specific use case? This is multifaceted and involves:',
+                    subpoints: [
+                        '<strong>Accuracy:</strong> Data is correct, factual, and free from errors or noise.',
+                        '<strong>Completeness:</strong> Data contains all necessary information and features required for the task.',
+                        '<strong>Consistency:</strong> Data is uniform in format, labels, and definitions across the entire dataset.',
+                        '<strong>Relevance:</strong> Data directly contributes to the model\'s learning objective and is pertinent to the problem being solved.',
+                        '<strong>Diversity:</strong> Data represents the full range of real-world scenarios, inputs, and variations the model will encounter, including important edge cases and minority groups to prevent bias.'
+                    ]
+                }
+            ];
+            initializeAccordion('dataNeedsAccordion', dataNeedsData,
+                'accordion-item border border-sky-200 rounded-lg',
+                'accordion-header bg-sky-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-sky-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-sky-700'
+            );
+
+            const dataProcessingStepsData = [
+                { name: '🧹 Cleaning', detail: 'Handling missing values (imputation, removal), removing duplicate entries, correcting inconsistencies and errors, and addressing outliers that could skew model training.' },
+                { name: '⚖️ Normalization/Standardization', detail: 'Scaling numerical features to a common range (e.g., 0 to 1 for normalization) or distribution (e.g., mean of 0 and standard deviation of 1 for standardization) to ensure fair contribution from all features.' },
+                { name: '🧩 Tokenization', detail: 'For text data, breaking down raw text into smaller units called tokens (e.g., words, subwords, characters) that the model can process. This step is crucial for language models.' },
+                { name: '🛠️ Feature Engineering', detail: 'Creating new, informative features from existing raw data to improve model performance. While less critical for large foundation models that learn features automatically, it can still be beneficial for specific tasks or structured data.' },
+                { name: '🔪 Data Splitting', detail: 'Dividing the dataset into distinct training, validation, and test sets. Training set is used to train the model, validation set to tune hyperparameters and prevent overfitting, and test set for final, unbiased evaluation of model performance.' }
+            ];
+            const stepsContainer = document.getElementById('dataProcessingSteps');
+            const stepDetailDiv = document.getElementById('stepDetail');
+
+            if (stepsContainer && stepDetailDiv) {
+                dataProcessingStepsData.forEach((step, index) => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'step-item';
+                    stepDiv.textContent = step.name;
+                    stepDiv.onclick = () => {
+                        stepsContainer.querySelectorAll('.step-item').forEach(el => el.classList.remove('active-step'));
+                        stepDiv.classList.add('active-step');
+                        stepDetailDiv.innerHTML = `<strong>${step.name}:</strong> ${step.detail}`;
+                        stepDetailDiv.classList.remove('hidden');
+                    };
+                    stepsContainer.appendChild(stepDiv);
+                    if (index < dataProcessingStepsData.length - 1) {
+                        const arrowDiv = document.createElement('span');
+                        arrowDiv.className = 'step-arrow';
+                        arrowDiv.innerHTML = '➔';
+                        stepsContainer.appendChild(arrowDiv);
+                    }
+                });
+            }
+            
+            const evolvingDataOpsData = [
+                { title: 'Shift in Focus', content: 'Data operations are no longer secondary or ad-hoc tasks but are recognized as critical, specialized functions central to the AI development lifecycle and model performance.' },
+                { 
+                    title: 'Specialized Roles', 
+                    content: 'The growing importance of data has led to the emergence and formalization of dedicated roles within AI teams:',
+                    subpoints: [
+                        '<strong>Data Labelers/Annotators:</strong> Professionals who meticulously annotate raw data with accurate labels required for supervised learning tasks.',
+                        '<strong>Dataset Creators:</strong> Experts in designing and assembling high-quality datasets, often involving complex pipelines for data acquisition, cleaning, and integration from various sources.',
+                        '<strong>Data Quality Engineers:</strong> Engineers focused on ensuring the ongoing accuracy, consistency, reliability, and overall fitness of data used for training and evaluating AI models.'
+                    ]
+                },
+                { title: 'Complexity of the Data Landscape', content: 'The sheer volume of available data, the variety of data types (text, image, audio, structured, etc.), and the ever-growing array of data processing techniques and tools make navigating and managing the data landscape increasingly complex.' },
+                { title: 'Non-Linear Workflow', content: 'Data curation, generation, and processing often do not follow a simple linear path from raw data to model-ready dataset. Instead, these processes are highly iterative, involving continuous feedback loops, experimentation, and refinement based on model evaluation and evolving project requirements.' }
+            ];
+            initializeAccordion('evolvingDataOpsAccordion', evolvingDataOpsData,
+                'accordion-item border border-teal-200 rounded-lg',
+                'accordion-header bg-teal-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-teal-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-teal-700'
+            );
+
+            // Chart.js for Takeaways (Slide 6)
+            const takeawaysCtx = document.getElementById('takeawaysChart');
+            if (takeawaysCtx) {
+                new Chart(takeawaysCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['High-Quality Data', 'Iterative Process', 'Dedicated Roles', 'Competitive Differentiator'],
+                        datasets: [{
+                            label: 'Key Takeaways in Dataset Engineering',
+                            data: [35, 25, 20, 20], // Conceptual values
+                            backgroundColor: [
+                                'rgba(56, 189, 248, 0.7)',  // sky-400
+                                'rgba(20, 184, 166, 0.7)',  // teal-500
+                                'rgba(16, 185, 129, 0.7)', // emerald-500
+                                'rgba(249, 115, 22, 0.7)'  // orange-500
+                            ],
+                            borderColor: [
+                                'rgba(56, 189, 248, 1)',
+                                'rgba(20, 184, 166, 1)',
+                                'rgba(16, 185, 129, 1)',
+                                'rgba(249, 115, 22, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { font: { size: 10 }, boxWidth: 12, padding:10 }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.raw}% (Conceptual Importance)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            if (navLinks.length > 0) showSection(navLinks[0].dataset.target);
+        });
+    </script>
+</body>
+</html>

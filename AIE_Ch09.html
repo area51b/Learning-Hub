@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>AI Engineering: Chapter 9 Interactive Summary - Inference Optimization</title>
+ <script src="https://cdn.tailwindcss.com"></script>
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+ <!-- Visualization & Content Choices:
+ - Navigation: Sidebar with 7 links (JS content switching). Goal: Easy access.
+ - API Patterns (Slide 2): Side-by-side styled cards for Online vs. Batch. Goal: Clear comparison.
+ - Metrics (Slide 3): Accordion for Latency, Throughput, Resource metrics. Goal: Structured info.
+ - Hardware (Slide 4): Cards for hardware types/considerations. Goal: Organized info.
+ - Model Opt (Slide 5): Accordion for Core (Quant, Prune, Distill) & Advanced Decoding. Simple HTML/CSS diagram for Distillation. Goal: Detailed explanation.
+ - Service Opt (Slide 6): Accordion for Batching, Caching, Parallelism. Simple HTML/CSS diagrams for batching types. Goal: Explain complex techniques.
+ - Conclusion (Slide 7): Chart.js Bar chart for 'Inference vs. Training Cost'. Goal: Visual impact for key statistic.
+ - All textual content from source.
+ - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+ <style>
+ body {
+ font-family: 'Inter', sans-serif;
+ }
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+ .content-section {
+ display: none;
+ }
+ .content-section.active {
+ display: block;
+ }
+ .nav-link {
+ display: block;
+ padding: 0.75rem 1rem;
+ border-radius: 0.375rem;
+ transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+ cursor: pointer;
+ }
+ .nav-link:hover {
+ background-color: #f0f9ff; /* sky-50 */
+ color: #0369a1; /* sky-700 */
+ }
+ .nav-link.active {
+ background-color: #0ea5e9; /* sky-500 */
+ color: white;
+ font-weight: 600;
+ }
+ .accordion-header {
+ cursor: pointer;
+ transition: background-color 0.2s;
+ }
+ .accordion-header:hover {
+ background-color: #f8fafc; /* slate-50 */
+ }
+ .accordion-content {
+ display: none;
+ max-height: 0;
+ overflow: hidden;
+ transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+ }
+ .accordion-content.open {
+ display: block;
+ max-height: 1500px; /* Increased for potentially long content */
+ padding-top: 0.75rem;
+ padding-bottom: 0.75rem;
+ }
+ .chart-container {
+ position: relative;
+ width: 100%;
+ max-width: 600px; 
+ margin-left: auto;
+ margin-right: auto;
+ height: 300px; 
+ max-height: 350px;
+ }
+ @media (min-width: 768px) { /* md breakpoint */
+ .chart-container {
+ height: 320px;
+ }
+ }
+ .info-card {
+ background-color: #f0fdfa; /* teal-50 */
+ border: 1px solid #99f6e4; /* teal-200 */
+ padding: 1rem;
+ border-radius: 0.5rem;
+ transition: box-shadow 0.2s, transform 0.2s;
+ }
+ .info-card:hover {
+ transform: translateY(-3px);
+ box-shadow: 0 4px 8px rgba(0,0,0,0.07);
+ }
+ .comparison-card {
+ background-color: #f0f9ff; /* sky-50 */
+ border: 1px solid #bae6fd; /* sky-200 */
+ }
+ .diagram-box {
+ border: 1px dashed #cbd5e1; /* slate-300 */
+ padding: 0.5rem;
+ border-radius: 0.25rem;
+ font-size: 0.8rem;
+ text-align: center;
+ background-color: #f8fafc; /* slate-50 */
+ margin-top: 0.5rem;
+ }
+ </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+ <div class="flex flex-col md:flex-row min-h-screen">
+ <nav class="w-full md:w-72 bg-white p-6 shadow-lg flex-shrink-0">
+ <h1 class="text-2xl font-bold text-sky-700 mb-6 border-b pb-3">AI Engineering Ch.9</h1>
+ <ul class="space-y-2">
+ <li><a class="nav-link active" data-target="slide1-ch9">1. Intro to Inference Opt.</a></li>
+ <li><a class="nav-link" data-target="slide2-ch9">2. APIs & Service Patterns</a></li>
+ <li><a class="nav-link" data-target="slide3-ch9">3. Performance Metrics</a></li>
+ <li><a class="nav-link" data-target="slide4-ch9">4. Hardware Considerations</a></li>
+ <li><a class="nav-link" data-target="slide5-ch9">5. Model Optimization</a></li>
+ <li><a class="nav-link" data-target="slide6-ch9">6. Service-Level Opt.</a></li>
+ <li><a class="nav-link" data-target="slide7-ch9">7. Conclusion</a></li>
+ </ul>
+ </nav>
+
+ <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+ 
+ <section id="slide1-ch9" class="content-section active">
+ <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+ <h2 class="text-3xl font-semibold text-sky-700 mb-6">Introduction to Inference Optimization</h2>
+ <p class="mb-6 text-slate-600">This section introduces Inference Optimization as a critical aspect of AI Engineering. It highlights the primary goals of making AI models faster and cheaper in production, discusses why this is vital for successful AI deployment, and outlines the interdisciplinary nature and different levels of optimization.</p>
+ <div class="space-y-4 text-slate-700">
+ <div>
+ <strong class="text-sky-600">Core Goal:</strong> Making AI models <strong class="text-teal-600">faster</strong> (reducing latency) and <strong class="text-teal-600">cheaper</strong> (reducing operational costs) when they are used in production environments to make predictions (inference).
+ <ul class="list-disc list-inside ml-6 mt-1 space-y-1 text-sm">
+ <li><strong>Speed (Latency):</strong> Crucial for real-time applications where delays directly impact user experience or the utility of the prediction (e.g., interactive chatbots, real-time stock predictions, autonomous driving responses).</li>
+ <li><strong>Cost:</strong> Unoptimized inference can lead to prohibitively high operational expenses due to compute resource consumption, significantly impacting the Return on Investment (ROI) of AI projects.</li>
+ </ul>
+ </div>
+ <p><strong class="text-sky-600">Why it Matters:</strong> Even the most accurate and capable AI models are impractical or useless in real-world scenarios if they are too slow to respond or too expensive to operate at scale.</p>
+ <p><strong class="text-sky-600">Interdisciplinary Field:</strong> Inference optimization is not a siloed task. It requires collaboration across various roles, including model researchers, application developers, system engineers, compiler designers, and hardware architects, each bringing specialized knowledge.</p>
+ <div>
+ <strong class="text-sky-600">Optimization Levels:</strong> This chapter explores optimization strategies at three key levels:
+ <ol class="list-decimal list-inside ml-6 mt-1 space-y-1 text-sm">
+ <li><strong>Model Level:</strong> Techniques applied directly to the AI model itself (e.g., quantization, pruning).</li>
+ <li><strong>Hardware Level:</strong> Leveraging specialized AI accelerators and optimizing hardware configurations.</li>
+ <li><strong>Service Level:</strong> Optimizing the inference serving infrastructure and request handling (e.g., batching, caching).</li>
+ </ol>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <section id="slide2-ch9" class="content-section">
+ <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+ <h2 class="text-3xl font-semibold text-sky-700 mb-6">Inference APIs and Service Patterns</h2>
+ <p class="mb-6 text-slate-600">The way AI models are deployed and accessed for predictions (inference) significantly impacts their performance and cost-effectiveness. This section discusses the two fundamental approaches to deploying inference services: Online Inference APIs and Batch Inference APIs.</p>
+ <p class="mb-4 text-slate-700"><strong class="text-sky-600">Purpose:</strong> To define how models are made available for making predictions in different application contexts.</p>
+ <div class="grid md:grid-cols-2 gap-6">
+ <div class="comparison-card p-6 rounded-lg shadow">
+ <h3 class="text-xl font-semibold text-sky-600 mb-3">1. Online Inference APIs</h3>
+ <ul class="space-y-2 text-sm text-slate-700">
+ <li><strong class="text-teal-600">Optimization:</strong> Primarily for minimal latency (fastest possible response time).</li>
+ <li><strong class="text-teal-600">Use Case:</strong> Designed for real-time, interactive applications where immediate feedback is critical (e.g., chatbots, live recommendations, fraud detection during transactions).</li>
+ <li><strong class="text-teal-600">Cost:</strong> Typically more expensive per inference due to the need for dedicated, always-on resources and immediate processing of individual requests.</li>
+ </ul>
+ </div>
+ <div class="comparison-card p-6 rounded-lg shadow">
+ <h3 class="text-xl font-semibold text-sky-600 mb-3">2. Batch Inference APIs</h3>
+ <ul class="space-y-2 text-sm text-slate-700">
+ <li><strong class="text-teal-600">Optimization:</strong> Primarily for cost efficiency and high throughput (processing many requests).</li>
+ <li><strong class="text-teal-600">Use Case:</strong> Ideal for bulk processing tasks where latency can be tolerated, and results are not needed instantaneously (e.g., generating daily reports, offline content moderation, periodic data analysis). Processing can take minutes or even hours.</li>
+ <li><strong class="text-teal-600">Cost:</strong> Allows providers to optimize resource utilization by processing many requests together in batches, leading to a lower cost per inference.</li>
+ </ul>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <section id="slide3-ch9" class="content-section">
+ <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+ <h2 class="text-3xl font-semibold text-sky-700 mb-6">Inference Performance Metrics</h2>
+ <p class="mb-6 text-slate-600">To effectively optimize inference, it's crucial to measure its performance accurately. This section details key metrics used to evaluate the efficiency of inference systems, categorized into latency, throughput/goodput, and resource utilization.</p>
+ <p class="mb-4 text-slate-700"><strong class="text-sky-600">Measuring Success:</strong> Key metrics to evaluate the efficiency and effectiveness of inference systems.</p>
+ <div id="metricsAccordion" class="space-y-3">
+ </div>
+ </div>
+ </section>
+
+ <section id="slide4-ch9" class="content-section">
+ <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+ <h2 class="text-3xl font-semibold text-sky-700 mb-6">Hardware Considerations and AI Accelerators</h2>
+ <p class="mb-6 text-slate-600">The choice of underlying hardware is a critical factor that significantly impacts inference performance, cost, and power efficiency. This section discusses the role of hardware, the differences between training and inference-optimized hardware, key optimization considerations, and popular AI accelerators.</p>
+ <p class="mb-4 text-slate-700"><strong class="text-sky-600">Hardware's Role:</strong> The foundation upon which inference performance is built. The right hardware can dramatically speed up computations and reduce costs.</p>
+ 
+ <div class="mb-6 p-4 bg-sky-50 border border-sky-200 rounded-lg">
+ <h3 class="text-lg font-semibold text-sky-600 mb-2">Inference vs. Training Hardware:</h3>
+ <ul class="list-disc list-inside text-sm space-y-1 text-slate-700">
+ <li><strong>Training-focused hardware:</strong> Prioritizes very large memory capacity (to hold large models and datasets) and high precision (e.g., FP32) for stable and accurate model training.</li>
+ <li><strong>Inference-optimized chips:</strong> Prioritize lower numerical precision (e.g., FP16, INT8), faster memory access (bandwidth), and specialized execution units for efficient forward passes, often with less emphasis on massive memory capacity compared to training chips.</li>
+ </ul>
+ </div>
+
+ <div class="mb-6">
+ <h3 class="text-lg font-semibold text-sky-600 mb-3">Key Hardware Optimization Considerations:</h3>
+ <div class="grid md:grid-cols-3 gap-4 text-sm">
+ <div class="info-card"><strong class="text-teal-600">💾 Memory Size & Bandwidth:</strong> Crucial for loading large models quickly and efficiently feeding data to compute units. High bandwidth is key for low latency.</div>
+ <div class="info-card"><strong class="text-teal-600">⚙️ Chip Architecture Specifics:</strong> Specialized cores (e.g., NVIDIA Tensor Cores, Google TPUs, Apple Neural Engine, other NPUs) designed for AI operations like matrix multiplications can offer significant speedups.</div>
+ <div class="info-card"><strong class="text-teal-600">💡 Power Consumption Profiles:</strong> Energy efficiency (performance per watt) is vital for large-scale deployments to manage operational costs and environmental impact.</div>
+ </div>
+ </div>
+ 
+ <div>
+ <h3 class="text-lg font-semibold text-sky-600 mb-2">Popular AI Accelerators:</h3>
+ <p class="text-sm text-slate-700">GPUs (NVIDIA, AMD), TPUs (Google), dedicated AI ASICs (Application-Specific Integrated Circuits) from companies like Cerebras, Graphcore, Intel (Habana), AWS (Inferentia/Trainium), and others.</p>
+ </div>
+ </div>
+ </section>
+
+ <section id="slide5-ch9" class="content-section">
+ <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+ <h2 class="text-3xl font-semibold text-sky-700 mb-6">Model Optimization Techniques</h2>
+ <p class="mb-6 text-slate-600">Model optimization involves techniques applied directly to the AI model to reduce its size and computational requirements, thereby improving inference speed and efficiency. This section covers core approaches and advanced decoding strategies.</p>
+ <p class="mb-4 text-slate-700"><strong class="text-sky-600">Purpose:</strong> Reducing a trained model's size, memory footprint, and computational complexity to make inference faster and more cost-effective.</p>
+ 
+ <div id="modelOptAccordion" class="space-y-3">
+ </div>
+ </div>
+ </section>
+
+ <section id="slide6-ch9" class="content-section">
+ <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+ <h2 class="text-3xl font-semibold text-sky-700 mb-6">Service-Level Optimization</h2>
+ <p class="mb-6 text-slate-600">Beyond optimizing the model and hardware, significant performance gains can be achieved by optimizing the inference service itself—the software layer that runs the model and handles user requests. This section explores key service-level optimization strategies.</p>
+ <p class="mb-4 text-slate-700"><strong class="text-sky-600">Purpose:</strong> Optimizing the inference serving infrastructure and request handling logic to maximize throughput, minimize latency, and efficiently utilize hardware resources.</p>
+ <div id="serviceOptAccordion" class="space-y-3">
+ </div>
+ </div>
+ </section>
+
+ <section id="slide7-ch9" class="content-section">
+ <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+ <h2 class="text-3xl font-semibold text-sky-700 mb-6">Conclusion: A Business Necessity</h2>
+ <p class="mb-6 text-slate-600">Chapter 9 firmly establishes that inference optimization is far more than a technical exercise; it's a critical business necessity for any organization deploying AI systems at scale. Efficient inference directly impacts user satisfaction, operational costs, and the overall viability of AI applications.</p>
+ 
+ <div class="flex flex-col lg:flex-row gap-8 items-center">
+ <div class="lg:w-2/3">
+ <h3 class="text-xl font-semibold text-sky-600 mb-3">Key Insights:</h3>
+ <ul class="list-disc list-inside space-y-2 text-slate-700 text-sm">
+ <li>Inference costs can account for a staggering <strong class="text-rose-600">up to 90%</strong> of total machine learning operational costs in production, often significantly exceeding training costs.</li>
+ <li>Optimizing for speed (latency) and cost is paramount for achieving positive user experience and a sustainable Return on Investment (ROI).</li>
+ <li>A holistic approach is required, involving optimizations at the <strong class="text-teal-600">model level</strong> (e.g., quantization, pruning), <strong class="text-teal-600">hardware level</strong> (e.g., specialized accelerators), and <strong class="text-teal-600">service level</strong> (e.g., intelligent batching, caching).</li>
+ <li>Techniques like quantization, Parameter-Efficient Finetuning (PEFT, from Chapter 7), advanced decoding strategies, and efficient batching are vital tools in the optimization arsenal.</li>
+ </ul>
+ </div>
+ <div class="lg:w-1/3">
+ <h3 class="text-xl font-semibold text-sky-600 mb-4 text-center">ML Costs: Inference vs. Training</h3>
+ <div class="chart-container bg-slate-50 p-2 rounded-lg border border-slate-200">
+ <canvas id="costComparisonChart"></canvas>
+ </div>
+ </div>
+ </div>
+ <p class="mt-6 text-slate-700 font-semibold"><strong class="text-sky-600">Continuous Effort:</strong> Inference optimization is not a one-time task but an ongoing process that must adapt to new models, evolving hardware capabilities, and changing application deployment patterns. Mastering these techniques is essential for building scalable, efficient, and economically viable AI applications.</p>
+ </div>
+ </section>
+
+ </main>
+ </div>
+
+ <script>
+ document.addEventListener('DOMContentLoaded', function () {
+ const navLinks = document.querySelectorAll('.nav-link');
+ const contentSections = document.querySelectorAll('.content-section');
+ 
+ function showSection(targetId) {
+ contentSections.forEach(section => section.classList.remove('active'));
+ const activeSection = document.getElementById(targetId);
+ if (activeSection) activeSection.classList.add('active');
+ 
+ navLinks.forEach(link => {
+ link.classList.remove('active');
+ if (link.dataset.target === targetId) link.classList.add('active');
+ });
+ document.querySelector('main').scrollTop = 0;
+ }
+
+ navLinks.forEach(link => {
+ link.addEventListener('click', function (e) {
+ e.preventDefault();
+ showSection(this.dataset.target);
+ });
+ });
+
+ // Generic Accordion Initializer
+ function initializeAccordion(containerId, itemsData, itemClasses, headerClasses, contentClasses, arrowClasses) {
+ const accordionContainer = document.getElementById(containerId);
+ if (!accordionContainer) return;
+ accordionContainer.innerHTML = ''; 
+
+ itemsData.forEach(itemData => {
+ const itemDiv = document.createElement('div');
+ itemDiv.className = itemClasses || 'accordion-item border border-slate-200 rounded-lg';
+ 
+ const headerDiv = document.createElement('div');
+ headerDiv.className = headerClasses || 'accordion-header bg-slate-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-slate-100 transition';
+ headerDiv.innerHTML = `<span class="font-medium text-slate-700 text-sm">${itemData.title}</span><span class="arrow ${arrowClasses || 'text-slate-700'} transform transition-transform duration-300 text-sm">▼</span>`;
+ 
+ const contentDiv = document.createElement('div');
+ contentDiv.className = contentClasses || 'accordion-content p-3 bg-white rounded-b-lg';
+ 
+ let contentHTML = `<p class="text-slate-600 text-xs">${itemData.content}</p>`;
+ if (itemData.subpoints) {
+ contentHTML += '<ul class="list-disc list-inside ml-4 mt-2 space-y-1 text-xs text-slate-500">';
+ itemData.subpoints.forEach(sub => contentHTML += `<li>${sub}</li>`);
+ contentHTML += '</ul>';
+ }
+ if (itemData.diagram) {
+ contentHTML += `<div class="mt-2 p-2 border border-slate-200 rounded bg-slate-50 text-center text-xs">${itemData.diagram}</div>`;
+ }
+ contentDiv.innerHTML = contentHTML;
+ 
+ itemDiv.appendChild(headerDiv);
+ itemDiv.appendChild(contentDiv);
+ accordionContainer.appendChild(itemDiv);
+
+ headerDiv.addEventListener('click', () => {
+ const isOpen = contentDiv.classList.contains('open');
+ if (isOpen) {
+ contentDiv.classList.remove('open');
+ contentDiv.style.maxHeight = null;
+ headerDiv.querySelector('.arrow').classList.remove('rotate-180');
+ } else {
+ contentDiv.classList.add('open');
+ contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
+ headerDiv.querySelector('.arrow').classList.add('rotate-180');
+ }
+ });
+ });
+ }
+
+ const metricsData = [
+ { 
+ title: '1. Latency Components', 
+ content: 'Measures of how quickly the model responds.',
+ subpoints: [
+ '<strong>Time to First Token (TTFT):</strong> Time until the model starts generating the first piece of output. Critical for user-perceived responsiveness in streaming applications.',
+ '<strong>Time per Token (TPOT):</strong> Average time taken to generate each subsequent token after the first. Impacts overall generation speed for longer outputs.',
+ '<strong>End-to-End Latency:</strong> Total time from when a request is submitted to when the final response is received by the user.'
+ ]
+ },
+ { 
+ title: '2. Throughput and Goodput Metrics', 
+ content: 'Measures of processing capacity.',
+ subpoints: [
+ '<strong>Throughput:</strong> Number of requests or tokens processed per unit of time (e.g., requests per second, tokens per second). Measures raw processing capacity.',
+ '<strong>Goodput:</strong> Number of *useful* or *successful* requests/tokens processed per unit of time. Accounts for errors, timeouts, or irrelevant outputs, providing a more accurate measure of effective capacity.'
+ ]
+ },
+ {
+ title: '3. Resource Utilization Metrics',
+ content: 'Measures of how efficiently hardware resources are being used.',
+ subpoints: [
+ '<strong>GPU Utilization:</strong> Percentage of time GPUs are actively performing computations.',
+ '<strong>Memory Usage:</strong> Amount of GPU memory (and system memory) consumed by the model and inference processes.',
+ '<strong>Power Consumption:</strong> Energy used during inference, important for cost and environmental impact.'
+ ]
+ }
+ ];
+ initializeAccordion('metricsAccordion', metricsData,
+ 'accordion-item border border-sky-200 rounded-lg',
+ 'accordion-header bg-sky-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-sky-100 transition',
+ 'accordion-content p-3 bg-white rounded-b-lg',
+ 'text-sky-700'
+ );
+
+ const modelOptData = [
+ {
+ title: 'Core Approaches',
+ content: 'Fundamental techniques to reduce model size and computation.',
+ subpoints: [
+ '<strong>1. Quantization:</strong> Reduces numerical precision (e.g., from 32-bit float to 16-bit float or 8-bit integer) of model weights and/or activations. Benefit: Significantly decreases memory footprint and can speed up computation with minimal performance impact. Common: Weight-only quantization.',
+ '<strong>2. Pruning:</strong> Removes non-essential parameters (weights or even entire neurons/attention heads) from the model that contribute little to its performance. Benefit: Reduces model size and computational load while preserving core behavior. Requirement: Requires careful validation to ensure no significant accuracy degradation.',
+ '<strong>3. Distillation:</strong> Transfers knowledge from a large, complex "teacher" model to a smaller, more efficient "student" model. The student model is trained to mimic the teacher\'s outputs or internal representations. Benefit: Creates smaller, faster models that maintain key capabilities of the larger model.'
+ ],
+ diagram: '<div class="diagram-box">Large Teacher Model ➔ Knowledge Transfer ➔ Small Student Model</div>'
+ },
+ {
+ title: 'Advanced Decoding Strategies (for Generative Models)',
+ content: 'Techniques to speed up the token generation process in autoregressive models.',
+ subpoints: [
+ '<strong>Speculative Decoding:</strong> Combines a large, accurate model with a smaller, faster "draft" model. The small model generates rapid initial sequences of tokens (drafts), and the large model then efficiently verifies and corrects these drafts in parallel. This leads to faster overall token generation.',
+ '<strong>Look-ahead Decoding:</strong> Instead of strictly sequential token generation, this method generates multiple potential future tokens or token sequences simultaneously. It then uses algorithmic mechanisms (e.g., tree search, verification steps) to select the best path and maintain coherence. Offers significant speed benefits but is algorithmically complex.'
+ ]
+ }
+ ];
+ initializeAccordion('modelOptAccordion', modelOptData,
+ 'accordion-item border border-teal-200 rounded-lg',
+ 'accordion-header bg-teal-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-teal-100 transition',
+ 'accordion-content p-3 bg-white rounded-b-lg',
+ 'text-teal-700'
+ );
+
+ const serviceOptData = [
+ {
+ title: '1. Batching Strategies',
+ content: 'Grouping multiple inference requests together to process them more efficiently on hardware like GPUs.',
+ subpoints: [
+ '<strong>Static Batching:</strong> Processes fixed-size batches of requests. Simple to implement but can be inefficient if requests arrive sporadically, leading to underutilized batches or increased wait times.',
+ '<strong>Dynamic Batching:</strong> Uses time windows or queue length thresholds to form batches. Processes incomplete batches after a timeout. Offers a better balance between latency and throughput compared to static batching.',
+ '<strong>Continuous Batching:</strong> (e.g., inspired by Orca paper, vLLM) A more advanced technique where the server processes requests in a fine-grained, iterative manner. It can add new requests to a running batch and return completed responses immediately without waiting for the entire batch. Optimizes GPU occupation rate significantly.'
+ ],
+ diagram: '<div class="grid grid-cols-3 gap-2 text-xs"><div class="diagram-box">Static: Wait for full batch</div><div class="diagram-box">Dynamic: Timeout/Queue</div><div class="diagram-box">Continuous: Add/Remove on-the-fly</div></div>'
+ },
+ {
+ title: '2. Prefill-Decode Decoupling',
+ content: 'For autoregressive models, the initial processing of the input prompt (prefill phase) is computationally different from the subsequent token-by-token generation (decode phase). Decoupling these allows for separate optimization and resource allocation, improving overall efficiency.'
+ },
+ {
+ title: '3. Prompt Caching',
+ content: 'Caching the computed states (e.g., key-value cache in Transformers) for common prompts or frequently occurring prefixes of prompts. This avoids redundant computation if similar requests are received, speeding up the prefill phase.'
+ },
+ {
+ title: '4. Parallelism Strategies',
+ content: 'Distributing the model and/or data across multiple processing units (e.g., GPUs) to handle very large models or high request volumes.',
+ subpoints: [
+ '<strong>Tensor Parallelism:</strong> Splitting individual tensors (e.g., large weight matrices in Transformer layers) across multiple devices. Each device computes on its part of the tensor.',
+ '<strong>Pipeline Parallelism:</strong> Splitting the model layers across different devices, forming a pipeline. Data flows sequentially through the layers on different devices.',
+ '<strong>Data Parallelism:</strong> Replicating the entire model on multiple devices and distributing different data batches (requests) to each replica for parallel processing.'
+ ],
+ diagram: '<div class="grid grid-cols-3 gap-2 text-xs"><div class="diagram-box">Tensor: Split Weights</div><div class="diagram-box">Pipeline: Split Layers</div><div class="diagram-box">Data: Replicate Model</div></div>'
+ }
+ ];
+ initializeAccordion('serviceOptAccordion', serviceOptData,
+ 'accordion-item border-indigo-200 rounded-lg',
+ 'accordion-header bg-indigo-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-indigo-100 transition',
+ 'accordion-content p-3 bg-white rounded-b-lg',
+ 'text-indigo-700'
+ );
+ 
+ // Chart.js for Cost Comparison (Slide 7)
+ const costCtx = document.getElementById('costComparisonChart');
+ if (costCtx) {
+ new Chart(costCtx, {
+ type: 'bar',
+ data: {
+ labels: ['Total ML Operational Costs'],
+ datasets: [
+ {
+ label: 'Inference Costs',
+ data: [90], // Conceptual: Inference 90%
+ backgroundColor: 'rgba(239, 68, 68, 0.7)', // rose-500
+ borderColor: 'rgba(239, 68, 68, 1)',
+ borderWidth: 1
+ },
+ {
+ label: 'Training Costs',
+ data: [10], // Conceptual: Training 10%
+ backgroundColor: 'rgba(59, 130, 246, 0.7)', // blue-500
+ borderColor: 'rgba(59, 130, 246, 1)',
+ borderWidth: 1
+ }
+ ]
+ },
+ options: {
+ responsive: true,
+ maintainAspectRatio: false,
+ indexAxis: 'y',
+ scales: {
+ x: {
+ stacked: true,
+ max: 100,
+ title: { display: true, text: 'Percentage of Total Costs (%)' }
+ },
+ y: {
+ stacked: true,
+ }
+ },
+ plugins: {
+ legend: { display: true, position: 'top' },
+ tooltip: {
+ callbacks: {
+ label: function(context) {
+ return `${context.dataset.label}: ${context.raw}%`;
+ }
+ }
+ }
+ }
+ }
+ });
+ }
+ 
+ if (navLinks.length > 0) showSection(navLinks[0].dataset.target);
+ });
+ </script>
+</body>
+</html>
