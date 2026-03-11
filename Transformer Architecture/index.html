@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Transformer Architecture</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; line-height: 1.6; }
+        h1, h2 { color: #333; }
+        ul { margin-left: 1.2rem; }
+        a { color: #0066cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .part { margin-top: 2rem; }
+        .cheatsheet { font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>Transformer Architecture</h1>
+    <p>This directory contains a series of modules that walk through the fundamental concepts and practical details of modern transformer-based large language models. The content is organized into a multi-part curriculum. Each numbered module has its own HTML page; click through the links below to open a module.</p>
+
+    <div class="part">
+        <h2>🧱 Part 1 — Foundations (What is a Transformer?)</h2>
+        <p><strong>Goal:</strong> Understand what's happening inside a model before any optimization talk makes sense.</p>
+        <ul>
+            <li><a href="module1_1.html">Module 1.1 — What is a Transformer? The big picture</a></li>
+            <li><a href="module1_2.html">Module 1.2 — Tokens &amp; Embeddings (how text becomes numbers a model can process)</a></li>
+            <li><a href="module1_3.html">Module 1.3 — Attention Mechanism — the concept (no formulas, just the "why")</a></li>
+            <li><a href="module1_4.html">Module 1.4 — Multi-Head Attention (why one attention isn't enough)</a></li>
+            <li><a href="module1_5.html">Module 1.5 — Feed Forward Network (FFN) (the other half of a transformer block)</a></li>
+            <li><a href="module1_6.html">Module 1.6 — How layers stack — the full transformer block</a></li>
+            <li><a href="module1_7.html">Module 1.7 — The two phases: Prefill vs Decode (this is your bridge to disaggregation)</a></li>
+            <li class="cheatsheet">📄 <a href="#">Part 1 Cheat Sheet</a> (coming soon)</li>
+        </ul>
+    </div>
+
+    <div class="part">
+        <h2>⚙️ Part 2 — How Inference Actually Works</h2>
+        <p><strong>Goal:</strong> Understand what happens at serving time, not training time.</p>
+        <ul>
+            <li>Module 2.1 — What is Inference? (vs Training)</li>
+            <li>Module 2.2 — KV Cache — what it is and why it matters (the most important concept in inference)</li>
+            <li>Module 2.3 — Memory bottleneck — why GPUs run out of memory</li>
+            <li>Module 2.4 — Batching — Naive vs Continuous vs Dynamic batching</li>
+            <li>Module 2.5 — Throughput vs Latency — the core tradeoff every customer cares about</li>
+            <li class="cheatsheet">📄 Part 2 Cheat Sheet (coming soon)</li>
+        </ul>
+    </div>
+
+    <div class="part">
+        <h2>⚡ Part 3 — Inference Optimization Techniques</h2>
+        <p><strong>Goal:</strong> Understand the "what &amp; why" of each optimization so you can explain it to customers.</p>
+        <ul>
+            <li>Module 3.1 — Flash Attention (faster attention without changing results)</li>
+            <li>Module 3.2 — Paged Attention (how vLLM manages KV cache like virtual memory)</li>
+            <li>Module 3.3 — Quantization — INT8, FP8, INT4 (smaller numbers = faster inference)</li>
+            <li>Module 3.4 — Tensor Parallelism &amp; Pipeline Parallelism (splitting models across GPUs)</li>
+            <li>Module 3.5 — Speculative Decoding (using a small model to speed up a big one)</li>
+            <li>Module 3.6 — Disaggregation — Prefill/Decode Split (your current focus — now with full context)</li>
+            <li class="cheatsheet">📄 Part 3 Cheat Sheet (coming soon)</li>
+        </ul>
+    </div>
+
+    <div class="part">
+        <h2>🛠️ Part 4 — The Stack: NVIDIA, vLLM, TensorRT-LLM &amp; Triton</h2>
+        <p><strong>Goal:</strong> Know how the tools connect to the concepts — for real customer conversations.</p>
+        <ul>
+            <li>Module 4.1 — NVIDIA Hardware Primer: GPUs, CUDA, NVLink, HBM</li>
+            <li>Module 4.2 — vLLM — architecture, what it solves, when to recommend it</li>
+            <li>Module 4.3 — TensorRT-LLM — how it differs from vLLM, when it's better</li>
+            <li>Module 4.4 — Triton Inference Server — the serving layer on top</li>
+            <li>Module 4.5 — How it all fits together: a real customer architecture walkthrough</li>
+            <li class="cheatsheet">📄 Part 4 Cheat Sheet (coming soon)</li>
+        </ul>
+    </div>
+
+    <div class="part">
+        <h2>🎯 Part 5 — SME Readiness</h2>
+        <p><strong>Goal:</strong> Be able to answer tough customer questions confidently.</p>
+        <ul>
+            <li>Module 5.1 — Common customer questions &amp; how to answer them</li>
+            <li>Module 5.2 — How to diagnose an inference bottleneck (GPU-bound vs memory-bound)</li>
+            <li>Module 5.3 — Glossary of all terms (master reference)</li>
+            <li class="cheatsheet">📄 Master Cheat Sheet — full glossary + decision tree for customer conversations</li>
+        </ul>
+    </div>
+
+    <footer>
+        <p>Last updated: March 11, 2026</p>
+    </footer>
+</body>
+</html>
