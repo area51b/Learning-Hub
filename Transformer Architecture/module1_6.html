@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 1.6 - The Full Transformer Block</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #004D40 0%, #00695C 40%, #00897B 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-20px; left:60px; width:100px; height:100px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #C5CAE9; background:white; font-family:Arial,sans-serif; font-size:13px; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #C62828; }
+  .nav-btn.next { text-align:right; border-right:4px solid #004D40; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout        { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-teal   { background:#E0F2F1; border-left:4px solid #00796B; }
+  .callout-blue   { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange { background:#FFF3E0; border-left:4px solid #FF9800; }
+  .callout-green  { background:#E8F5E9; border-left:4px solid #4CAF50; }
+  .callout-purple { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-red    { background:#FFEBEE; border-left:4px solid #C62828; }
+
+  /* ── Layer stack diagram ── */
+  .layer-stack { display:flex; flex-direction:column; gap:6px; margin:18px 0; }
+  .layer-row   { display:flex; align-items:stretch; gap:8px; }
+  .layer-label { width:70px; display:flex; align-items:center; justify-content:flex-end; font-size:11px; font-family:Arial,sans-serif; color:#888; letter-spacing:1px; text-transform:uppercase; flex-shrink:0; padding-right:6px; }
+  .layer-block { flex:1; border-radius:8px; padding:12px 16px; display:flex; align-items:center; gap:14px; }
+  .lb-icon  { width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:13px; font-family:Arial,sans-serif; flex-shrink:0; }
+  .lb-title { font-weight:bold; font-size:13.5px; font-family:Arial,sans-serif; margin-bottom:2px; }
+  .lb-desc  { font-size:12.5px; color:#555; line-height:1.5; }
+  .layer-connector { width:70px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .connector-line { width:2px; height:24px; background:#D0D0D0; margin:0 auto; }
+
+  /* ── Single block diagram ── */
+  .block-diagram { background:#F8F9FF; border:1px solid #D0D8FF; border-radius:14px; padding:22px; margin:18px 0; }
+  .bd-title-bar  { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#666; font-family:Arial,sans-serif; margin-bottom:18px; text-align:center; }
+  .bd-flow       { display:flex; flex-direction:column; align-items:center; gap:0; }
+  .bd-node       { border-radius:10px; padding:12px 20px; text-align:center; width:100%; max-width:420px; position:relative; }
+  .bd-node-title { font-weight:bold; font-size:14px; font-family:Arial,sans-serif; margin-bottom:3px; }
+  .bd-node-desc  { font-size:12.5px; line-height:1.5; }
+  .bd-arrow-down { font-size:22px; color:#999; line-height:1; padding:4px 0; }
+  .bd-branch     { display:flex; gap:12px; width:100%; max-width:420px; margin:4px 0; }
+  .bd-branch-node{ flex:1; border-radius:8px; padding:10px 12px; text-align:center; }
+  .bd-branch-title{ font-weight:bold; font-size:13px; font-family:Arial,sans-serif; margin-bottom:2px; }
+  .bd-branch-desc { font-size:12px; line-height:1.5; color:#555; }
+
+  /* ── Residual stream visual ── */
+  .residual-wrap { background:#1e1e2e; border-radius:12px; padding:22px 24px; margin:18px 0; color:white; font-family:Arial,sans-serif; }
+  .residual-title{ font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.5; margin-bottom:16px; }
+  .res-row       { display:flex; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+  .res-box       { border-radius:7px; padding:7px 14px; font-size:13px; font-weight:bold; }
+  .res-plus      { font-size:20px; opacity:0.6; }
+  .res-arrow     { font-size:18px; opacity:0.5; }
+  .res-result    { border-radius:7px; padding:7px 14px; font-size:13px; font-weight:bold; background:#00897B; }
+  .res-note      { font-size:12.5px; opacity:0.55; margin-top:10px; line-height:1.6; }
+
+  /* ── Depth table ── */
+  .depth-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:13.5px; font-family:Arial,sans-serif; }
+  .depth-table th { background:#004D40; color:white; padding:10px 14px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .depth-table td { padding:11px 14px; border-bottom:1px solid #F0F0F0; vertical-align:top; line-height:1.6; }
+  .depth-table tr:last-child td { border-bottom:none; }
+  .depth-table tr:nth-child(even) td { background:#F8F8F8; }
+  .dt-term { font-weight:bold; color:#004D40; }
+
+  /* ── Interactive layer explorer ── */
+  .explorer-wrap { background:#F4FBF9; border:1px solid #B2DFDB; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .explorer-title{ font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#555; font-family:Arial,sans-serif; margin-bottom:14px; }
+  .layer-slider-row { display:flex; align-items:center; gap:14px; margin-bottom:16px; font-family:Arial,sans-serif; }
+  .layer-slider  { flex:1; accent-color:#00796B; cursor:pointer; }
+  .layer-num-display { background:#00796B; color:white; border-radius:6px; padding:4px 12px; font-weight:bold; font-size:14px; min-width:90px; text-align:center; }
+  .explorer-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .exp-card      { background:white; border-radius:8px; padding:12px 14px; border-left:3px solid #ccc; }
+  .exp-card-label{ font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; margin-bottom:4px; }
+  .exp-card-value{ font-weight:bold; font-size:14px; font-family:Arial,sans-serif; color:#004D40; }
+  .exp-card-sub  { font-size:12px; color:#666; margin-top:2px; line-height:1.5; }
+  .exp-bar-wrap  { margin-top:10px; }
+  .exp-bar-label { font-size:12px; color:#666; font-family:Arial,sans-serif; margin-bottom:4px; display:flex; justify-content:space-between; }
+  .exp-bar-bg    { background:#E0E0E0; border-radius:4px; height:8px; overflow:hidden; }
+  .exp-bar-fill  { height:8px; border-radius:4px; transition:width 0.4s ease; }
+
+  /* ── What changes per layer ── */
+  .layer-journey { display:flex; flex-direction:column; gap:10px; margin:16px 0; }
+  .lj-row  { display:flex; gap:14px; align-items:flex-start; }
+  .lj-num  { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .lj-body { flex:1; border-radius:0 10px 10px 0; padding:12px 16px; }
+  .lj-title{ font-weight:bold; font-size:14px; font-family:Arial,sans-serif; margin-bottom:4px; }
+  .lj-desc { font-size:13.5px; line-height:1.7; color:#444; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#004D40; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#80CBC4; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.85; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover   { border-color:#00796B; background:#E0F2F1; }
+  .quiz-option.selected{ border-color:#00796B; background:#E0F2F1; }
+  .quiz-option.correct { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong   { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#00796B; }
+  .quiz-btn  { margin-top:14px; background:#004D40; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#00695C; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:16px 20px; background:linear-gradient(135deg,#E0F2F1,#E8F5E9); border:1px solid #B2DFDB; display:flex; justify-content:space-between; align-items:center; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:600px) {
+    .cheat-grid, .explorer-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+    .bd-branch { flex-direction:column; }
+    .res-row { flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-eyebrow">PART 1 · MODULE 1.6</div>
+    <h1>The Full Transformer Block</h1>
+    <p>How Attention and FFN stack together into layers — and what depth means for inference</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+      <span class="tag">No math</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav-bar">
+    <div class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">1.5 — Feed Forward Network (FFN)</div>
+    </div>
+    <div class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">1.7 — Prefill vs Decode</div>
+    </div>
+  </div>
+
+  <!-- Intro -->
+  <div class="intro-card">
+    <p>You now know the two core components of a Transformer: <strong>Attention</strong> (which gathers context across tokens) and the <strong>FFN</strong> (which processes each token individually). In this module, you will see how they are assembled into a single <em>transformer block</em> — and how stacking many of these blocks creates the deep, powerful models used in production today.</p>
+    <p>This is the module where all the previous concepts connect. Understanding how blocks stack also gives you the intuition for why increasing model depth (more layers) increases both quality <em>and</em> inference cost — and how techniques like pipeline parallelism exploit this structure.</p>
+  </div>
+
+  <!-- Section 1: Anatomy of one block -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#00796B;">1</span>
+        Anatomy of a Single Transformer Block
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>A single transformer block is a fixed sequence of four operations. Every block in every model — from the smallest 1B model to the largest 400B model — follows the same structure:</p>
+
+      <div class="block-diagram">
+        <div class="bd-title-bar">One transformer block — executed once per layer</div>
+        <div class="bd-flow">
+
+          <div class="bd-node" style="background:#E3F2FD; border:1px solid #90CAF9;">
+            <div class="bd-node-title" style="color:#1565C0;">Input from previous layer</div>
+            <div class="bd-node-desc">Token embeddings carrying all knowledge from layers below</div>
+          </div>
+          <div class="bd-arrow-down">&#8595;</div>
+
+          <div class="bd-node" style="background:#F3E8FD; border:1px solid #CE93D8;">
+            <div class="bd-node-title" style="color:#7B1FA2;">Layer Normalisation</div>
+            <div class="bd-node-desc">Stabilises the numbers before attention — keeps training and inference numerically stable</div>
+          </div>
+          <div class="bd-arrow-down">&#8595;</div>
+
+          <div class="bd-node" style="background:#E8F5E9; border:1px solid #A5D6A7;">
+            <div class="bd-node-title" style="color:#2E7D32;">Multi-Head Attention</div>
+            <div class="bd-node-desc">Every token gathers context from every other token. Q, K, V computed. KV Cache populated.</div>
+          </div>
+          <div class="bd-arrow-down">&#8595;</div>
+
+          <div class="bd-node" style="background:#FFF3E0; border:1px solid #FFCC80;">
+            <div class="bd-node-title" style="color:#E65100;">Residual Connection (Add)</div>
+            <div class="bd-node-desc">Attention output is <em>added</em> to the original input — preserving what the token knew before attention ran</div>
+          </div>
+          <div class="bd-arrow-down">&#8595;</div>
+
+          <div class="bd-node" style="background:#F3E8FD; border:1px solid #CE93D8;">
+            <div class="bd-node-title" style="color:#7B1FA2;">Layer Normalisation</div>
+            <div class="bd-node-desc">Stabilises again before the FFN step</div>
+          </div>
+          <div class="bd-arrow-down">&#8595;</div>
+
+          <div class="bd-node" style="background:#FFEBEE; border:1px solid #FFCDD2;">
+            <div class="bd-node-title" style="color:#C62828;">Feed Forward Network (FFN)</div>
+            <div class="bd-node-desc">Each token individually processed — expand to think widely, contract to a refined representation</div>
+          </div>
+          <div class="bd-arrow-down">&#8595;</div>
+
+          <div class="bd-node" style="background:#FFF3E0; border:1px solid #FFCC80;">
+            <div class="bd-node-title" style="color:#E65100;">Residual Connection (Add)</div>
+            <div class="bd-node-desc">FFN output added to pre-FFN input — again preserving existing information</div>
+          </div>
+          <div class="bd-arrow-down">&#8595;</div>
+
+          <div class="bd-node" style="background:#E0F2F1; border:1px solid #80CBC4;">
+            <div class="bd-node-title" style="color:#004D40;">Output to next layer</div>
+            <div class="bd-node-desc">Richer token embeddings — carry everything learned so far, passed to the block above</div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>The two new components:</strong> You have already learned Attention and FFN in depth. The two additions here are <strong>Layer Normalisation</strong> (a stability mechanism — think of it as resetting the scale before each major operation) and <strong>Residual Connections</strong> (which ensure the block <em>adds</em> to what it knows rather than replacing it). Both are covered in the next two sections.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Residual connections -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">2</span>
+        Residual Connections — Why Blocks Add, Not Replace
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>Residual connections are one of the most elegant ideas in deep learning — and they are easy to understand conceptually. The core idea is: <strong>instead of a layer transforming the input into something new, it transforms the input into a small update that gets added to the original</strong>.</p>
+
+      <div class="residual-wrap">
+        <div class="residual-title">Residual connection — illustrated</div>
+        <div class="res-row">
+          <span class="res-box" style="background:rgba(21,101,192,0.3); color:#90CAF9;">Token before attention</span>
+          <span class="res-plus">+</span>
+          <span class="res-box" style="background:rgba(123,31,162,0.3); color:#CE93D8;">What attention learned</span>
+          <span class="res-arrow">&#8594;</span>
+          <span class="res-result">Richer token</span>
+        </div>
+        <div class="res-row">
+          <span class="res-box" style="background:rgba(21,101,192,0.3); color:#90CAF9;">Token before FFN</span>
+          <span class="res-plus">+</span>
+          <span class="res-box" style="background:rgba(198,40,40,0.3); color:#EF9A9A;">What FFN reasoned</span>
+          <span class="res-arrow">&#8594;</span>
+          <span class="res-result">Even richer token</span>
+        </div>
+        <div class="res-note">Each operation contributes an increment. The token's representation grows richer with each block — it never loses what it already knew.</div>
+      </div>
+
+      <p>Without residual connections, information from early layers can get "washed out" as it passes through dozens of layers. With them, the original token information always flows forward, and each layer only needs to learn the <em>delta</em> — what new information to add. This is why models can be made very deep (80, 96, 128 layers) without degrading quality.</p>
+
+      <div class="callout callout-blue">
+        <strong>Why this matters for inference:</strong> Residual connections mean every layer's output depends on the layer below it — which is why transformer inference cannot be trivially parallelised across layers. Layer 10 cannot start until layer 9 finishes. This sequential dependency is what <strong>pipeline parallelism</strong> is designed to manage when running large models across multiple GPUs. You will learn this in Module 3.4.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Layer norm -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">3</span>
+        Layer Normalisation — The Stability Mechanism
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Layer normalisation is a small but critical operation that runs before both Attention and the FFN. Its job is simple: <strong>keep the numbers in a well-behaved range</strong>.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
+        <div style="background:#FFEBEE; border-radius:10px; padding:16px 18px; border-left:4px solid #C62828;">
+          <div style="font-weight:bold; font-size:14px; margin-bottom:8px; font-family:Arial,sans-serif; color:#C62828;">Without normalisation</div>
+          <div style="font-size:13.5px; line-height:1.7; color:#333;">After 30+ layers of additions and multiplications, some embedding values become very large, others very small. Attention scores become unstable. The model produces garbage outputs or fails to converge during training.</div>
+        </div>
+        <div style="background:#E8F5E9; border-radius:10px; padding:16px 18px; border-left:4px solid #4CAF50;">
+          <div style="font-weight:bold; font-size:14px; margin-bottom:8px; font-family:Arial,sans-serif; color:#2E7D32;">With layer normalisation</div>
+          <div style="font-size:13.5px; line-height:1.7; color:#333;">Before each major operation, the embedding values are rescaled to have a consistent mean and spread. Operations work in a stable, predictable range at every layer. Deep 80-layer models run reliably.</div>
+        </div>
+      </div>
+
+      <div class="callout callout-purple">
+        <strong>The analogy:</strong> Think of layer normalisation like a mixing board engineer adjusting audio levels before each stage of a recording. If one instrument is unexpectedly loud, it gets turned down before it hits the next processor — otherwise the distortion would compound through every stage. Layer norm does the same for token embeddings: resets the scale before every major operation.
+      </div>
+
+      <div class="callout callout-teal" style="margin-top:10px;">
+        <strong>For inference:</strong> Layer norm adds a small but non-zero compute cost at every layer. In INT8 or FP8 quantised models, layer norm is often kept in higher precision (FP16) because it is sensitive to numerical errors. This is a detail that comes up when discussing quantised model accuracy with customers.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Stacking blocks — the depth story -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">4</span>
+        Stacking Blocks — What Depth Actually Means
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>A single transformer block gives the model one pass at understanding the input. Modern models repeat this block many times — a 7B model has 32 layers, a 70B model has 80. Each pass builds on the previous one.</p>
+
+      <div class="layer-journey">
+        <div class="lj-row">
+          <div class="lj-num" style="background:#B0BEC5;">1–4</div>
+          <div class="lj-body" style="background:#F5F5F5; border-left:3px solid #B0BEC5;">
+            <div class="lj-title">Early layers — surface features</div>
+            <div class="lj-desc">The model learns basic syntax, word boundaries, and simple local relationships. "This is a noun." "This token follows a preposition." Pattern recognition at a surface level.</div>
+          </div>
+        </div>
+        <div class="lj-row">
+          <div class="lj-num" style="background:#42A5F5;">5–16</div>
+          <div class="lj-body" style="background:#E3F2FD; border-left:3px solid #42A5F5;">
+            <div class="lj-title">Middle layers — semantic understanding</div>
+            <div class="lj-desc">The model builds meaning, resolves references, and understands context. "This 'it' refers to 'server'." "This sentence describes a failure." Topic and entity relationships emerge.</div>
+          </div>
+        </div>
+        <div class="lj-row">
+          <div class="lj-num" style="background:#00796B;">17–28</div>
+          <div class="lj-body" style="background:#E0F2F1; border-left:3px solid #00796B;">
+            <div class="lj-title">Later layers — reasoning and knowledge</div>
+            <div class="lj-desc">The model applies learned world knowledge, reasons about implications, and makes judgements. "A memory error in a server usually means the process was killed by the OS." Domain expertise emerges.</div>
+          </div>
+        </div>
+        <div class="lj-row">
+          <div class="lj-num" style="background:#C62828;">29–32</div>
+          <div class="lj-body" style="background:#FFEBEE; border-left:3px solid #C62828;">
+            <div class="lj-title">Final layers — output preparation</div>
+            <div class="lj-desc">The model consolidates its representation into a form ready for the next-token prediction. The final layer's output is used to select the most likely next token from the vocabulary.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>Why layer count matters for inference cost:</strong> Every layer must execute sequentially. A 32-layer model runs 32 full Attention + FFN cycles per token. An 80-layer model runs 80. More layers = higher latency per token and more parameters = more GPU memory. This is the direct trade-off between model quality and inference cost — and why model selection (7B vs 70B) is often the single biggest infrastructure decision.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Interactive layer explorer -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">5</span>
+        Interactive: Layer Count vs Inference Cost
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>Use the slider to explore how layer count changes model size, memory, and inference characteristics across common model families.</p>
+
+      <div class="explorer-wrap">
+        <div class="explorer-title">Layer count explorer</div>
+        <div class="layer-slider-row">
+          <span style="font-size:13px; font-family:Arial,sans-serif; color:#555; min-width:40px;">Layers:</span>
+          <input type="range" class="layer-slider" id="layerSlider" min="12" max="96" step="4" value="32" oninput="updateExplorer(this.value)">
+          <div class="layer-num-display" id="layerDisplay">32 layers</div>
+        </div>
+        <div class="explorer-grid" id="explorerGrid">
+          <!-- filled by JS -->
+        </div>
+        <div style="margin-top:14px;">
+          <div class="exp-bar-label">
+            <span style="font-family:Arial,sans-serif; font-size:12px; color:#666;">Relative memory usage</span>
+            <span id="memPct" style="font-family:Arial,sans-serif; font-size:12px; font-weight:bold; color:#004D40;"></span>
+          </div>
+          <div class="exp-bar-bg"><div class="exp-bar-fill" id="memBar" style="background:#00796B;"></div></div>
+          <div class="exp-bar-label" style="margin-top:8px;">
+            <span style="font-family:Arial,sans-serif; font-size:12px; color:#666;">Relative latency per token</span>
+            <span id="latPct" style="font-family:Arial,sans-serif; font-size:12px; font-weight:bold; color:#C62828;"></span>
+          </div>
+          <div class="exp-bar-bg"><div class="exp-bar-fill" id="latBar" style="background:#C62828;"></div></div>
+        </div>
+      </div>
+
+      <div class="callout callout-green">
+        <strong>The practical decision:</strong> In most customer deployments, model selection is the biggest lever for inference cost. Switching from a 70B (80 layers) to a 13B (40 layers) model roughly halves the per-token compute cost and cuts memory requirements by ~5x. If a 13B model meets the quality bar, it is almost always the right infrastructure choice for cost-sensitive applications.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: How pipeline parallelism uses this structure -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#F57F17;">6</span>
+        How the Layer Structure Enables Pipeline Parallelism
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>Because a transformer is simply a stack of identical blocks, it is straightforward to split those blocks across multiple GPUs. This is called <strong>pipeline parallelism</strong>.</p>
+
+      <div style="background:#FFFDE7; border:1px solid #FFE082; border-radius:12px; padding:20px 22px; margin:16px 0; font-family:Arial,sans-serif;">
+        <div style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:14px;">Pipeline parallelism — 4 GPUs, 32-layer model</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="background:#1565C0; color:white; border-radius:6px; padding:6px 12px; font-size:13px; font-weight:bold; min-width:70px; text-align:center;">GPU 0</div>
+            <div style="flex:1; background:#E3F2FD; border-radius:6px; padding:8px 12px; font-size:13px;">Layers 1–8 &nbsp;&nbsp; (Attention + FFN x8)</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="background:#7B1FA2; color:white; border-radius:6px; padding:6px 12px; font-size:13px; font-weight:bold; min-width:70px; text-align:center;">GPU 1</div>
+            <div style="flex:1; background:#F3E8FD; border-radius:6px; padding:8px 12px; font-size:13px;">Layers 9–16 &nbsp;&nbsp; (Attention + FFN x8)</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="background:#E65100; color:white; border-radius:6px; padding:6px 12px; font-size:13px; font-weight:bold; min-width:70px; text-align:center;">GPU 2</div>
+            <div style="flex:1; background:#FFF3E0; border-radius:6px; padding:8px 12px; font-size:13px;">Layers 17–24 &nbsp;&nbsp; (Attention + FFN x8)</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="background:#2E7D32; color:white; border-radius:6px; padding:6px 12px; font-size:13px; font-weight:bold; min-width:70px; text-align:center;">GPU 3</div>
+            <div style="flex:1; background:#E8F5E9; border-radius:6px; padding:8px 12px; font-size:13px;">Layers 25–32 &nbsp;&nbsp; (Attention + FFN x8)</div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; color:#777; margin-top:12px; line-height:1.6;">Each GPU holds 1/4 of the model's weights. Output from GPU 0 is passed to GPU 1, then GPU 2, then GPU 3. The model is too large for one GPU but fits comfortably across four.</div>
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>Pipeline parallelism vs tensor parallelism:</strong> Pipeline parallelism splits the model <em>vertically</em> by layers — different GPUs handle different layers. Tensor parallelism splits the model <em>horizontally</em> — each GPU handles a slice of every layer simultaneously. Most large-scale deployments use both. You will learn this in detail in Module 3.4.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr7" onclick="toggle(7)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">7</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv7">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy7">
+      <div class="key-item">
+        <div class="key-num" style="color:#00796B;">01</div>
+        <div>
+          <div class="key-title">Every transformer block = LayerNorm + Attention + Residual + LayerNorm + FFN + Residual</div>
+          <div class="key-desc">This six-step sequence is identical in every block of every transformer model. Knowing this structure lets you reason about where time and memory go at each layer — and which optimisations target which step.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">02</div>
+        <div>
+          <div class="key-title">Residual connections mean each layer adds knowledge, not replaces it</div>
+          <div class="key-desc">This is what makes deep models (80+ layers) work well. It also creates sequential layer dependencies — layer N cannot start until layer N-1 finishes — which is the constraint pipeline parallelism is designed to manage.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">03</div>
+        <div>
+          <div class="key-title">Depth (layers) and width (embedding size) both drive quality and cost</div>
+          <div class="key-desc">More layers = deeper reasoning but higher latency and more parameters. Larger embedding = richer representations but more memory per token. Model architecture is always a quality-vs-cost trade-off across these dimensions.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#7B1FA2;">04</div>
+        <div>
+          <div class="key-title">The uniform layer structure is what makes multi-GPU deployment straightforward</div>
+          <div class="key-desc">Because every block is structurally identical, you can split them evenly across GPUs. Pipeline parallelism assigns groups of layers to different GPUs. Tensor parallelism shards each layer across GPUs. Both exploit the regular, repeating block structure.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat Sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 1.6 — CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Transformer Block</div>
+        <div class="cheat-def">One repeating unit: LayerNorm + MHA + Residual + LayerNorm + FFN + Residual. Stacked N times to form the model.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Residual Connection</div>
+        <div class="cheat-def">Adds the layer's output to its input. Ensures each layer learns a delta, not a replacement. Enables very deep models.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Layer Normalisation</div>
+        <div class="cheat-def">Rescales token embeddings before each major operation. Keeps numerical values stable across deep networks.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Model Depth (Layers)</div>
+        <div class="cheat-def">Number of stacked transformer blocks. More layers = deeper reasoning, more parameters, higher cost per token.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Pipeline Parallelism</div>
+        <div class="cheat-def">Splits model layers across GPUs — different GPUs handle different layer ranges. Solves the "model too large for one GPU" problem.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Tensor Parallelism</div>
+        <div class="cheat-def">Splits each layer's weights across GPUs horizontally — every GPU works on every layer but only a slice. High bandwidth needed between GPUs.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Sequential Dependency</div>
+        <div class="cheat-def">Layer N must wait for layer N-1. Inference cannot be parallelised across layers for a single request — only across requests (batching).</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Early vs Late Layers</div>
+        <div class="cheat-def">Early layers learn syntax and surface patterns. Middle layers build semantics. Late layers apply reasoning and world knowledge.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer has a 70B model (80 layers) they need to deploy across 4 x A100 80GB GPUs. A colleague suggests using pipeline parallelism. What does that mean in practice, and what is the key limitation to be aware of?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Pipeline parallelism means each GPU processes a different token simultaneously — the limitation is that tokens must arrive in batches
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        Pipeline parallelism means each GPU holds a different group of layers (e.g. GPU 0 handles layers 1–20, GPU 1 handles 21–40, etc.). The key limitation is pipeline bubbles — GPUs earlier in the pipeline sit idle while waiting for the next batch when the current one finishes
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        Pipeline parallelism means the model weights are duplicated across all 4 GPUs for redundancy — the limitation is 4x the memory cost
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        Pipeline parallelism is not suitable for transformer models because the residual connections prevent layer splitting
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <!-- Next -->
+  <div class="next-module">
+    <div>
+      <div class="next-label">UP NEXT</div>
+      <div class="next-title">Module 1.7 — The Two Phases: Prefill vs Decode</div>
+      <div class="next-sub">Your bridge to disaggregation — how the model's two modes create completely different hardware demands</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </div>
+
+</div>
+
+<script>
+  /* ── toggles ── */
+  var colors = {1:'#00796B',2:'#E65100',3:'#7B1FA2',4:'#1565C0',5:'#2E7D32',6:'#F57F17',7:'#283593'};
+  var bgs    = {1:'#E0F2F1',2:'#FFF3E0',3:'#F3E8FD',4:'#E3F2FD',5:'#E8F5E9',6:'#FFFDE7',7:'#E8EAF6'};
+
+  function toggle(n) {
+    var body = document.getElementById('bdy'+n);
+    var chv  = document.getElementById('chv'+n);
+    var hdr  = document.getElementById('hdr'+n);
+    var isOpen = body.classList.contains('open');
+    body.classList.toggle('open');
+    chv.classList.toggle('open');
+    hdr.style.borderLeftColor = isOpen ? '#E8E8E8' : colors[n];
+    hdr.style.background      = isOpen ? 'white'   : bgs[n];
+  }
+
+  /* ── layer explorer ── */
+  var modelData = [
+    { layers:12, name:'Small / Distilled', params:'~1B',   memory:'~2GB',   latency:'Very fast', use:'Edge, mobile, simple classification' },
+    { layers:16, name:'Compact',           params:'~3B',   memory:'~6GB',   latency:'Fast',      use:'Lightweight chat, summarisation' },
+    { layers:24, name:'Base (GPT-2 size)', params:'~7B',   memory:'~14GB',  latency:'Fast',      use:'General purpose, fits single GPU' },
+    { layers:32, name:'Standard (Llama 7B)',params:'~7B',  memory:'~14GB',  latency:'Moderate',  use:'Production chat, instruction following' },
+    { layers:40, name:'Mid-range (13B)',   params:'~13B',  memory:'~26GB',  latency:'Moderate',  use:'Higher quality, still single-GPU feasible' },
+    { layers:48, name:'Large (34B)',       params:'~34B',  memory:'~68GB',  latency:'Slower',    use:'Complex reasoning, near-70B quality' },
+    { layers:80, name:'Full (70B)',        params:'~70B',  memory:'~140GB', latency:'Slow',      use:'High quality, requires multi-GPU' },
+    { layers:96, name:'XL (180B+)',        params:'~180B', memory:'~360GB', latency:'Very slow', use:'Research, maximum quality tasks' },
+  ];
+
+  function updateExplorer(val) {
+    val = parseInt(val);
+    document.getElementById('layerDisplay').textContent = val + ' layers';
+
+    var closest = modelData[0];
+    var minDiff = Math.abs(modelData[0].layers - val);
+    modelData.forEach(function(m) {
+      var diff = Math.abs(m.layers - val);
+      if (diff < minDiff) { minDiff = diff; closest = m; }
+    });
+
+    var grid = document.getElementById('explorerGrid');
+    grid.innerHTML =
+      card('Closest Model',    closest.name,    closest.name,        '#00796B') +
+      card('Parameters',       closest.params,  'Approx total',      '#1565C0') +
+      card('GPU Memory (FP16)',closest.memory,  'Model weights only','#C62828') +
+      card('Typical Use',      closest.use,     '',                   '#E65100');
+
+    var memPct = Math.round((val / 96) * 100);
+    var latPct = Math.round((val / 96) * 100);
+    document.getElementById('memBar').style.width = memPct + '%';
+    document.getElementById('latBar').style.width = latPct + '%';
+    document.getElementById('memPct').textContent = memPct + '% of max';
+    document.getElementById('latPct').textContent = latPct + '% of max';
+  }
+
+  function card(label, value, sub, color) {
+    return '<div class="exp-card" style="border-left-color:'+color+';">' +
+      '<div class="exp-card-label">'+label+'</div>' +
+      '<div class="exp-card-value" style="color:'+color+';">'+value+'</div>' +
+      (sub ? '<div class="exp-card-sub">'+sub+'</div>' : '') +
+      '</div>';
+  }
+
+  updateExplorer(32);
+
+  /* ── quiz ── */
+  var selected = null;
+  var answered = false;
+
+  function selectOption(el, id) {
+    if (answered) return;
+    document.querySelectorAll('.quiz-option').forEach(function(o) {
+      o.classList.remove('selected');
+      o.querySelector('.opt-letter').classList.remove('active');
+    });
+    el.classList.add('selected');
+    el.querySelector('.opt-letter').classList.add('active');
+    selected = id;
+    document.getElementById('check-btn').style.display = 'inline-block';
+  }
+
+  function checkAnswer() {
+    if (!selected || answered) return;
+    answered = true;
+    var opts    = document.querySelectorAll('.quiz-option');
+    var letters = ['a','b','c','d'];
+    opts.forEach(function(o, i) {
+      o.style.cursor = 'default'; o.onclick = null;
+      if (letters[i] === 'b') o.classList.add('correct');
+      else if (letters[i] === selected) o.classList.add('wrong');
+    });
+    var result = document.getElementById('quiz-result');
+    result.style.display = 'block';
+    if (selected === 'b') {
+      result.style.background = '#E8F5E9';
+      result.innerHTML = '<strong>Correct!</strong> Pipeline parallelism assigns layer ranges to each GPU — for a 70B model (80 layers) across 4 GPUs, each GPU holds 20 layers and ~35GB of weights. The pipeline bubble is the key limitation: when request batch N has passed all layers and request batch N+1 has not yet started flowing through, some GPUs sit idle. This reduces GPU utilisation. Techniques like micro-batching reduce bubble time by keeping multiple micro-batches flowing through the pipeline simultaneously. In practice, pipeline parallelism is often combined with tensor parallelism for large-scale 70B+ deployments.';
+    } else {
+      result.style.background = '#FFF3E0';
+      result.innerHTML = '<strong>Not quite.</strong> Pipeline parallelism splits the model by layer groups across GPUs (Option B). It does not duplicate weights, and residual connections do not prevent it — in fact the sequential layer structure is exactly what makes it natural. The main challenge is the pipeline bubble: GPUs earlier in the chain can sit idle between batches.';
+    }
+    document.getElementById('check-btn').style.display = 'none';
+  }
+</script>
+</body>
+</html>

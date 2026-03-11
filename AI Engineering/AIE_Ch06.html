@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Engineering: Chapter 6 Interactive Summary - RAG and Agents</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Navigation: Sidebar with 7 links (JS content switching). Goal: Easy access.
+        - RAG Workflow (Slide 2): Interactive HTML/CSS diagram with clickable steps. Goal: Visualize process.
+        - Agents Overview (Slide 3): Styled cards for Key Components. Goal: Clear organization.
+        - Tools for Agents (Slide 4): Styled cards for Tool Types and Complex Tools. Goal: Easy differentiation.
+        - Planning & Reflection (Slide 5): Interactive HTML/CSS diagram for Control Flow types. Goal: Explain complex logic visually.
+        - Evaluating Agents (Slide 6): Accordion for Evaluation Strategies. Chart.js Bar chart for 'Compound Mistakes'. Goal: Digestible list & quantitative concept visualization.
+        - All textual content from source.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            background-color: #f0f9ff; /* sky-50 */
+            color: #0369a1; /* sky-700 */
+        }
+        .nav-link.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+            font-weight: 600;
+        }
+        .accordion-header {
+            cursor: pointer;
+        }
+        .accordion-content {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+        .accordion-content.open {
+            display: block;
+            max-height: 1000px; 
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; 
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; 
+            max-height: 350px;
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 320px;
+            }
+        }
+        .diagram-step {
+            background-color: #f0f9ff; /* sky-50 */
+            border: 1px solid #bae6fd; /* sky-200 */
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            transition: background-color 0.2s, transform 0.2s;
+            cursor: default;
+        }
+        .diagram-step.interactive:hover {
+            background-color: #e0f2fe; /* sky-100 */
+            transform: scale(1.02);
+        }
+        .diagram-arrow {
+            text-align: center;
+            font-size: 1.5rem; /* 24px */
+            color: #38bdf8; /* sky-400 */
+            line-height: 1;
+        }
+        .info-card {
+            background-color: #f0fdfa; /* teal-50 */
+            border: 1px solid #99f6e4; /* teal-200 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            transition: box-shadow 0.2s;
+        }
+        .info-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+        .control-flow-item {
+            background-color: #f8fafc; /* slate-50 */
+            border: 1px solid #e2e8f0; /* slate-200 */
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+        }
+        .control-flow-item:hover {
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .control-flow-details {
+            display: none;
+            font-size: 0.8em;
+            color: #475569; /* slate-600 */
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background-color: #e2e8f0; /* slate-200 */
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <nav class="w-full md:w-72 bg-white p-6 shadow-lg flex-shrink-0">
+            <h1 class="text-2xl font-bold text-sky-700 mb-6 border-b pb-3">AI Engineering Ch.6</h1>
+            <ul class="space-y-2">
+                <li><a class="nav-link active" data-target="slide1-ch6">1. Intro to RAG & Agents</a></li>
+                <li><a class="nav-link" data-target="slide2-ch6">2. RAG Overview</a></li>
+                <li><a class="nav-link" data-target="slide3-ch6">3. Agents Overview</a></li>
+                <li><a class="nav-link" data-target="slide4-ch6">4. Tools for Agents</a></li>
+                <li><a class="nav-link" data-target="slide5-ch6">5. Planning & Reflection</a></li>
+                <li><a class="nav-link" data-target="slide6-ch6">6. Evaluating Agents</a></li>
+                <li><a class="nav-link" data-target="slide7-ch6">7. Conclusion</a></li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            
+            <section id="slide1-ch6" class="content-section active">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Introduction to RAG and Agents</h2>
+                    <p class="mb-6 text-slate-600">This section introduces Chapter 6, which explores advanced techniques for enhancing AI model capabilities. It addresses the core problem of AI hallucinations and lack of up-to-date knowledge by presenting two dominant patterns: Retrieval-Augmented Generation (RAG) and AI Agents. Understanding these patterns is key to building more accurate, informed, and automated AI applications.</p>
+                    <div class="space-y-4 text-slate-700">
+                        <p><strong class="text-sky-600">Core Problem:</strong> AI models, much like humans, are prone to making mistakes or "hallucinating" (generating incorrect or nonsensical information) when they lack sufficient context or access to up-to-date information. Their knowledge is typically frozen at the time of their last training.</p>
+                        <div>
+                            <strong class="text-sky-600">Solution:</strong> This chapter introduces two dominating patterns for providing relevant context and extended capabilities to AI models:
+                            <ol class="list-decimal list-inside ml-6 mt-2 space-y-1 text-sm">
+                                <li><strong>Retrieval-Augmented Generation (RAG):</strong> Allows models to retrieve and incorporate information from external data sources before generating a response.</li>
+                                <li><strong>Agents:</strong> Empowers models to use external tools (like web search, APIs, code execution) to gather information, process it, and interact with the world in a more dynamic way.</li>
+                            </ol>
+                        </div>
+                        <p><strong class="text-sky-600">Significance:</strong> Both RAG and agentic patterns significantly extend the capabilities of powerful foundation models, enabling the development of more accurate, contextually aware, informed, and automated applications. They represent a shift towards AI systems that can actively seek and utilize external knowledge and tools.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide2-ch6" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Retrieval-Augmented Generation (RAG)</h2>
+                    <p class="mb-6 text-slate-600">Retrieval-Augmented Generation (RAG) is a powerful technique to enhance Large Language Models (LLMs) by grounding their responses in external, up-to-date knowledge. This section explains what RAG is, why it's beneficial, its typical workflow, and key considerations for its evaluation.</p>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-2">What is RAG?</h3>
+                        <p class="text-slate-700">A pattern that augments a language model's generation process by first retrieving relevant information from an external knowledge base (e.g., a collection of documents, a database) and then using this retrieved context to inform the generation of the final response.</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Why RAG? (Benefits)</h3>
+                        <ul class="list-disc list-inside space-y-2 text-slate-700 text-sm">
+                            <li><strong>Reduces Hallucinations:</strong> Provides factual grounding, making outputs more accurate and reliable.</li>
+                            <li><strong>Access to Up-to-Date Information:</strong> Overcomes the knowledge cutoff inherent in pre-trained models by accessing current data.</li>
+                            <li><strong>Domain Specificity:</strong> Allows models to answer questions using private, proprietary, or specialized data not seen during their initial training.</li>
+                            <li><strong>Transparency & Citability:</strong> Can cite sources for generated information, allowing users to verify facts and increasing trust.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">RAG Workflow (Click steps for details)</h3>
+                        <div class="flex flex-col md:flex-row items-stretch justify-around space-y-2 md:space-y-0 md:space-x-2 text-sm" id="ragWorkflow">
+                            <div class="diagram-step interactive flex-1" data-step="query">1. Query (User Input)</div>
+                            <div class="diagram-arrow self-center hidden md:block">➔</div>
+                            <div class="diagram-step interactive flex-1" data-step="retrieval">2. Retrieval (Knowledge Base Search)</div>
+                            <div class="diagram-arrow self-center hidden md:block">➔</div>
+                            <div class="diagram-step interactive flex-1" data-step="augmentation">3. Augmentation (Contextual Prompt)</div>
+                            <div class="diagram-arrow self-center hidden md:block">➔</div>
+                            <div class="diagram-step interactive flex-1" data-step="generation">4. Generation (LLM Response)</div>
+                        </div>
+                        <div id="ragStepDetails" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 hidden"></div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold text-sky-600 mb-2">Evaluation of RAG</h3>
+                        <p class="text-slate-700">Focuses on both retrieval performance (e.g., context precision, recall, NDCG, MAP, MRR) and the quality of the final generated response (e.g., faithfulness, relevance, helpfulness).</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide3-ch6" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Agents: Overview and Capabilities</h2>
+                    <p class="mb-6 text-slate-600">AI Agents represent a paradigm where AI models act as the core "brain" of a system, capable of planning, using tools, and interacting with an environment to accomplish complex tasks. This section defines AI agents, outlines their key components, and discusses how tools extend their capabilities.</p>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-2">What is an AI Agent?</h3>
+                        <p class="text-slate-700">An AI system where the AI model (typically an LLM) acts as the central controller or "brain." It processes a given task, formulates a plan involving a sequence of actions, executes these actions (often by using tools), and evaluates the outcomes to determine if the task has been successfully accomplished.</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Key Components of an Agent:</h3>
+                        <div class="grid md:grid-cols-2 gap-4 text-sm">
+                            <div class="info-card"><strong class="text-teal-600">🌍 Environment:</strong> The domain or context in which the agent operates (e.g., a game, the internet, a specific software application, a file system).</div>
+                            <div class="info-card"><strong class="text-teal-600">🛠️ Tools (Tool Inventory):</strong> External functions, APIs, or capabilities the agent can utilize to perceive its environment (read-only actions) and act upon it (write actions).</div>
+                            <div class="info-card"><strong class="text-teal-600">🗺️ Planning:</strong> The ability to decompose a complex task into a sequence of manageable, logical actions or sub-goals.</div>
+                            <div class="info-card"><strong class="text-teal-600">🤔 Reflection & Error Correction:</strong> The capacity to evaluate generated plans and action outcomes, identify mistakes or deviations, and generate new plans or corrective actions if needed.</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Capabilities Extended by Tools:</h3>
+                        <ul class="list-disc list-inside space-y-2 text-slate-700 text-sm">
+                            <li><strong>Perception:</strong> Accessing and understanding real-world, real-time data (e.g., using web search for current events, querying databases for specific information, reading from news APIs).</li>
+                            <li><strong>Action:</strong> Interacting with and modifying external systems or environments (e.g., sending emails, executing code, making API calls to other services, updating database records).</li>
+                            <li><strong>Addressing Limitations:</strong> Overcoming inherent weaknesses of the core AI model (e.g., using a calculator tool for precise mathematical computations, a calendar tool for scheduling).</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide4-ch6" class="content-section">
+                 <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Tools for Agents</h2>
+                    <p class="mb-6 text-slate-600">Tools are fundamental to an AI agent's ability to perform complex tasks and interact with its environment effectively. This section discusses the importance of tools, categorizes them, and touches upon considerations for managing an agent's tool inventory.</p>
+
+                    <p class="mb-4 text-slate-700"><strong class="text-sky-600">Importance of Tools:</strong> While a core AI model can generate text or make predictions, external tools make an agent vastly more capable, allowing it to gather information, perform specialized calculations, and interact with other systems.</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-sky-600 mb-2">Types of Tools:</h3>
+                            <ul class="list-disc list-inside space-y-1 text-sm text-slate-700">
+                                <li><strong>Read-Only Tools:</strong> Allow the agent to perceive and gather information from the environment (e.g., web search, database query, document reader, sensor input).</li>
+                                <li><strong>Write Tools:</strong> Allow the agent to act upon or modify the environment (e.g., sending an email, executing a script, updating a database, controlling a robotic arm).</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-sky-600 mb-2">Complex Tools:</h3>
+                            <ul class="list-disc list-inside space-y-1 text-sm text-slate-700">
+                                <li><strong>Code Interpreters:</strong> Enable agents to write and execute code (e.g., Python), receive results, or analyze code failures. This facilitates complex reasoning, data manipulation, and experimentation.</li>
+                                <li><strong>APIs (Application Programming Interfaces):</strong> Allow agents to connect to and utilize various external services (e.g., weather APIs, stock market APIs, calendar APIs, e-commerce platforms).</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-semibold text-sky-600 mb-3">Tool Management:</h3>
+                        <ul class="list-disc list-inside space-y-2 text-sm text-slate-700">
+                            <li><strong>What to give:</strong> Carefully select and design tools that are directly relevant to the agent's intended tasks and operational environment. The tools should be reliable and well-documented for the agent to use.</li>
+                            <li><strong>How many:</strong> More tools can offer more capabilities, but they also increase the complexity for the agent to understand when and how to use each tool effectively. There's a trade-off between capability and the risk of confusion or incorrect tool selection by the agent.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide5-ch6" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Planning and Reflection in Agents</h2>
+                    <p class="mb-6 text-slate-600">Effective agents don't just react; they plan their actions and reflect on their outcomes. This section delves into the critical processes of task decomposition (planning), the various control flows agents can use, and the importance of reflection and error correction for robust performance.</p>
+
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Planning (Task Decomposition):</h3>
+                        <p class="text-slate-700 text-sm mb-3">The agent's ability to break down a complex goal into a sequence of smaller, manageable actions or sub-tasks. This involves creating a coherent plan to achieve the overall objective.</p>
+                        <h4 class="text-md font-semibold text-sky-600 mb-2">Control Flow in Plans (Click for details):</h4>
+                        <div class="grid sm:grid-cols-2 gap-3 text-xs" id="controlFlowContainer">
+                            </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Reflection and Error Correction:</h3>
+                        <ul class="list-disc list-inside space-y-2 text-slate-700 text-sm">
+                            <li><strong>Plan Evaluation:</strong> Before execution, the agent (or a component of it) may evaluate the generated plan. If the plan is deemed flawed or suboptimal, it can be revised or a new one generated.</li>
+                            <li><strong>Outcome Evaluation:</strong> After executing actions, the agent assesses the outcomes. It determines if the sub-goal or overall goal has been accomplished and identifies any mistakes or unexpected results.</li>
+                            <li><strong>Iterative Refinement:</strong> If the goal is not completed or errors are detected, the agent uses the feedback from outcome evaluation to generate a new plan or modify the existing one, leading to an iterative problem-solving process.</li>
+                        </ul>
+                        <p class="mt-4 text-sm text-slate-600"><strong class="text-teal-600">Impact of Reflection:</strong> While not strictly mandatory for a system to be called an agent, the ability to reflect on its actions and correct errors significantly boosts an agent's performance, adaptability, and robustness, especially in complex and dynamic environments.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide6-ch6" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Evaluating Agents</h2>
+                    <p class="mb-6 text-slate-600">Evaluating AI agents is a complex task due to their autonomous nature, multi-step operations, and interactions with dynamic environments. This section highlights new failure modes, the issue of compound mistakes, and strategies for agent evaluation.</p>
+                    
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="lg:w-1/2">
+                            <h3 class="text-xl font-semibold text-sky-600 mb-2">New Modes of Failure:</h3>
+                            <p class="text-sm text-slate-700 mb-4">Agents, with their multi-step operations and tool use, introduce new failure modes beyond simple incorrect outputs (e.g., incorrect tool selection, flawed planning, inability to recover from errors).</p>
+                            
+                            <h3 class="text-xl font-semibold text-sky-600 mb-3">Evaluation Strategies (Click to Expand):</h3>
+                            <div id="agentEvalAccordion" class="space-y-2">
+                                </div>
+                             <p class="mt-4 text-sm text-slate-700"><strong class="text-rose-600">Challenges:</strong> Evaluating agents is complex due to their autonomous nature, long action sequences, and interaction with dynamic, unpredictable environments.</p>
+                        </div>
+                        <div class="lg:w-1/2">
+                            <h3 class="text-xl font-semibold text-sky-600 mb-2">Compound Mistakes:</h3>
+                            <p class="text-sm text-slate-700 mb-4">Accuracy can decrease significantly with more steps. If a single step has 95% accuracy, 10 steps might drop overall accuracy to ~60%, and 100 steps to a mere ~0.6%.</p>
+                            <div class="chart-container bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <canvas id="compoundMistakesChart"></canvas>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1 text-center">Illustrative: Accuracy drop over multiple steps (assuming 95% per-step accuracy).</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide7-ch6" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Conclusion: Extending AI Capabilities</h2>
+                    <p class="mb-6 text-slate-600">Chapter 6 has illuminated Retrieval-Augmented Generation (RAG) and AI Agents as two powerful paradigms for significantly extending the capabilities of foundation models. These approaches move beyond simple input-output generation towards more dynamic, informed, and interactive AI systems.</p>
+                    <ul class="space-y-3 list-disc list-inside text-slate-700">
+                        <li>Chapter 6 highlights RAG and Agents as powerful patterns for extending the capabilities of foundation models, making them more knowledgeable and actionable.</li>
+                        <li><strong class="text-sky-600">RAG</strong> provides models with factual grounding and access to up-to-date or specialized information, thereby reducing hallucinations and improving the reliability of generated content.</li>
+                        <li><strong class="text-teal-600">Agents</strong> empower models with tools and planning capabilities, enabling them to interact with the external world, perform complex multi-step tasks, and automate processes.</li>
+                        <li>Both RAG and agentic patterns introduce new engineering challenges, particularly in areas like retrieval optimization, tool design, planning robustness, and comprehensive evaluation due to their multi-step nature and interaction with external systems.</li>
+                        <li>Mastering these advanced techniques is essential for AI engineers looking to build sophisticated, reliable, and impactful AI applications that can truly understand context, access knowledge, and take meaningful actions.</li>
+                    </ul>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            
+            function showSection(targetId) {
+                contentSections.forEach(section => section.classList.remove('active'));
+                const activeSection = document.getElementById(targetId);
+                if (activeSection) activeSection.classList.add('active');
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.target === targetId) link.classList.add('active');
+                });
+                document.querySelector('main').scrollTop = 0;
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    showSection(this.dataset.target);
+                });
+            });
+            
+            // RAG Workflow Interaction
+            const ragWorkflowSteps = document.querySelectorAll('#ragWorkflow .diagram-step');
+            const ragStepDetailsDiv = document.getElementById('ragStepDetails');
+            const ragStepDetailsContent = {
+                query: "<strong>1. Query:</strong> The process begins when a user submits a query or question to the system.",
+                retrieval: "<strong>2. Retrieval:</strong> The system searches a connected knowledge base (e.g., vector database of documents, product catalogs) for information chunks most relevant to the user's query. This often involves embedding the query and searching for similar embeddings in the knowledge base.",
+                augmentation: "<strong>3. Augmentation:</strong> The retrieved relevant information (context) is then combined with the original user query to form an augmented prompt. This prompt now contains both the question and the supporting facts.",
+                generation: "<strong>4. Generation:</strong> The augmented prompt is fed to a Large Language Model (LLM), which generates a response that is grounded in the provided context, aiming for accuracy and relevance."
+            };
+
+            ragWorkflowSteps.forEach(step => {
+                step.addEventListener('click', () => {
+                    ragWorkflowSteps.forEach(s => s.classList.remove('bg-sky-200', 'border-sky-400'));
+                    step.classList.add('bg-sky-200', 'border-sky-400');
+                    ragStepDetailsDiv.innerHTML = ragStepDetailsContent[step.dataset.step] || "";
+                    ragStepDetailsDiv.classList.remove('hidden');
+                });
+            });
+
+            // Control Flow Interaction
+            const controlFlowItems = [
+                { id: 'seq', name: 'Sequential', detail: 'Task B executes only after Task A is complete. Example: Translating natural language to SQL, then executing the SQL query.' },
+                { id: 'par', name: 'Parallel', detail: 'Tasks A and B execute at the same time. Example: Retrieving best-selling products AND their prices concurrently.' },
+                { id: 'if', name: 'If/Else (Routing)', detail: 'Execute Task B OR Task C based on the output of a previous step. Example: Check earnings report, then decide to buy or sell stock.' },
+                { id: 'for', name: 'For Loop', detail: 'Repeat executing Task A until a specific condition is met. Example: Keep generating random numbers until a prime number is found.' }
+            ];
+            const controlFlowContainer = document.getElementById('controlFlowContainer');
+            if(controlFlowContainer){
+                controlFlowItems.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'control-flow-item';
+                    div.innerHTML = `<h5 class="font-medium text-sky-700">${item.name}</h5><div class="control-flow-details" id="detail-${item.id}">${item.detail}</div>`;
+                    div.onclick = () => {
+                        const detailDiv = document.getElementById(`detail-${item.id}`);
+                        const isVisible = detailDiv.style.display === 'block';
+                        // Hide all details first
+                        controlFlowContainer.querySelectorAll('.control-flow-details').forEach(d => d.style.display = 'none');
+                        // Toggle current one
+                        detailDiv.style.display = isVisible ? 'none' : 'block';
+                    };
+                    controlFlowContainer.appendChild(div);
+                });
+            }
+
+            // Generic Accordion Initializer
+            function initializeAccordion(containerId, itemsData, itemClasses, headerClasses, contentClasses, arrowClasses) {
+                const accordionContainer = document.getElementById(containerId);
+                if (!accordionContainer) return;
+                accordionContainer.innerHTML = ''; 
+
+                itemsData.forEach(itemData => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = itemClasses || 'accordion-item border border-slate-200 rounded-lg';
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = headerClasses || 'accordion-header bg-slate-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-slate-100 transition';
+                    headerDiv.innerHTML = `<span class="font-medium text-slate-700 text-sm">${itemData.title}</span><span class="arrow ${arrowClasses || 'text-slate-700'} transform transition-transform duration-300 text-sm">▼</span>`;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = contentClasses || 'accordion-content p-3 bg-white rounded-b-lg';
+                    contentDiv.innerHTML = `<p class="text-slate-600 text-xs">${itemData.content}</p>`;
+                    
+                    itemDiv.appendChild(headerDiv);
+                    itemDiv.appendChild(contentDiv);
+                    accordionContainer.appendChild(itemDiv);
+
+                    headerDiv.addEventListener('click', () => {
+                        const isOpen = contentDiv.classList.contains('open');
+                        if (isOpen) {
+                            contentDiv.classList.remove('open');
+                            contentDiv.style.maxHeight = null;
+                            headerDiv.querySelector('.arrow').classList.remove('rotate-180');
+                        } else {
+                            contentDiv.classList.add('open');
+                            contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
+                            headerDiv.querySelector('.arrow').classList.add('rotate-180');
+                        }
+                    });
+                });
+            }
+
+            const agentEvalData = [
+                { title: 'Tool Performance Comparison', content: 'Evaluate how an agent performs with different sets of tools or configurations to understand the impact of each tool.' },
+                { title: 'Ablation Studies', content: 'Systematically remove tools from the agent\'s inventory to measure the performance drop. If a tool can be removed without a significant drop, it might be redundant or unnecessary.' },
+                { title: 'Error Analysis', content: 'Investigate common failure points. Look for tools the agent frequently misuses or tasks where planning often goes awry.' },
+                { title: 'Human Evaluation', content: 'Crucial for complex, open-ended agent tasks where automated metrics may not capture the full picture of success or failure. Humans can assess nuanced aspects like goal completion, efficiency, and safety.' }
+            ];
+            initializeAccordion('agentEvalAccordion', agentEvalData,
+                'accordion-item border border-amber-200 rounded-lg',
+                'accordion-header bg-amber-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-amber-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-amber-700'
+            );
+
+            // Chart.js for Compound Mistakes (Slide 6)
+            const compoundCtx = document.getElementById('compoundMistakesChart');
+            if (compoundCtx) {
+                const perStepAccuracy = 0.95;
+                const labels = [1, 2, 5, 10, 20, 50, 100].map(s => `${s} Steps`);
+                const data = [1, 2, 5, 10, 20, 50, 100].map(steps => Math.pow(perStepAccuracy, steps) * 100);
+
+                new Chart(compoundCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: `Overall Accuracy (at ${perStepAccuracy*100}% per-step accuracy)`,
+                            data: data,
+                            backgroundColor: 'rgba(239, 68, 68, 0.6)', // rose-500
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: { display: true, text: 'Overall Accuracy (%)' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Number of Sequential Steps' }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels:{font:{size:10}} },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Accuracy: ${context.raw.toFixed(2)}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            if (navLinks.length > 0) showSection(navLinks[0].dataset.target);
+        });
+    </script>
+</body>
+</html>

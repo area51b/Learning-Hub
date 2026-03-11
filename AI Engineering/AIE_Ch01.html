@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Engineering: Chapter 1 Interactive Summary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Navigation: Sidebar with 7 links (JS for content switching). Goal: Easy access to all sections.
+        - Section Content: HTML text, styled with Tailwind. Goal: Present information clearly.
+        - AI Engineering Stack (Slide 3): HTML/CSS visual (3 stacked blocks). Interaction: Hover/click to highlight. Goal: Visually represent the concept.
+        - 80/20 Development Pattern (Slide 4): Chart.js bar chart ('Effort Distribution': 80% functionality - 40% effort, Final 20% - 60% effort). Goal: Quantify and visualize the concept.
+        - Common Pitfalls (Slide 6): HTML/CSS accordion. Interaction: Click to expand/collapse. Goal: Make a long list digestible.
+        - All textual content is directly from the source report.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            background-color: #f0f9ff; /* sky-50 */
+            color: #0369a1; /* sky-700 */
+        }
+        .nav-link.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+            font-weight: 600;
+        }
+        .accordion-header {
+            cursor: pointer;
+        }
+        .accordion-content {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-content.open {
+            display: block;
+            max-height: 500px; /* Adjust as needed */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* max-w-2xl */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Default height, can be responsive */
+            max-height: 400px;
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <nav class="w-full md:w-72 bg-white p-6 shadow-lg flex-shrink-0">
+            <h1 class="text-2xl font-bold text-sky-700 mb-6 border-b pb-3">AI Engineering Ch.1</h1>
+            <ul class="space-y-2">
+                <li><a class="nav-link active" data-target="slide1">1. The Rise of AI Engineering</a></li>
+                <li><a class="nav-link" data-target="slide2">2. Foundation & Language Models</a></li>
+                <li><a class="nav-link" data-target="slide3">3. The AI Engineering Stack</a></li>
+                <li><a class="nav-link" data-target="slide4">4. Planning AI Applications</a></li>
+                <li><a class="nav-link" data-target="slide5">5. Evaluation & Challenges</a></li>
+                <li><a class="nav-link" data-target="slide6">6. Paradigm & Pitfalls</a></li>
+                <li><a class="nav-link" data-target="slide7">7. Conclusion</a></li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            <section id="slide1" class="content-section active">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">The Rise of AI Engineering</h2>
+                    <p class="mb-6 text-slate-600">This section introduces the significant shift occurring in the field of artificial intelligence, moving from traditional Machine Learning (ML) Engineering towards a new discipline: AI Engineering. It highlights the key drivers behind this evolution and the foundational changes in how AI applications are conceptualized and built.</p>
+                    <ul class="space-y-3 list-disc list-inside text-slate-700">
+                        <li><strong class="text-sky-600">Shift in Focus:</strong> Moving from traditional ML Engineering to AI Engineering.</li>
+                        <li><strong class="text-sky-600">Catalyst:</strong> The emergence and widespread availability of powerful Foundation Models (FMs) and Large Language Models (LLMs).</li>
+                        <li><strong class="text-sky-600">Accessibility:</strong> FMs and LLMs lower the barrier to entry, enabling more people to build AI applications without deep ML expertise.</li>
+                        <li><strong class="text-sky-600">Product-Centric Approach:</strong> AI Engineering often starts with product development and leveraging existing models, rather than data collection and model training.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="slide2" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Foundation Models and Language Models</h2>
+                    <p class="mb-6 text-slate-600">This section delves into the core components driving the AI engineering revolution: Foundation Models and Language Models. It explains their characteristics, how they function, and their significance in building modern AI applications. Understanding these models is crucial for anyone looking to work in this space.</p>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Foundation Models (FMs):</h3>
+                        <ul class="space-y-2 list-disc list-inside text-slate-700">
+                            <li>Pre-trained on vast amounts of data.</li>
+                            <li>Highly adaptable for various downstream tasks (e.g., coding, writing, chatbots).</li>
+                            <li>Dual significance: fundamental importance and adaptability.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Language Models (LMs):</h3>
+                        <ul class="space-y-2 list-disc list-inside text-slate-700">
+                            <li>Encode statistical information about language(s).</li>
+                            <li>Predict the likelihood of a word in a given context.</li>
+                            <li><strong class="text-teal-600">Categories:</strong>
+                                <ul class="ml-6 mt-1 space-y-1 list-circle list-inside">
+                                    <li>Masked Language Models (e.g., BERT)</li>
+                                    <li>Autoregressive Language Models (e.g., GPT in ChatGPT)</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Tokens:</h3>
+                        <p class="text-slate-700">The basic unit of a language model (can be a character, a word, or a part of a word). <strong class="text-teal-600">Tokenization</strong> is the process of breaking text into these tokens.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide3" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">The AI Engineering Stack</h2>
+                    <p class="mb-6 text-slate-600">Understanding the AI Engineering Stack is key to grasping how modern AI applications are structured and developed. This section breaks down the stack into its three primary layers, outlining the focus and responsibilities of each. This layered approach helps organize the complexities involved in building and deploying AI solutions.</p>
+                    <div class="space-y-6">
+                        <div class="p-6 border border-sky-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                            <h3 class="text-xl font-semibold text-sky-600 mb-2">1. Application Development Layer</h3>
+                            <p class="text-sm text-slate-500 mb-1">Focus:</p>
+                            <p class="text-slate-700 mb-2">Prompt crafting, context provision, interface design, user experience.</p>
+                            <p class="text-sm text-slate-500 mb-1">Responsibilities:</p>
+                            <p class="text-slate-700">Evaluation, prompt engineering, AI interface development.</p>
+                        </div>
+                        <div class="p-6 border border-teal-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                            <h3 class="text-xl font-semibold text-teal-600 mb-2">2. Model Development Layer</h3>
+                            <p class="text-sm text-slate-500 mb-1">Focus:</p>
+                            <p class="text-slate-700 mb-2">Adapting and fine-tuning models.</p>
+                            <p class="text-sm text-slate-500 mb-1">Techniques:</p>
+                            <p class="text-slate-700">Prompt-based (no weight updates) and fine-tuning (requires weight updates).</p>
+                        </div>
+                        <div class="p-6 border border-amber-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                            <h3 class="text-xl font-semibold text-amber-600 mb-2">3. Infrastructure Layer</h3>
+                            <p class="text-sm text-slate-500 mb-1">Focus:</p>
+                            <p class="text-slate-700">Serving and deploying models efficiently.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide4" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Planning AI Applications</h2>
+                    <p class="mb-6 text-slate-600">Effective planning is paramount for the success of any AI application. This section outlines crucial considerations that teams must address before and during development. It also introduces the "80/20" development pattern, a common observation in AI projects that can help set realistic timelines and resource allocations.</p>
+                    
+                    <h3 class="text-xl font-semibold text-sky-600 mb-3">Key Considerations:</h3>
+                    <ul class="space-y-3 list-disc list-inside text-slate-700 mb-8">
+                        <li><strong class="text-teal-600">Use Case Evaluation:</strong> Is AI truly needed, or are traditional methods more suitable? (Avoid using AI just because it's available).</li>
+                        <li><strong class="text-teal-600">Setting Expectations:</strong> Be realistic about AI capabilities and limitations.</li>
+                        <li><strong class="text-teal-600">User Exposure:</strong> Determine how users will interact with the AI.</li>
+                        <li><strong class="text-teal-600">Deployment:</strong> Internal vs. external deployment.</li>
+                        <li><strong class="text-teal-600">Maintenance:</strong> Plan for ongoing updates and support.</li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold text-sky-600 mb-4">The "80/20" Development Pattern:</h3>
+                    <p class="text-slate-700 mb-4">Reaching 80% functionality is often quicker than the final 20%, which can require significant effort. This pattern highlights that the last mile of polish and perfection can be disproportionately time-consuming.</p>
+                    <div class="chart-container bg-slate-100 p-4 rounded-lg">
+                        <canvas id="effortChart"></canvas>
+                    </div>
+                     <p class="text-sm text-slate-500 mt-2 text-center">Conceptual: Effort Distribution in AI Projects</p>
+                </div>
+            </section>
+
+            <section id="slide5" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Evaluation and Implementation Challenges</h2>
+                    <p class="mb-6 text-slate-600">Evaluating AI models, especially powerful foundation models, presents a unique set of challenges distinct from traditional software or ML systems. This section explores these difficulties and underscores the critical role of human evaluation in ensuring AI systems are reliable, fair, and perform as intended.</p>
+
+                    <h3 class="text-xl font-semibold text-sky-600 mb-3">Unique Challenges with AI Models:</h3>
+                    <ul class="space-y-3 list-disc list-inside text-slate-700 mb-6">
+                        <li><strong class="text-teal-600">Open-ended Outputs:</strong> Difficulty in defining "correct" answers.</li>
+                        <li><strong class="text-teal-600">Guardrails:</strong> Challenges in implementing strict controls.</li>
+                        <li><strong class="text-teal-600">Type Enforcement:</strong> Ensuring outputs adhere to expected formats.</li>
+                        <li><strong class="text-teal-600">Comprehensive Strategies:</strong> Need for robust evaluation methods beyond traditional ML metrics.</li>
+                    </ul>
+
+                    <div class="bg-sky-50 p-4 rounded-lg border border-sky-200">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-2">Importance of Human Evaluation:</h3>
+                        <p class="text-slate-700">Essential for sanity checks and validating automatic evaluation methods. Human oversight remains crucial for complex AI systems.</p>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-2">Data and Model Adaptation:</h3>
+                        <p class="text-slate-700">The focus shifts from raw data collection and processing to effective model adaptation and deployment strategies. This means curating and preparing data specifically for fine-tuning or providing context to foundation models.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide6" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Modern Development Paradigm & Pitfalls</h2>
+                    <p class="mb-6 text-slate-600">The advent of AI engineering has ushered in a modern development paradigm that differs significantly from traditional software or ML projects. This section highlights this new product-oriented approach and the evolving skill sets required. It also provides a crucial overview of common pitfalls to avoid when building AI applications.</p>
+
+                    <h3 class="text-xl font-semibold text-sky-600 mb-3">Modern Approach:</h3>
+                     <ul class="space-y-2 list-disc list-inside text-slate-700 mb-6">
+                        <li><strong class="text-teal-600">Product-Oriented Approach:</strong> Start with product requirements, then adapt models.</li>
+                        <li><strong class="text-teal-600">Shift in Skills:</strong> Growing recognition that understanding AI system behavior (constraints, opportunities) is valuable for software engineers.</li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold text-sky-600 mb-4">Common Pitfalls (Click to Expand):</h3>
+                    <div id="pitfallsAccordion" class="space-y-2">
+                        <div class="accordion-item border border-rose-200 rounded-lg">
+                            <div class="accordion-header bg-rose-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-rose-100 transition">
+                                <span class="font-medium text-rose-700">Using generative AI when not necessary</span>
+                                <span class="arrow text-rose-700 transform transition-transform duration-300 ">▼</span>
+                            </div>
+                            <div class="accordion-content p-3 bg-white rounded-b-lg">
+                                <p class="text-slate-600 text-sm">Not every problem requires a generative AI solution. Simpler, more traditional methods might be more efficient, reliable, and cost-effective. Evaluate if the complexity of GenAI aligns with the problem's needs.</p>
+                            </div>
+                        </div>
+                        <div class="accordion-item border border-rose-200 rounded-lg">
+                            <div class="accordion-header bg-rose-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-rose-100 transition">
+                                <span class="font-medium text-rose-700">Confusing "bad product" with "bad AI"</span>
+                                 <span class="arrow text-rose-700 transform transition-transform duration-300 ">▼</span>
+                            </div>
+                            <div class="accordion-content p-3 bg-white rounded-b-lg">
+                                <p class="text-slate-600 text-sm">Sometimes, an AI application fails not because the underlying AI model is flawed, but because the product design, user experience, or problem framing is poor. It's crucial to distinguish between AI limitations and product strategy issues.</p>
+                            </div>
+                        </div>
+                         <div class="accordion-item border border-rose-200 rounded-lg">
+                            <div class="accordion-header bg-rose-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-rose-100 transition">
+                                <span class="font-medium text-rose-700">Starting too complex</span>
+                                 <span class="arrow text-rose-700 transform transition-transform duration-300 ">▼</span>
+                            </div>
+                            <div class="accordion-content p-3 bg-white rounded-b-lg">
+                                <p class="text-slate-600 text-sm">Begin with simpler approaches and iterate. Jumping to complex architectures or extensive fine-tuning prematurely can lead to wasted effort and difficulties in debugging and maintenance.</p>
+                            </div>
+                        </div>
+                        <div class="accordion-item border border-rose-200 rounded-lg">
+                            <div class="accordion-header bg-rose-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-rose-100 transition">
+                                <span class="font-medium text-rose-700">Over-indexing on early success</span>
+                                 <span class="arrow text-rose-700 transform transition-transform duration-300 ">▼</span>
+                            </div>
+                            <div class="accordion-content p-3 bg-white rounded-b-lg">
+                                <p class="text-slate-600 text-sm">Impressive demos or initial positive results can be misleading. Transitioning from a proof-of-concept to a robust, production-ready application often uncovers significant challenges (the "80/20" rule applies here too).</p>
+                            </div>
+                        </div>
+                        <div class="accordion-item border border-rose-200 rounded-lg">
+                            <div class="accordion-header bg-rose-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-rose-100 transition">
+                                <span class="font-medium text-rose-700">Forgoing human evaluation</span>
+                                 <span class="arrow text-rose-700 transform transition-transform duration-300 ">▼</span>
+                            </div>
+                            <div class="accordion-content p-3 bg-white rounded-b-lg">
+                                <p class="text-slate-600 text-sm">While automated metrics are useful, human evaluation is indispensable for assessing nuanced aspects like quality, relevance, safety, and fairness, especially for generative models with open-ended outputs.</p>
+                            </div>
+                        </div>
+                        <div class="accordion-item border border-rose-200 rounded-lg">
+                            <div class="accordion-header bg-rose-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-rose-100 transition">
+                                <span class="font-medium text-rose-700">Crowdsourcing use cases without a clear strategy</span>
+                                 <span class="arrow text-rose-700 transform transition-transform duration-300 ">▼</span>
+                            </div>
+                            <div class="accordion-content p-3 bg-white rounded-b-lg">
+                                <p class="text-slate-600 text-sm">While exploring potential applications is good, it should be guided by a strategic vision. Randomly pursuing use cases without aligning them with business goals or user needs can lead to scattered efforts and low-impact outcomes.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide7" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Chapter 1 Conclusion</h2>
+                    <p class="mb-6 text-slate-600">This chapter has laid the groundwork for understanding AI Engineering. It's a dynamic field driven by the power of foundation models, demanding a new approach to building applications. The emphasis is on practical application development, thoughtful model adaptation, and rigorous evaluation to create impactful and responsible AI solutions.</p>
+                    <ul class="space-y-3 list-disc list-inside text-slate-700">
+                        <li>AI Engineering is a rapidly evolving field, driven by foundation models.</li>
+                        <li>It emphasizes application development, model adaptation, and robust evaluation.</li>
+                        <li>Success requires a product-centric mindset and awareness of unique AI challenges.</li>
+                        <li>The field offers new career paths and opportunities for innovation.</li>
+                    </ul>
+                    <div class="mt-8 text-center">
+                        <button id="keyTakeawaysBtn" class="bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all">
+                            View Key Chapter Takeaways
+                        </button>
+                    </div>
+                    <div id="takeawaysModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+                        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full">
+                            <h3 class="text-2xl font-semibold text-sky-700 mb-4">Key Takeaways from Chapter 1</h3>
+                            <ul class="space-y-2 list-disc list-inside text-slate-700 text-sm">
+                                <li>AI Engineering is distinct from traditional ML, focusing on leveraging pre-trained FMs.</li>
+                                <li>Product-centric development is key: start with the application, not just the model.</li>
+                                <li>The AI stack has three layers: Application, Model Development, and Infrastructure.</li>
+                                <li>Careful planning and expectation setting are vital for AI projects.</li>
+                                <li>Evaluating FMs is challenging due to open-ended outputs; human evaluation is critical.</li>
+                                <li>Awareness of common pitfalls can save significant time and resources.</li>
+                            </ul>
+                            <button id="closeModalBtn" class="mt-6 bg-rose-500 hover:bg-rose-600 text-white font-semibold py-2 px-4 rounded-lg transition-all w-full">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            const accordionItems = document.querySelectorAll('.accordion-item');
+            const keyTakeawaysBtn = document.getElementById('keyTakeawaysBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const takeawaysModal = document.getElementById('takeawaysModal');
+
+            function showSection(targetId) {
+                contentSections.forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(targetId).classList.add('active');
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.target === targetId) {
+                        link.classList.add('active');
+                    }
+                });
+                 // Scroll to top of main content area on section change
+                document.querySelector('main').scrollTop = 0;
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.dataset.target;
+                    showSection(targetId);
+                });
+            });
+
+            // Accordion functionality
+            accordionItems.forEach(item => {
+                const header = item.querySelector('.accordion-header');
+                const content = item.querySelector('.accordion-content');
+                const arrow = header.querySelector('.arrow');
+
+                header.addEventListener('click', () => {
+                    const isOpen = content.classList.contains('open');
+                    
+                    // Close all other accordions if you want only one open at a time
+                    // accordionItems.forEach(otherItem => {
+                    //     if (otherItem !== item) {
+                    //         otherItem.querySelector('.accordion-content').classList.remove('open');
+                    //         otherItem.querySelector('.accordion-content').style.maxHeight = null;
+                    //         otherItem.querySelector('.arrow').classList.remove('rotate-180');
+                    //     }
+                    // });
+
+                    if (isOpen) {
+                        content.classList.remove('open');
+                        content.style.maxHeight = null;
+                        if(arrow) arrow.classList.remove('rotate-180');
+                    } else {
+                        content.classList.add('open');
+                        content.style.maxHeight = content.scrollHeight + "px";
+                         if(arrow) arrow.classList.add('rotate-180');
+                    }
+                });
+            });
+
+            // Chart.js for 80/20 rule
+            const ctx = document.getElementById('effortChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Initial 80% Functionality', 'Final 20% Polish/Perfection'],
+                        datasets: [{
+                            label: 'Relative Effort',
+                            data: [40, 60], // Conceptual values: 40% effort for first 80%, 60% for last 20%
+                            backgroundColor: [
+                                'rgba(56, 189, 248, 0.6)', // sky-400
+                                'rgba(20, 184, 166, 0.6)'  // teal-500
+                            ],
+                            borderColor: [
+                                'rgba(56, 189, 248, 1)',
+                                'rgba(20, 184, 166, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Percentage of Total Effort'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.raw + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Modal functionality
+            if (keyTakeawaysBtn) {
+                keyTakeawaysBtn.addEventListener('click', () => {
+                    takeawaysModal.classList.remove('hidden');
+                });
+            }
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', () => {
+                    takeawaysModal.classList.add('hidden');
+                });
+            }
+            // Close modal if clicking outside of it
+            if (takeawaysModal) {
+                takeawaysModal.addEventListener('click', (event) => {
+                    if (event.target === takeawaysModal) {
+                        takeawaysModal.classList.add('hidden');
+                    }
+                });
+            }
+
+
+            // Activate the first section by default
+            if (navLinks.length > 0) {
+                showSection(navLinks[0].dataset.target);
+            }
+        });
+    </script>
+</body>
+</html>

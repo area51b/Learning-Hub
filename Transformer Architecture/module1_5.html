@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 1.5 - Feed Forward Network (FFN)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #B71C1C 0%, #C62828 50%, #D32F2F 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content: ''; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+  .header-eyebrow { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.7; margin-bottom: 8px; font-family: Arial, sans-serif; }
+  .header h1 { font-size: 28px; margin-bottom: 8px; line-height: 1.2; }
+  .header p { opacity: 0.85; font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
+  .tags { display: flex; gap: 12px; flex-wrap: wrap; }
+  .tag { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 14px; font-size: 13px; font-family: Arial, sans-serif; }
+
+  .nav-bar { display: flex; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+  .nav-btn { flex: 1; border-radius: 10px; padding: 12px 16px; border: 1px solid #C5CAE9; background: white; font-family: Arial, sans-serif; font-size: 13px; }
+  .nav-btn .nav-dir { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #999; margin-bottom: 3px; }
+  .nav-btn .nav-title { font-weight: bold; color: #333; font-size: 13.5px; }
+  .nav-btn.prev { text-align: left; border-left: 4px solid #1565C0; }
+  .nav-btn.next { text-align: right; border-right: 4px solid #B71C1C; }
+
+  .intro-card { background: white; border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; border: 1px solid #E8E8E8; line-height: 1.8; font-size: 15.5px; }
+  .intro-card p { margin-bottom: 12px; }
+  .intro-card p:last-child { margin-bottom: 0; color: #555; }
+
+  .section-card { background: white; border-radius: 12px; margin-bottom: 12px; border: 1px solid #E8E8E8; overflow: hidden; }
+  .section-header { padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-left: 4px solid #E8E8E8; transition: all 0.2s; user-select: none; }
+  .section-header:hover { background: #FAFAFA; }
+  .section-title { display: flex; align-items: center; gap: 12px; font-weight: bold; font-size: 15.5px; }
+  .section-num { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; font-family: Arial, sans-serif; color: white; flex-shrink: 0; }
+  .chevron { font-size: 16px; color: #999; transition: transform 0.2s; display: inline-block; }
+  .chevron.open { transform: rotate(180deg); }
+  .section-body { padding: 20px 24px; border-top: 1px solid #F0F0F0; display: none; }
+  .section-body.open { display: block; }
+  .section-body p { line-height: 1.8; font-size: 15px; margin-bottom: 14px; }
+
+  .callout { border-radius: 0 8px 8px 0; padding: 14px 18px; font-size: 14.5px; line-height: 1.7; margin-top: 8px; margin-bottom: 8px; }
+  .callout-red    { background: #FFEBEE; border-left: 4px solid #C62828; }
+  .callout-blue   { background: #E3F2FD; border-left: 4px solid #1565C0; }
+  .callout-orange { background: #FFF3E0; border-left: 4px solid #FF9800; }
+  .callout-green  { background: #E8F5E9; border-left: 4px solid #4CAF50; }
+  .callout-teal   { background: #E0F2F1; border-left: 4px solid #00796B; }
+  .callout-purple { background: #F3E8FD; border-left: 4px solid #7B1FA2; }
+
+  /* Block diagram */
+  .block-diagram { display: flex; align-items: stretch; gap: 0; margin: 18px 0; }
+  .bd-block { flex: 1; text-align: center; padding: 16px 10px; border: 1px solid #E0E0E0; position: relative; }
+  .bd-block:first-child { border-radius: 8px 0 0 8px; }
+  .bd-block:last-child  { border-radius: 0 8px 8px 0; }
+  .bd-block + .bd-block { border-left: none; }
+  .bd-arrow { position: absolute; right: -14px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #999; z-index: 2; background: white; padding: 0 2px; }
+  .bd-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #888; font-family: Arial, sans-serif; margin-bottom: 6px; }
+  .bd-title { font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; margin-bottom: 4px; }
+  .bd-desc  { font-size: 12px; color: #666; line-height: 1.5; }
+
+  /* Analogy rows */
+  .analogy-row { display: flex; gap: 14px; margin-bottom: 12px; align-items: flex-start; }
+  .analogy-step { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; font-family: Arial, sans-serif; color: white; flex-shrink: 0; }
+  .analogy-content { flex: 1; background: #F8F8F8; border-radius: 0 10px 10px 0; border-left: 3px solid #ccc; padding: 12px 16px; }
+  .analogy-title { font-weight: bold; font-size: 14px; margin-bottom: 4px; font-family: Arial, sans-serif; }
+  .analogy-desc  { font-size: 13.5px; line-height: 1.7; color: #444; }
+
+  /* FFN vs Attention comparison */
+  .fa-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .fa-box { border-radius: 10px; padding: 18px; }
+  .fa-box-title { font-size: 13px; font-weight: bold; font-family: Arial, sans-serif; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .fa-row { font-size: 13.5px; line-height: 1.65; margin-bottom: 8px; padding-left: 12px; position: relative; }
+  .fa-row::before { content: '–'; position: absolute; left: 0; color: #999; }
+
+  /* MOE visual */
+  .moe-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0; }
+  .moe-expert { border-radius: 8px; padding: 10px 8px; text-align: center; border: 2px solid transparent; font-family: Arial, sans-serif; }
+  .moe-expert.active-expert { border-color: #C62828; }
+  .moe-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #888; margin-bottom: 4px; }
+  .moe-name  { font-size: 12px; font-weight: bold; margin-bottom: 3px; }
+  .moe-badge { font-size: 10px; border-radius: 10px; padding: 2px 7px; display: inline-block; }
+
+  /* Size table */
+  .size-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; font-family: Arial, sans-serif; }
+  .size-table th { background: #B71C1C; color: white; padding: 10px 14px; text-align: left; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  .size-table td { padding: 11px 14px; border-bottom: 1px solid #F0F0F0; vertical-align: top; line-height: 1.6; }
+  .size-table tr:last-child td { border-bottom: none; }
+  .size-table tr:nth-child(even) td { background: #F8F8F8; }
+  .st-term { font-weight: bold; color: #B71C1C; }
+
+  /* Key items */
+  .key-item { display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start; }
+  .key-num   { font-size: 22px; font-weight: bold; font-family: monospace; min-width: 36px; padding-top: 2px; }
+  .key-title { font-weight: bold; font-size: 15px; margin-bottom: 4px; }
+  .key-desc  { font-size: 14px; line-height: 1.7; color: #444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background: #B71C1C; border-radius: 14px; padding: 24px 28px; margin-top: 24px; color: white; }
+  .cheatsheet-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; margin-bottom: 14px; font-family: Arial, sans-serif; }
+  .cheat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cheat-item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 14px; border-left: 3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight: bold; font-size: 13px; margin-bottom: 4px; color: #FFCDD2; font-family: Arial, sans-serif; }
+  .cheat-def  { font-size: 13px; opacity: 0.85; line-height: 1.5; }
+
+  /* Quiz */
+  .quiz-section { background: white; border-radius: 14px; padding: 24px 28px; margin-top: 16px; border: 1px solid #E8E8E8; }
+  .quiz-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #999; margin-bottom: 10px; font-family: Arial, sans-serif; }
+  .quiz-q { font-weight: bold; font-size: 16px; margin-bottom: 16px; line-height: 1.5; }
+  .quiz-option { padding: 12px 16px; border-radius: 8px; border: 2px solid #E0E0E0; background: #F8F8F8; cursor: pointer; display: flex; gap: 12px; align-items: flex-start; transition: all 0.15s; font-size: 14px; line-height: 1.6; margin-bottom: 10px; font-family: Arial, sans-serif; }
+  .quiz-option:hover   { border-color: #C62828; background: #FFEBEE; }
+  .quiz-option.selected{ border-color: #C62828; background: #FFEBEE; }
+  .quiz-option.correct { border-color: #4CAF50 !important; background: #E8F5E9 !important; }
+  .quiz-option.wrong   { border-color: #EF5350 !important; background: #FFEBEE !important; }
+  .opt-letter { font-weight: bold; color: #999; min-width: 20px; }
+  .opt-letter.active { color: #C62828; }
+  .quiz-btn { margin-top: 14px; background: #B71C1C; color: white; border: none; border-radius: 8px; padding: 10px 24px; cursor: pointer; font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; }
+  .quiz-btn:hover { background: #C62828; }
+  .quiz-result { margin-top: 14px; border-radius: 8px; padding: 12px 16px; font-size: 14px; line-height: 1.7; color: #333; font-family: Arial, sans-serif; }
+
+  .next-module { margin-top: 16px; margin-bottom: 32px; border-radius: 12px; padding: 16px 20px; background: linear-gradient(135deg, #FFEBEE, #FFF3E0); border: 1px solid #FFCDD2; display: flex; justify-content: space-between; align-items: center; }
+  .next-label  { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #777; margin-bottom: 4px; font-family: Arial, sans-serif; }
+  .next-title  { font-weight: bold; font-size: 15px; }
+  .next-sub    { font-size: 13px; color: #666; margin-top: 2px; font-family: Arial, sans-serif; }
+  .next-arrow  { font-size: 28px; color: #555; }
+
+  @media (max-width: 600px) {
+    .fa-compare, .cheat-grid { grid-template-columns: 1fr; }
+    .moe-grid { grid-template-columns: 1fr 1fr; }
+    .header, .nav-bar { padding: 24px 20px; }
+    .nav-bar { flex-direction: column; }
+    .block-diagram { flex-direction: column; }
+    .bd-block { border-radius: 8px !important; border: 1px solid #E0E0E0 !important; margin-bottom: 6px; }
+    .bd-arrow { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-eyebrow">PART 1 · MODULE 1.5</div>
+    <h1>Feed Forward Network (FFN)</h1>
+    <p>The other half of every transformer block — what it does and why it is the biggest consumer of GPU memory</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+      <span class="tag">No math</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav-bar">
+    <div class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">1.4 — Multi-Head Attention</div>
+    </div>
+    <div class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">1.6 — The Full Transformer Block</div>
+    </div>
+  </div>
+
+  <!-- Intro -->
+  <div class="intro-card">
+    <p>Every Transformer block has two major components. You have learned about the first — Attention. Now meet the second: the <strong>Feed Forward Network (FFN)</strong>.</p>
+    <p>While Attention handles <em>relationships between tokens</em>, the FFN handles something different — it processes each token <em>individually</em>, applying deep reasoning to refine what the token means after attention has told it what to focus on. Together, they are the engine of every transformer layer.</p>
+    <p>This module also introduces <strong>Mixture of Experts (MoE)</strong> — a modern FFN variant that is reshaping how large models are built and served, and that you will encounter in customer conversations about models like Mixtral and GPT-4.</p>
+  </div>
+
+  <!-- Section 1: What FFN does -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#C62828;">1</span>
+        What the FFN Actually Does
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>After Attention has gathered information from across the sequence, each token now knows what other tokens are relevant to it. But that raw gathered information still needs to be processed and refined. That is what the FFN does.</p>
+      <p>Think of it in two distinct steps:</p>
+
+      <div style="margin: 18px 0;">
+        <div class="analogy-row">
+          <div class="analogy-step" style="background:#1565C0;">1</div>
+          <div class="analogy-content" style="border-left-color:#1565C0;">
+            <div class="analogy-title">Expand — look at it from many angles</div>
+            <div class="analogy-desc">The token's embedding is projected into a much higher-dimensional space — typically 4x larger. This is like taking a concept and breaking it down into thousands of sub-questions: "Is this technical? Is it a question? Is it positive? Does it relate to infrastructure? Does it require a list response?" The model considers all of these simultaneously.</div>
+          </div>
+        </div>
+        <div class="analogy-row">
+          <div class="analogy-step" style="background:#C62828;">2</div>
+          <div class="analogy-content" style="border-left-color:#C62828;">
+            <div class="analogy-title">Contract — synthesise into a refined answer</div>
+            <div class="analogy-desc">The expanded representation is projected back down to the original embedding size. The model has now "thought through" the token from many angles and produced a refined, richer understanding of it. This output flows to the next transformer layer.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>The key difference from Attention:</strong> Attention is about <em>relationships between tokens</em> — token A looks at tokens B, C, D. The FFN is about <em>reasoning within a single token</em> — token A thinks deeply about itself after gathering that context. Both are essential. Attention gathers. FFN processes.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: The thinking desk analogy -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">2</span>
+        The Analogy: A Research Team's Workflow
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>Imagine a research analyst preparing a briefing on a complex topic. Their workflow has two distinct phases:</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
+        <div style="background:#E3F2FD; border-radius:10px; padding:16px 18px; border-left:4px solid #1565C0;">
+          <div style="font-weight:bold; font-size:14px; margin-bottom:8px; font-family:Arial,sans-serif; color:#1565C0;">Phase 1 — Attention (Gathering)</div>
+          <div style="font-size:13.5px; line-height:1.7; color:#333;">The analyst reaches out to colleagues, reads related reports, and gathers information. They ask: "What do others know about this topic that I need?" This is cross-token, relational work.</div>
+        </div>
+        <div style="background:#FFEBEE; border-radius:10px; padding:16px 18px; border-left:4px solid #C62828;">
+          <div style="font-weight:bold; font-size:14px; margin-bottom:8px; font-family:Arial,sans-serif; color:#C62828;">Phase 2 — FFN (Processing)</div>
+          <div style="font-size:13.5px; line-height:1.7; color:#333;">The analyst sits at their desk alone, thinks deeply, synthesises what they gathered, and writes their analysis. This is individual, token-level reasoning — no looking outward, just thinking through what has been collected.</div>
+        </div>
+      </div>
+
+      <p>A transformer layer always does these in sequence: Attention first (gather context), then FFN (process it). This pair repeats at every layer, each time producing a richer understanding of the tokens.</p>
+
+      <div class="callout callout-red">
+        <strong>Why this matters for inference:</strong> The FFN is not just a minor component. In a standard Transformer, the FFN accounts for roughly <strong>two-thirds of the total model parameters</strong>. Attention is powerful but compact. The FFN is where most of the model's "knowledge" and reasoning capacity is stored — which is also why it is the biggest contributor to model weight size on disk and in GPU memory.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: FFN vs Attention on inference -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">3</span>
+        FFN vs Attention — Different Bottlenecks
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>For inference optimisation, it is important to understand that Attention and the FFN create <em>different kinds</em> of bottlenecks. This shapes which techniques fix which problem.</p>
+
+      <div class="fa-compare">
+        <div class="fa-box" style="background:#E3F2FD; border:1px solid #90CAF9;">
+          <div class="fa-box-title" style="color:#1565C0;">Attention Bottleneck</div>
+          <div class="fa-row">Scales with sequence length (quadratic)</div>
+          <div class="fa-row">Bottleneck grows as context gets longer</div>
+          <div class="fa-row">KV Cache is the main memory burden</div>
+          <div class="fa-row">Fixed by: Flash Attention, Paged Attention, GQA</div>
+        </div>
+        <div class="fa-box" style="background:#FFEBEE; border:1px solid #FFCDD2;">
+          <div class="fa-box-title" style="color:#C62828;">FFN Bottleneck</div>
+          <div class="fa-row">Scales with model size (number of parameters)</div>
+          <div class="fa-row">Bottleneck is constant regardless of context length</div>
+          <div class="fa-row">Model weights are the main memory burden</div>
+          <div class="fa-row">Fixed by: Quantisation, MoE, tensor parallelism</div>
+        </div>
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>Practical takeaway for customer conversations:</strong> When a customer says "our model is slow", the first question is: is it slow because of long contexts (Attention bottleneck) or because the model is just too large for their GPU (FFN / weight bottleneck)? These require different solutions. Understanding the distinction makes you a much more credible technical advisor.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: FFN size table -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">4</span>
+        How FFN Size Scales with Model Size
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>The FFN intermediate size (the expanded dimension in Step 1) is typically 4x the embedding dimension. For large models, this adds up quickly:</p>
+
+      <table class="size-table">
+        <thead>
+          <tr>
+            <th>Model Size</th>
+            <th>Embedding Dim</th>
+            <th>FFN Intermediate</th>
+            <th>% of Total Params</th>
+            <th>Inference Implication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="st-term">7B</td>
+            <td>4,096</td>
+            <td>~11,008</td>
+            <td>~65% FFN</td>
+            <td>Fits on a single A100 80GB in FP16</td>
+          </tr>
+          <tr>
+            <td class="st-term">13B</td>
+            <td>5,120</td>
+            <td>~13,824</td>
+            <td>~65% FFN</td>
+            <td>Tight on one A100, comfortable with quantisation</td>
+          </tr>
+          <tr>
+            <td class="st-term">70B</td>
+            <td>8,192</td>
+            <td>~28,672</td>
+            <td>~67% FFN</td>
+            <td>Requires multiple GPUs or heavy quantisation</td>
+          </tr>
+          <tr>
+            <td class="st-term">405B</td>
+            <td>16,384</td>
+            <td>~53,248</td>
+            <td>~68% FFN</td>
+            <td>Requires large GPU clusters or MoE architecture</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-green">
+        <strong>Why quantisation targets the FFN first:</strong> Since the FFN holds most of the model's weight, compressing it (e.g. from FP16 to INT8 or INT4) yields the biggest memory savings. Quantising just the FFN weights can reduce model size by 50–75% with manageable quality impact. You will learn this in detail in Module 3.3.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Mixture of Experts -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">5</span>
+        Mixture of Experts (MoE) — The Modern FFN Evolution
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>Standard FFNs run the same set of weights for every single token. This is effective but wasteful — a token about "GPU architecture" and a token about "cooking recipes" both go through the exact same weights, even though they need completely different reasoning.</p>
+      <p><strong>Mixture of Experts (MoE)</strong> solves this. Instead of one FFN, it has many smaller FFNs called <em>experts</em>. A lightweight router decides which 1–2 experts are most relevant for each token, and only those experts are activated.</p>
+
+      <div style="background:#F8F0FF; border-radius:12px; padding:20px 22px; margin:16px 0;">
+        <div style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; margin-bottom:12px;">MoE — only 2 of 8 experts activate per token</div>
+        <div class="moe-grid">
+          <div class="moe-expert active-expert" style="background:#F3E8FD;">
+            <div class="moe-label">Expert 1</div>
+            <div class="moe-name" style="color:#7B1FA2;">Technical</div>
+            <div class="moe-badge" style="background:#7B1FA2; color:white;">ACTIVE</div>
+          </div>
+          <div class="moe-expert" style="background:#F5F5F5; opacity:0.5;">
+            <div class="moe-label">Expert 2</div>
+            <div class="moe-name" style="color:#888;">Creative</div>
+            <div class="moe-badge" style="background:#E0E0E0; color:#888;">idle</div>
+          </div>
+          <div class="moe-expert" style="background:#F5F5F5; opacity:0.5;">
+            <div class="moe-label">Expert 3</div>
+            <div class="moe-name" style="color:#888;">Legal</div>
+            <div class="moe-badge" style="background:#E0E0E0; color:#888;">idle</div>
+          </div>
+          <div class="moe-expert active-expert" style="background:#E3F2FD;">
+            <div class="moe-label">Expert 4</div>
+            <div class="moe-name" style="color:#1565C0;">Reasoning</div>
+            <div class="moe-badge" style="background:#1565C0; color:white;">ACTIVE</div>
+          </div>
+          <div class="moe-expert" style="background:#F5F5F5; opacity:0.5;">
+            <div class="moe-label">Expert 5</div>
+            <div class="moe-name" style="color:#888;">Medical</div>
+            <div class="moe-badge" style="background:#E0E0E0; color:#888;">idle</div>
+          </div>
+          <div class="moe-expert" style="background:#F5F5F5; opacity:0.5;">
+            <div class="moe-label">Expert 6</div>
+            <div class="moe-name" style="color:#888;">Financial</div>
+            <div class="moe-badge" style="background:#E0E0E0; color:#888;">idle</div>
+          </div>
+          <div class="moe-expert" style="background:#F5F5F5; opacity:0.5;">
+            <div class="moe-label">Expert 7</div>
+            <div class="moe-name" style="color:#888;">Linguistic</div>
+            <div class="moe-badge" style="background:#E0E0E0; color:#888;">idle</div>
+          </div>
+          <div class="moe-expert" style="background:#F5F5F5; opacity:0.5;">
+            <div class="moe-label">Expert 8</div>
+            <div class="moe-name" style="color:#888;">General</div>
+            <div class="moe-badge" style="background:#E0E0E0; color:#888;">idle</div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; color:#777; font-family:Arial,sans-serif; margin-top:12px; line-height:1.6;">For a technical reasoning token, only Expert 1 (Technical) and Expert 4 (Reasoning) activate. The other 6 experts sit idle — saving compute while keeping quality high.</div>
+      </div>
+
+      <div class="callout callout-purple">
+        <strong>Why MoE matters for inference:</strong> A Mixtral 8x7B model has 8 experts per layer, but only activates 2 per token. It has 47B total parameters but only uses ~13B active parameters per token — giving near-70B quality at 13B compute cost. The catch: all 47B weights still need to fit in GPU memory. This is the key MoE trade-off — high quality at lower compute, but higher memory than a dense model of equivalent active size.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">6</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <div class="key-item">
+        <div class="key-num" style="color:#C62828;">01</div>
+        <div>
+          <div class="key-title">Attention gathers. FFN processes.</div>
+          <div class="key-desc">Every transformer layer does both in sequence. Attention collects relevant context from across the sequence. The FFN then reasons through that context at the individual token level. Neither works well without the other.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">02</div>
+        <div>
+          <div class="key-title">The FFN holds ~65–70% of a model's parameters</div>
+          <div class="key-desc">This is why quantisation — compressing weight precision — is so effective. Reducing FFN weight size from FP16 to INT4 cuts model memory requirements by 75%. It is the single biggest lever for fitting large models onto fewer GPUs.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">03</div>
+        <div>
+          <div class="key-title">FFN bottleneck is about model size, not context length</div>
+          <div class="key-desc">Unlike Attention (which gets worse with longer sequences), the FFN cost is the same regardless of how long the input is. If a model is slow on short prompts too, the bottleneck is the FFN — likely a GPU memory or compute capacity issue, not a context issue.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#7B1FA2;">04</div>
+        <div>
+          <div class="key-title">MoE gives large-model quality at lower active compute cost</div>
+          <div class="key-desc">By activating only the most relevant experts per token, MoE models like Mixtral achieve high quality with much lower per-token compute. The trade-off is total memory: all experts must be loaded. MoE is ideal when you have GPU memory headroom but want to reduce compute cost.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat Sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 1.5 — CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Feed Forward Network (FFN)</div>
+        <div class="cheat-def">Second half of every transformer block. Processes each token individually using a two-step expand-then-contract operation.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">FFN Intermediate Size</div>
+        <div class="cheat-def">The expanded dimension in the first FFN step. Typically 4x the embedding dimension. Larger = more reasoning capacity.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Dense FFN</div>
+        <div class="cheat-def">Standard FFN — all parameters activate for every token. Simple but computationally uniform regardless of input type.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Mixture of Experts (MoE)</div>
+        <div class="cheat-def">Multiple smaller FFNs (experts) with a router that selects which ones activate per token. High quality at lower compute cost.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Active Parameters</div>
+        <div class="cheat-def">In MoE: the parameters actually used per token. Much smaller than total parameters. Determines compute cost per token.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Total Parameters</div>
+        <div class="cheat-def">All parameters including idle MoE experts. Determines GPU memory requirement regardless of how many activate.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">FFN Bottleneck</div>
+        <div class="cheat-def">Slowness caused by model weight size. Constant regardless of context length. Fixed by quantisation, MoE, or tensor parallelism.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Attention Bottleneck</div>
+        <div class="cheat-def">Slowness caused by long sequences. Grows quadratically with context. Fixed by Flash Attention, GQA, Paged Attention.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer is running a Mixtral 8x7B model (47B total parameters, ~13B active per token). They have 80GB of GPU memory but find the model is slow even on very short prompts. What is the most likely explanation and recommended direction?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        The KV Cache is overflowing — they need to reduce their context window length
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        Even though only 13B parameters are active per token, all 47B parameters must be loaded into GPU memory — if the GPU is near capacity from model weights alone, it will be slow regardless of prompt length. The fix is quantisation or adding more GPU memory.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        Mixtral does not support short prompts efficiently — they should switch to a dense model
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        The attention mechanism is the bottleneck — Flash Attention should fix it
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <!-- Next -->
+  <div class="next-module">
+    <div>
+      <div class="next-label">UP NEXT</div>
+      <div class="next-title">Module 1.6 — The Full Transformer Block</div>
+      <div class="next-sub">How Attention and FFN stack together into layers — and what that means for inference depth</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </div>
+
+</div>
+
+<script>
+  var colors = {1:'#C62828',2:'#1565C0',3:'#E65100',4:'#2E7D32',5:'#7B1FA2',6:'#283593'};
+  var bgs    = {1:'#FFEBEE',2:'#E3F2FD',3:'#FFF3E0',4:'#E8F5E9',5:'#F3E8FD',6:'#E8EAF6'};
+
+  function toggle(n) {
+    var body = document.getElementById('bdy'+n);
+    var chv  = document.getElementById('chv'+n);
+    var hdr  = document.getElementById('hdr'+n);
+    var isOpen = body.classList.contains('open');
+    body.classList.toggle('open');
+    chv.classList.toggle('open');
+    hdr.style.borderLeftColor = isOpen ? '#E8E8E8' : colors[n];
+    hdr.style.background      = isOpen ? 'white'   : bgs[n];
+  }
+
+  var selected = null;
+  var answered = false;
+
+  function selectOption(el, id) {
+    if (answered) return;
+    document.querySelectorAll('.quiz-option').forEach(function(o) {
+      o.classList.remove('selected');
+      o.querySelector('.opt-letter').classList.remove('active');
+    });
+    el.classList.add('selected');
+    el.querySelector('.opt-letter').classList.add('active');
+    selected = id;
+    document.getElementById('check-btn').style.display = 'inline-block';
+  }
+
+  function checkAnswer() {
+    if (!selected || answered) return;
+    answered = true;
+    var opts = document.querySelectorAll('.quiz-option');
+    ['a','b','c','d'].forEach(function(l, i) {
+      opts[i].style.cursor = 'default'; opts[i].onclick = null;
+      if (l === 'b') opts[i].classList.add('correct');
+      else if (l === selected) opts[i].classList.add('wrong');
+    });
+    var result = document.getElementById('quiz-result');
+    result.style.display = 'block';
+    if (selected === 'b') {
+      result.style.background = '#E8F5E9';
+      result.innerHTML = '<strong>Correct!</strong> This is a classic MoE trade-off. Mixtral 8x7B in FP16 requires ~94GB just for the model weights — which already exceeds a single 80GB A100. The model is memory-bound before any inference even begins. The recommended solutions: (1) quantise to INT8 or INT4 to cut weight size in half or more, (2) use tensor parallelism across two GPUs, or (3) use a TensorRT-LLM optimised build. The short prompt tells you immediately it is not a KV Cache or context-length problem.';
+    } else {
+      result.style.background = '#FFF3E0';
+      result.innerHTML = '<strong>Not quite.</strong> The clue is that it is slow on <em>short</em> prompts — which rules out context length and KV Cache issues. The problem is the FFN weight bottleneck (Option B). Mixtral 8x7B at FP16 requires ~94GB for weights alone, exceeding an 80GB A100. Quantisation or multi-GPU deployment is needed.';
+    }
+    document.getElementById('check-btn').style.display = 'none';
+  }
+</script>
+</body>
+</html>

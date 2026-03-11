@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Engineering: Chapter 7 Interactive Summary - Finetuning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Navigation: Sidebar with 7 links (JS content switching). Goal: Easy access.
+        - Progression Path (Slide 2): Interactive HTML/CSS step-diagram. Goal: Visualize decision flow.
+        - Memory Considerations (Slide 3): Accordion for contributors. Chart.js Bar chart for conceptual memory footprint (Full vs PEFT vs PEFT+Quant). Goal: Quantifiable concept.
+        - Quantization (Slide 4): Side-by-side styled cards for PTQ vs QAT. Goal: Clear comparison.
+        - PEFT Approaches (Slide 5): Tab-like clickable cards for Adapter-based (LoRA) vs Soft Prompt-based, showing diagrams. Goal: Detailed explanation with visuals.
+        - Model Merging (Slide 6): Accordion for strategies with simple HTML/CSS diagrams. Goal: Explain complex techniques clearly.
+        - All textual content from source.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            background-color: #f0f9ff; /* sky-50 */
+            color: #0369a1; /* sky-700 */
+        }
+        .nav-link.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+            font-weight: 600;
+        }
+        .accordion-header {
+            cursor: pointer;
+        }
+        .accordion-content {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+        .accordion-content.open {
+            display: block;
+            max-height: 1000px; 
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; 
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; 
+            max-height: 350px;
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 320px;
+            }
+        }
+        .step-diagram-item {
+            background-color: #f0f9ff; /* sky-50 */
+            border: 1px solid #bae6fd; /* sky-200 */
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .step-diagram-item:hover, .step-diagram-item.active-step {
+            background-color: #e0f2fe; /* sky-100 */
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .step-diagram-arrow {
+            font-size: 1.5rem; /* 24px */
+            color: #38bdf8; /* sky-400 */
+        }
+        .info-card {
+            background-color: #f0fdfa; /* teal-50 */
+            border: 1px solid #99f6e4; /* teal-200 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        .clickable-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .clickable-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.07);
+        }
+        .diagram-box {
+            border: 1px dashed #cbd5e1; /* slate-300 */
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            text-align: center;
+            background-color: #f8fafc; /* slate-50 */
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <nav class="w-full md:w-72 bg-white p-6 shadow-lg flex-shrink-0">
+            <h1 class="text-2xl font-bold text-sky-700 mb-6 border-b pb-3">AI Engineering Ch.7</h1>
+            <ul class="space-y-2">
+                <li><a class="nav-link active" data-target="slide1-ch7">1. Intro to Finetuning</a></li>
+                <li><a class="nav-link" data-target="slide2-ch7">2. When to Fine-tune</a></li>
+                <li><a class="nav-link" data-target="slide3-ch7">3. Memory Considerations</a></li>
+                <li><a class="nav-link" data-target="slide4-ch7">4. Quantization Approaches</a></li>
+                <li><a class="nav-link" data-target="slide5-ch7">5. PEFT Approaches</a></li>
+                <li><a class="nav-link" data-target="slide6-ch7">6. Model Merging</a></li>
+                <li><a class="nav-link" data-target="slide7-ch7">7. Conclusion</a></li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            
+            <section id="slide1-ch7" class="content-section active">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Introduction to Finetuning</h2>
+                    <p class="mb-6 text-slate-600">This section introduces Finetuning as a significant technique in AI engineering. It defines the process, positions it as an advanced model adaptation method beyond simpler techniques like prompt engineering and RAG, and highlights the "last resort" philosophy advocated in the chapter due to its inherent complexities and resource demands.</p>
+                    <div class="space-y-4 text-slate-700">
+                        <p><strong class="text-sky-600">Definition:</strong> Finetuning is the process of further training a pre-trained foundation model on a smaller, task-specific dataset to adapt its capabilities to a particular application or domain. This allows the model to specialize its knowledge and behavior.</p>
+                        <p><strong class="text-sky-600">Role in AI Engineering:</strong> It's an advanced model adaptation technique, typically considered when more straightforward methods like prompt engineering and Retrieval-Augmented Generation (RAG) do not yield the desired performance or specificity.</p>
+                        <p><strong class="text-sky-600">"Last Resort" Approach:</strong> The chapter emphasizes that finetuning should be considered <strong class="text-rose-600">after</strong> simpler, more economical solutions have been thoroughly explored and exhausted. This is due to the significant investment required.</p>
+                        <p><strong class="text-sky-600">Complexity:</strong> While the technical process of finetuning itself might not always be overly complex (especially with modern tools), the surrounding infrastructure (e.g., data pipelines, compute resources), rigorous data curation, and long-term maintenance requirements for finetuned models are substantial and should not be underestimated.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide2-ch7" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">When to Fine-tune (Core Decision)</h2>
+                    <p class="mb-6 text-slate-600">Deciding whether to fine-tune a model is a critical strategic choice. This section outlines the criteria for this decision, the potential benefits of finetuning, and a recommended progression path that prioritizes simpler adaptation methods before resorting to finetuning.</p>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-2">Decision Criteria:</h3>
+                        <p class="text-slate-700 text-sm">The decision to fine-tune should not be taken lightly. It requires weighing potential benefits (e.g., improved quality, task-specific capabilities) against significant costs (e.g., data collection, compute resources, maintenance) and complexities.</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Benefits of Finetuning:</h3>
+                        <ul class="list-disc list-inside space-y-1 text-slate-700 text-sm">
+                            <li>Improved model quality and performance for specific, niche tasks.</li>
+                            <li>Enhanced task-specific capabilities that general models might lack.</li>
+                            <li>Better alignment with domain-specific language, jargon, and nuances.</li>
+                            <li>Potentially reduced inference latency or cost if a smaller, finetuned model can replace a larger general one for specific tasks.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Progression Path (Prioritization):</h3>
+                        <p class="text-slate-700 text-sm mb-3">A clear pathway for model adaptation, starting with the simplest methods:</p>
+                        <div class="flex flex-col space-y-2" id="progressionPath">
+                            </div>
+                        <div id="progressionDetails" class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 hidden">Select a step to see details.</div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold text-sky-600 mb-2">Alternative to Finetuning:</h3>
+                        <p class="text-slate-700 text-sm">For complex tasks, breaking them down into simpler, manageable components that can be addressed by sophisticated prompt engineering or RAG might still be preferable to, or a prerequisite for, effective full finetuning.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide3-ch7" class="content-section">
+                 <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Memory Considerations in Finetuning</h2>
+                    <p class="mb-6 text-slate-600">Finetuning large foundation models can be extremely memory-intensive, posing a significant challenge in terms of computational resources. This section details the key factors contributing to this memory footprint and introduces concepts for mitigation.</p>
+                    <p class="mb-4 text-slate-700"><strong class="text-rose-600">Challenge:</strong> Finetuning large models requires substantial GPU memory, often exceeding what's readily available.</p>
+                    
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="lg:w-1/2">
+                            <h3 class="text-xl font-semibold text-sky-600 mb-3">Key Contributors to Memory Footprint:</h3>
+                            <div id="memoryContributorsAccordion" class="space-y-2">
+                                </div>
+                        </div>
+                        <div class="lg:w-1/2">
+                            <h3 class="text-xl font-semibold text-sky-600 mb-4 text-center">Conceptual Memory Footprint</h3>
+                            <div class="chart-container bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <canvas id="memoryFootprintChart"></canvas>
+                            </div>
+                            <p class="text-sm text-slate-500 mt-2 text-center">Illustrative: Relative memory usage by finetuning approach.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide4-ch7" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Quantization Approaches</h2>
+                    <p class="mb-6 text-slate-600">Quantization is a key technique for reducing the memory footprint and often improving the inference speed of models by using lower-precision numeric representations for weights and/or activations. This section explains its purpose and compares Post-Training Quantization (PTQ) with Quantization-Aware Training (QAT).</p>
+                    <p class="mb-4 text-slate-700"><strong class="text-sky-600">Purpose:</strong> Reduces the precision of model weights and/or activations, thereby decreasing memory footprint and improving inference speed, with a potential trade-off in model accuracy.</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="info-card bg-sky-50 border-sky-200 p-6 rounded-lg">
+                            <h3 class="text-lg font-semibold text-sky-700 mb-2">Post-Training Quantization (PTQ)</h3>
+                            <p class="text-sm font-medium text-slate-600 mb-1">Description:</p>
+                            <p class="text-xs text-slate-600 mb-2">Quantization applied *after* the model has been fully trained (or finetuned).</p>
+                            <p class="text-sm font-medium text-slate-600 mb-1">Characteristics:</p>
+                            <ul class="list-disc list-inside ml-4 text-xs text-slate-600 mb-2">
+                                <li>Most common approach, simpler to implement.</li>
+                                <li>Particularly relevant for AI application developers focusing on deployment.</li>
+                                <li>Supported by major frameworks with minimal code changes.</li>
+                            </ul>
+                            <p class="text-sm font-medium text-slate-600 mb-1">Benefit:</p>
+                            <p class="text-xs text-slate-600">Reduces model size and speeds up inference without requiring retraining or access to the original training data.</p>
+                        </div>
+                        <div class="info-card bg-teal-50 border-teal-200 p-6 rounded-lg">
+                            <h3 class="text-lg font-semibold text-teal-700 mb-2">Training Quantization (QAT - Quantization-Aware Training)</h3>
+                            <p class="text-sm font-medium text-slate-600 mb-1">Description:</p>
+                            <p class="text-xs text-slate-600 mb-2">Quantization is integrated into the training or finetuning process itself. The model learns to be robust to lower precision during training.</p>
+                            <p class="text-sm font-medium text-slate-600 mb-1">Characteristics:</p>
+                            <ul class="list-disc list-inside ml-4 text-xs text-slate-600 mb-2">
+                                <li>Emerging approach gaining traction, more complex.</li>
+                                <li>Simulates quantization effects during training.</li>
+                            </ul>
+                            <p class="text-sm font-medium text-slate-600 mb-1">Benefit:</p>
+                            <p class="text-xs text-slate-600">Aims to optimize both inference performance and training costs, often leading to better accuracy retention compared to PTQ, especially at very low bit-widths (e.g., INT4).</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide5-ch7" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Parameter-Efficient Finetuning (PEFT) Approaches</h2>
+                    <p class="mb-6 text-slate-600">Parameter-Efficient Finetuning (PEFT) methods are crucial for making the finetuning of very large models feasible by updating only a small subset of parameters. This section explores the purpose of PEFT and details two primary categories: adapter-based methods and soft prompt-based methods.</p>
+                    <p class="mb-4 text-slate-700"><strong class="text-sky-600">Purpose:</strong> PEFT methods enable finetuning large models without updating all of their parameters, significantly reducing computational cost, memory usage, and catastrophic forgetting.</p>
+                    
+                    <div class="space-y-6" id="peftContainer">
+                        </div>
+                    <div id="peftDetails" class="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 hidden"></div>
+                </div>
+            </section>
+
+            <section id="slide6-ch7" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Model Merging</h2>
+                    <p class="mb-6 text-slate-600">Model merging offers innovative solutions to challenges in multitask learning and model specialization. This section discusses the traditional challenges, how model merging provides an elegant solution, its primary strategies, and benefits.</p>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-rose-600 mb-2">Challenge: Multitask Learning</h3>
+                        <p class="text-sm text-slate-600">Traditional approaches often face issues:</p>
+                        <ul class="list-disc list-inside ml-4 text-xs text-slate-500 space-y-1">
+                            <li><strong>Simultaneous Training:</strong> Requires comprehensive, balanced datasets for all tasks; often leads to compromised per-task performance.</li>
+                            <li><strong>Sequential Training:</strong> Risks catastrophic forgetting (new tasks overwrite previous learning); requires careful task ordering and learning rate tuning.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-2">Solution: Model Merging</h3>
+                        <p class="text-sm text-slate-700">Enables an elegant solution by allowing individual models (or adapters) to be fine-tuned for specific tasks independently and then combined.</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Technical Architecture: Primary Merging Strategies (Click to see conceptual diagram)</h3>
+                        <div id="mergingStrategiesAccordion" class="space-y-2">
+                            </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold text-sky-600 mb-3">Benefits of Model Merging:</h3>
+                        <ul class="list-disc list-inside space-y-1 text-slate-700 text-sm">
+                            <li>Individual models/adapters can be finetuned in parallel, optimizing resource usage.</li>
+                            <li>Preserves task-specific optimizations while allowing combination of capabilities.</li>
+                            <li>Reduces the need for complex multitask dataset creation or risky sequential training.</li>
+                            <li>Allows for dynamic composition of skills by selecting and merging relevant models/adapters.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide7-ch7" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Conclusion: Nuances of Finetuning</h2>
+                    <p class="mb-6 text-slate-600">Chapter 7 provides a thorough exploration of finetuning, presenting it as a powerful yet nuanced technique within the AI engineering toolkit. It emphasizes a strategic approach, considering various factors beyond just the technical implementation.</p>
+                    <div class="space-y-4 text-slate-700">
+                        <p><strong class="text-sky-600">Key Takeaways:</strong></p>
+                        <ul class="list-disc list-inside ml-6 space-y-2 text-sm">
+                            <li>Finetuning is an advanced adaptation method, best considered a <strong class="text-rose-600">last resort</strong> after simpler techniques like prompt engineering and RAG have been fully explored.</li>
+                            <li>Effective memory management through techniques like <strong class="text-teal-600">quantization</strong> and <strong class="text-teal-600">Parameter-Efficient Finetuning (PEFT)</strong> is crucial for making finetuning feasible and efficient, especially for large models.</li>
+                            <li><strong class="text-teal-600">Model merging</strong> offers innovative and flexible solutions for multitask learning and combining specialized model capabilities.</li>
+                        </ul>
+                        <p><strong class="text-sky-600">Holistic View:</strong> Success with finetuning requires more than just technical execution. It demands careful consideration of business priorities, available resources (data, compute, expertise), and robust long-term maintenance capabilities for the finetuned models.</p>
+                        <p><strong class="text-sky-600">Evolving Field:</strong> The landscape of model adaptation, including finetuning, is constantly evolving. New techniques and tools are continuously emerging, aiming to make these processes more accessible, efficient, and effective for a wider range of applications. Staying updated is key.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            
+            function showSection(targetId) {
+                contentSections.forEach(section => section.classList.remove('active'));
+                const activeSection = document.getElementById(targetId);
+                if (activeSection) activeSection.classList.add('active');
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.target === targetId) link.classList.add('active');
+                });
+                document.querySelector('main').scrollTop = 0;
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    showSection(this.dataset.target);
+                });
+            });
+
+            // Progression Path Interaction (Slide 2)
+            const progressionPathContainer = document.getElementById('progressionPath');
+            const progressionDetailsDiv = document.getElementById('progressionDetails');
+            const progressionSteps = [
+                { name: "1. Prompt Engineering", detail: "Start here. Most economical and fastest. Focus on clear instructions, context, and few-shot examples." },
+                { name: "2. Add Examples (Few-Shot)", detail: "If prompting alone isn't enough, incorporate up to ~50 diverse examples directly into your prompts to better guide the model's behavior and output style." },
+                { name: "3. Implement RAG", detail: "If the model lacks specific knowledge, access to up-to-date information, or needs to use private data, use Retrieval-Augmented Generation to provide relevant context at inference time." },
+                { name: "4. Consider Finetuning (Last Resort)", detail: "Only when the above methods are insufficient for achieving desired performance. Requires significant data, compute, and maintenance effort." }
+            ];
+
+            if (progressionPathContainer) {
+                progressionSteps.forEach((step, index) => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'step-diagram-item';
+                    stepDiv.textContent = step.name;
+                    stepDiv.onclick = () => {
+                        progressionPathContainer.querySelectorAll('.step-diagram-item').forEach(el => el.classList.remove('active-step', 'bg-sky-200', 'border-sky-400'));
+                        stepDiv.classList.add('active-step', 'bg-sky-200', 'border-sky-400');
+                        progressionDetailsDiv.innerHTML = `<strong>${step.name}:</strong> ${step.detail}`;
+                        progressionDetailsDiv.classList.remove('hidden');
+                    };
+                    progressionPathContainer.appendChild(stepDiv);
+                    if (index < progressionSteps.length - 1) {
+                        const arrowDiv = document.createElement('div');
+                        arrowDiv.className = 'step-diagram-arrow self-center';
+                        arrowDiv.innerHTML = '▼';
+                        progressionPathContainer.appendChild(arrowDiv);
+                    }
+                });
+            }
+            
+            // Generic Accordion Initializer
+            function initializeAccordion(containerId, itemsData, itemClasses, headerClasses, contentClasses, arrowClasses) {
+                const accordionContainer = document.getElementById(containerId);
+                if (!accordionContainer) return;
+                accordionContainer.innerHTML = ''; 
+
+                itemsData.forEach(itemData => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = itemClasses || 'accordion-item border border-slate-200 rounded-lg';
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = headerClasses || 'accordion-header bg-slate-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-slate-100 transition';
+                    headerDiv.innerHTML = `<span class="font-medium text-slate-700 text-sm">${itemData.title}</span><span class="arrow ${arrowClasses || 'text-slate-700'} transform transition-transform duration-300 text-sm">▼</span>`;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = contentClasses || 'accordion-content p-3 bg-white rounded-b-lg';
+                    
+                    let contentHTML = `<p class="text-slate-600 text-xs">${itemData.content}</p>`;
+                     if (itemData.diagram) {
+                        contentHTML += `<div class="mt-2 p-2 border border-slate-200 rounded bg-slate-50 text-center text-xs">${itemData.diagram}</div>`;
+                    }
+                    contentDiv.innerHTML = contentHTML;
+                    
+                    itemDiv.appendChild(headerDiv);
+                    itemDiv.appendChild(contentDiv);
+                    accordionContainer.appendChild(itemDiv);
+
+                    headerDiv.addEventListener('click', () => {
+                        const isOpen = contentDiv.classList.contains('open');
+                        if (isOpen) {
+                            contentDiv.classList.remove('open');
+                            contentDiv.style.maxHeight = null;
+                            headerDiv.querySelector('.arrow').classList.remove('rotate-180');
+                        } else {
+                            contentDiv.classList.add('open');
+                            contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
+                            headerDiv.querySelector('.arrow').classList.add('rotate-180');
+                        }
+                    });
+                });
+            }
+
+            const memoryContributorsData = [
+                { title: '1. Parameter Count', content: 'The total number of parameters in the model. Larger models (e.g., billions of parameters) naturally require more memory for weights, gradients, and optimizer states.' },
+                { title: '2. Trainable Parameter Count', content: 'The number of parameters actually being updated during finetuning. Full finetuning updates all parameters. PEFT techniques significantly reduce this by freezing most parameters.' },
+                { title: '3. Numeric Representations (Precision)', content: 'The precision used for model weights, activations, and gradients (e.g., FP32 - 32-bit floating point, FP16 - 16-bit, BF16, INT8 - 8-bit integer). Lower precision reduces memory but can impact accuracy.' }
+            ];
+            initializeAccordion('memoryContributorsAccordion', memoryContributorsData,
+                'accordion-item border border-rose-200 rounded-lg',
+                'accordion-header bg-rose-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-rose-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-rose-700'
+            );
+
+            // Chart.js for Memory Footprint (Slide 3)
+            const memoryCtx = document.getElementById('memoryFootprintChart');
+            if (memoryCtx) {
+                new Chart(memoryCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Full Finetuning', 'PEFT (e.g., LoRA)', 'PEFT + Quantization'],
+                        datasets: [{
+                            label: 'Relative Memory Usage',
+                            data: [100, 20, 10], // Conceptual values
+                            backgroundColor: [
+                                'rgba(239, 68, 68, 0.6)', // rose-500
+                                'rgba(59, 130, 246, 0.6)', // blue-500
+                                'rgba(20, 184, 166, 0.6)'  // teal-500
+                            ],
+                            borderColor: [
+                                'rgba(239, 68, 68, 1)',
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(20, 184, 166, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Relative Memory Usage (%)' }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.raw + '% (Conceptual)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // PEFT Approaches (Slide 5)
+            const peftContainer = document.getElementById('peftContainer');
+            const peftDetailsDiv = document.getElementById('peftDetails');
+            const peftMethods = [
+                { 
+                    name: '1. Adapter-based Methods (Additive)', 
+                    id: 'adapter',
+                    concept: 'Involve adding small, trainable modules (adapters) to an existing pre-trained model\'s architecture. Only these new modules are trained, keeping the original model weights frozen.',
+                    implementation: '<strong>Most Popular:</strong> LoRA (Low-Rank Adaptation). Others: Dora, qDora.',
+                    benefit: 'Highly efficient, allows multiple task-specific adapters on a single base model, significantly reduces trainable parameters.',
+                    diagram: '<div class="flex items-center justify-center space-x-2"><div class="diagram-box">Frozen Base Model</div> <span class="text-2xl text-sky-500">+</span> <div class="diagram-box text-sky-700 border-sky-500">Small Trainable Adapters (LoRA)</div></div>'
+                },
+                { 
+                    name: '2. Soft Prompt-based Methods', 
+                    id: 'softprompt',
+                    concept: 'Introduce trainable "soft prompts" (continuous vector embeddings) that are prepended or inserted into the model\'s input. These soft prompts are trained, while the main model weights remain frozen.',
+                    characteristics: 'Less common than adapter-based methods but growing in popularity.',
+                    benefit: 'Offers a middle ground between full finetuning and basic prompting, providing more flexibility than simple text prompts without modifying model architecture.',
+                    diagram: '<div class="flex items-center justify-center space-x-2"><div class="diagram-box text-sky-700 border-sky-500">Trainable Soft Prompt</div> <span class="text-2xl text-sky-500">➔</span> <div class="diagram-box">Frozen Base Model Input</div></div>'
+                }
+            ];
+            if(peftContainer && peftDetailsDiv){
+                peftMethods.forEach(method => {
+                    const card = document.createElement('div');
+                    card.className = 'clickable-card p-4 border border-sky-200 rounded-lg bg-sky-50';
+                    card.innerHTML = `<h4 class="font-semibold text-sky-700 mb-2">${method.name}</h4>`;
+                    card.onclick = () => {
+                        peftContainer.querySelectorAll('.clickable-card').forEach(c => c.classList.remove('bg-sky-100', 'ring-2', 'ring-sky-300'));
+                        card.classList.add('bg-sky-100', 'ring-2', 'ring-sky-300');
+                        let detailsHTML = `<strong>Concept:</strong> ${method.concept}<br>`;
+                        if(method.implementation) detailsHTML += `<strong>Implementation:</strong> ${method.implementation}<br>`;
+                        if(method.characteristics) detailsHTML += `<strong>Characteristics:</strong> ${method.characteristics}<br>`;
+                        detailsHTML += `<strong>Benefit:</strong> ${method.benefit}`;
+                        if(method.diagram) detailsHTML += `<div class="mt-3 p-2 border border-slate-200 rounded bg-white">${method.diagram}</div>`;
+                        peftDetailsDiv.innerHTML = detailsHTML;
+                        peftDetailsDiv.classList.remove('hidden');
+                    };
+                    peftContainer.appendChild(card);
+                });
+            }
+
+            // Model Merging Strategies (Slide 6)
+            const mergingStrategiesData = [
+                { 
+                    title: '1. Weight Averaging', 
+                    content: 'Simply averaging the corresponding weights from multiple finetuned models (derived from the same base model). Conceptually straightforward.',
+                    diagram: '<div class="flex items-center justify-around"><div class="diagram-box">Model A (Task 1)</div> <span class="text-2xl text-sky-500">+</span> <div class="diagram-box">Model B (Task 2)</div> <span class="text-2xl text-sky-500">➔</span> <div class="diagram-box text-sky-700 border-sky-500">Merged Model (Avg)</div></div>'
+                },
+                { 
+                    title: '2. Task Arithmetic', 
+                    content: 'Combining models by adding or subtracting their weight differences (deltas) from a common pre-trained base model. E.g., (Base + Delta_A) + (Base + Delta_B) - Base.',
+                    diagram: '<div class="flex items-center justify-around"><div class="diagram-box">Base + ΔA</div> <span class="text-2xl text-sky-500">&</span> <div class="diagram-box">Base + ΔB</div> <span class="text-2xl text-sky-500">➔</span> <div class="diagram-box text-sky-700 border-sky-500">Merged (Arithmetic)</div></div>'
+                },
+                { 
+                    title: '3. Linear Interpolation (e.g., TIES-Merging)', 
+                    content: 'Creating a new model by performing a weighted linear interpolation between the weights of different models. More sophisticated methods like TIES-Merging identify and resolve parameter sign conflicts before merging.',
+                    diagram: '<div class="flex items-center justify-around"><div class="diagram-box">Model A</div> <span class="text-2xl text-sky-500">α +</span> <div class="diagram-box">Model B</div> <span class="text-2xl text-sky-500">(1-α) ➔</span> <div class="diagram-box text-sky-700 border-sky-500">Merged (Interpolated)</div></div>'
+                }
+            ];
+            initializeAccordion('mergingStrategiesAccordion', mergingStrategiesData,
+                'accordion-item border border-teal-200 rounded-lg',
+                'accordion-header bg-teal-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-teal-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-teal-700'
+            );
+            
+            if (navLinks.length > 0) showSection(navLinks[0].dataset.target);
+        });
+    </script>
+</body>
+</html>

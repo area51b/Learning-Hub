@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Engineering: Chapter 3 Interactive Summary - Evaluation Methodology</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Navigation: Sidebar with 7 links (JS content switching). Goal: Easy access.
+        - Challenges (Slide 2): Accordion for detailed explanations. Chart.js bar chart for 'Investment Gap' (Model Dev vs. Eval Investment). Goal: Digestible list & visual concept.
+        - LM Metrics (Slide 3): Styled cards for each metric (Entropy, Cross-Entropy, Perplexity) with HTML/CSS for formula display. Goal: Clear presentation.
+        - Exact Evaluation (Slide 4): Cards for 'Functional Correctness' & 'Similarity Measurements', with sub-details for N-gram/Embedding. Goal: Structured information.
+        - AI as a Judge (Slide 5): HTML/CSS diagram for concept. Accordion for 'Limitations'. Goal: Visual explanation & detailed breakdown.
+        - Comparative Evaluation (Slide 6): HTML/CSS diagram for A/B comparison. List for 'Challenges'. Goal: Visual process & clear points.
+        - All textual content from source.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            background-color: #f0f9ff; /* sky-50 */
+            color: #0369a1; /* sky-700 */
+        }
+        .nav-link.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+            font-weight: 600;
+        }
+        .accordion-header {
+            cursor: pointer;
+        }
+        .accordion-content {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-content.open {
+            display: block;
+            max-height: 500px; /* Adjust as needed */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; 
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; 
+            max-height: 350px; /* Slightly reduced for bar chart */
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 320px; /* Slightly reduced for bar chart */
+            }
+        }
+        .metric-card, .eval-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .metric-card:hover, .eval-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f8fafc; /* slate-50 */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            color: #334155; /* slate-700 */
+            font-size: 0.9em;
+        }
+        .comparison-box {
+            border: 2px dashed #cbd5e1; /* slate-300 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <nav class="w-full md:w-72 bg-white p-6 shadow-lg flex-shrink-0">
+            <h1 class="text-2xl font-bold text-sky-700 mb-6 border-b pb-3">AI Engineering Ch.3</h1>
+            <ul class="space-y-2">
+                <li><a class="nav-link active" data-target="slide1-ch3">1. Criticality of Evaluation</a></li>
+                <li><a class="nav-link" data-target="slide2-ch3">2. Challenges in Evaluating FMs</a></li>
+                <li><a class="nav-link" data-target="slide3-ch3">3. Language Modeling Metrics</a></li>
+                <li><a class="nav-link" data-target="slide4-ch3">4. Exact Evaluation Approaches</a></li>
+                <li><a class="nav-link" data-target="slide5-ch3">5. AI as a Judge</a></li>
+                <li><a class="nav-link" data-target="slide6-ch3">6. Comparative Evaluation</a></li>
+                <li><a class="nav-link" data-target="slide7-ch3">7. Conclusion</a></li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            
+            <section id="slide1-ch3" class="content-section active">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">The Criticality of Evaluation</h2>
+                    <p class="mb-6 text-slate-600">This section introduces the central theme of Chapter 3: the indispensable role of evaluation in AI engineering. It highlights the growing risks associated with powerful AI models and positions evaluation as a key, albeit challenging, component in developing responsible and reliable AI applications.</p>
+                    <ul class="space-y-4 text-slate-700">
+                        <li><strong class="text-sky-600">Introduction:</strong> As AI models become more powerful and widely adopted, the potential for catastrophic failures increases significantly. We've seen examples like chatbots giving harmful advice or AI generating false evidence.</li>
+                        <li><strong class="text-sky-600">Core Problem:</strong> Without robust evaluation, the risks associated with AI applications (e.g., misinformation, bias, safety issues) can outweigh their potential benefits for many use cases.</li>
+                        <li><strong class="text-sky-600">Key Hurdle:</strong> Evaluation is often the biggest challenge in bringing AI applications to reality, sometimes consuming the majority of development effort due to the complexity of open-ended outputs.</li>
+                        <li><strong class="text-sky-600">Purpose of Chapter:</strong> This chapter covers various evaluation methods for open-ended models, their underlying mechanisms, and their inherent limitations, aiming to equip engineers with the knowledge to build better evaluation strategies.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="slide2-ch3" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Challenges of Evaluating Foundation Models</h2>
+                    <p class="mb-6 text-slate-600">Evaluating Foundation Models (FMs) presents unique and significant difficulties compared to traditional Machine Learning systems. This section outlines these core challenges, emphasizing why robust evaluation strategies are both critical and complex to implement.</p>
+                    
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="lg:w-1/2">
+                            <h3 class="text-xl font-semibold text-sky-600 mb-4">Key Challenges (Click to Expand):</h3>
+                            <div id="challengesAccordionCh3" class="space-y-2">
+                                </div>
+                        </div>
+                        <div class="lg:w-1/2">
+                            <h3 class="text-xl font-semibold text-sky-600 mb-4 text-center">Conceptual: The Investment Gap</h3>
+                            <div class="chart-container bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <canvas id="investmentGapChart"></canvas>
+                            </div>
+                            <p class="text-sm text-slate-500 mt-2 text-center">Illustrative representation of typical investment focus.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide3-ch3" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Language Modeling Metrics</h2>
+                    <p class="mb-6 text-slate-600">Since many Foundation Models have a core language modeling component, understanding specific metrics for language tasks is crucial. This section details key metrics like entropy, cross-entropy, and perplexity, explaining what they measure and how they help assess a model's language understanding and generation capabilities.</p>
+                    <p class="mb-4"><strong class="text-sky-600">Relevance:</strong> Crucial for assessing models with language components.</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="metric-card bg-sky-50 p-4 rounded-lg border border-sky-200">
+                            <h4 class="font-semibold text-sky-700 mb-1">Entropy</h4>
+                            <p class="text-sm text-slate-600">Measures uncertainty or randomness in a model's predictions. Quantifies the unpredictability of the next token.</p>
+                        </div>
+                        <div class="metric-card bg-sky-50 p-4 rounded-lg border border-sky-200">
+                            <h4 class="font-semibold text-sky-700 mb-1">Cross-Entropy</h4>
+                            <p class="text-sm text-slate-600">Measures how well a model's predicted probability distribution for tokens matches the actual distribution in a target text. Lower is better.</p>
+                        </div>
+                        <div class="metric-card bg-sky-50 p-4 rounded-lg border border-sky-200">
+                            <h4 class="font-semibold text-sky-700 mb-1">Bits-per-Character/Byte (BPC/BPB)</h4>
+                            <p class="text-sm text-slate-600">Related to entropy; average bits needed to encode each character/byte given model predictions. Lower is better.</p>
+                        </div>
+                        <div class="metric-card bg-sky-50 p-4 rounded-lg border border-sky-200">
+                            <h4 class="font-semibold text-sky-700 mb-1">Perplexity</h4>
+                            <p class="text-sm text-slate-600 mb-2">Derived from cross-entropy; geometric mean of the inverse probability of each word. Lower perplexity indicates a better (less "perplexed") model.</p>
+                            <p class="text-xs text-slate-500">Interpretation: A perplexity of <span class="formula">P</span> means the model is as confused as if choosing uniformly among <span class="formula">P</span> words at each step.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide4-ch3" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Exact Evaluation Approaches</h2>
+                    <p class="mb-6 text-slate-600">Exact evaluation methods provide objective, quantifiable assessments by comparing model outputs against predefined criteria or reference data. This section explores two main categories: functional correctness and similarity measurements, outlining their goals and common techniques.</p>
+                    <p class="mb-4"><strong class="text-sky-600">Definition:</strong> Aim for objective, quantifiable assessments against a reference or criteria.</p>
+                    <div class="space-y-6">
+                        <div class="eval-card bg-teal-50 p-6 rounded-lg border border-teal-200">
+                            <h3 class="text-xl font-semibold text-teal-700 mb-2">Functional Correctness</h3>
+                            <p class="text-sm text-slate-600 mb-2"><strong class="text-teal-600">Goal:</strong> Verify if the model's output fulfills a specific, predefined function or task correctly.</p>
+                            <p class="text-sm text-slate-600"><strong class="text-teal-600">Examples:</strong>
+                                <ul class="list-disc list-inside ml-4 text-xs text-slate-500">
+                                    <li>Code generation: Does the code compile and pass unit tests?</li>
+                                    <li>Summarization: Does the summary include all key predefined facts?</li>
+                                    <li>Question Answering: Is the answer factually correct based on a knowledge base?</li>
+                                </ul>
+                            </p>
+                        </div>
+                        <div class="eval-card bg-teal-50 p-6 rounded-lg border border-teal-200">
+                            <h3 class="text-xl font-semibold text-teal-700 mb-2">Similarity Measurements Against Reference Data</h3>
+                            <p class="text-sm text-slate-600 mb-2"><strong class="text-teal-600">Goal:</strong> Quantify how similar a model's output is to a human-written or "gold standard" reference.</p>
+                            <p class="text-sm text-slate-600 mb-3"><strong class="text-teal-600">Techniques:</strong></p>
+                            <div class="space-y-3">
+                                <div class="p-3 bg-white rounded border border-teal-100">
+                                    <h4 class="font-medium text-teal-600 text-sm">N-gram Overlap (e.g., BLEU, ROUGE)</h4>
+                                    <p class="text-xs text-slate-500">Measures the overlap of sequences of words (n-grams) between generated and reference text. Useful for tasks like machine translation and summarization.</p>
+                                </div>
+                                <div class="p-3 bg-white rounded border border-teal-100">
+                                    <h4 class="font-medium text-teal-600 text-sm">Embedding-based Similarity</h4>
+                                    <p class="text-xs text-slate-500 mb-1">Uses vector embeddings (dense representations capturing semantic meaning) to calculate similarity (e.g., cosine similarity) between generated and reference texts. Can capture semantic similarity better than pure n-gram overlap.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide5-ch3" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">AI as a Judge</h2>
+                    <p class="mb-6 text-slate-600">"AI as a Judge" is an emerging evaluation paradigm where another AI model, typically a powerful LLM, assesses the quality of an AI application's output. This section explains the concept, its rationale, methodology, limitations, and the types of models suitable for this role.</p>
+                    
+                    <div class="text-center mb-6 p-4 bg-slate-100 rounded-lg">
+                        <p class="text-lg font-medium text-slate-700">Input ➔ <span class="text-sky-600 font-semibold">[AI Application]</span> ➔ Output</p>
+                        <p class="text-2xl my-2">↓</p>
+                        <p class="text-lg font-medium text-slate-700">(Output + Criteria) ➔ <span class="text-teal-600 font-semibold">[AI Judge Model]</span> ➔ Evaluation Score/Feedback</p>
+                        <p class="text-xs text-slate-500 mt-1">Conceptual flow of AI as a Judge</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-sky-600 mb-2">Why AI as a Judge?</h3>
+                            <ul class="list-disc list-inside text-sm space-y-1 text-slate-700">
+                                <li>Scalability: Evaluates large volumes quickly.</li>
+                                <li>Cost-effectiveness: Cheaper than human evaluation at scale.</li>
+                                <li>Consistency: Can be more consistent than multiple human evaluators (if prompted well).</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-sky-600 mb-2">How to Use AI as a Judge?</h3>
+                            <ul class="list-disc list-inside text-sm space-y-1 text-slate-700">
+                                <li>Provide clear input, generated output, and a specific rubric/criteria.</li>
+                                <li>The judge model then provides a score or qualitative assessment.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-lg font-semibold text-sky-600 mb-3">Limitations & Considerations:</h3>
+                    <div id="aiJudgeLimitationsAccordion" class="space-y-2 mb-4">
+                        </div>
+
+                    <p class="text-sm text-slate-700"><strong class="text-sky-600">What Models Can Act as Judges?</strong> Typically, large, capable language models that have undergone extensive post-training alignment are used, as they have a better understanding of nuance and instruction following.</p>
+                </div>
+            </section>
+
+            <section id="slide6-ch3" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Ranking Models with Comparative Evaluation</h2>
+                    <p class="mb-6 text-slate-600">Comparative evaluation offers an alternative to scoring models in isolation. Instead, it focuses on directly comparing outputs from two or more models to determine which is better. This section explains this approach, its methodology, and associated challenges.</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-lg font-semibold text-sky-600 mb-2">Alternative Approach:</h3>
+                            <p class="text-sm text-slate-700 mb-3">Instead of evaluating models independently on absolute scores, compare them directly against each other for a given input.</p>
+                            <h3 class="text-lg font-semibold text-sky-600 mb-2">Methodology:</h3>
+                            <p class="text-sm text-slate-700 mb-3">Present two or more model outputs for the same input to evaluators (human or AI) and ask them to choose which one is better based on specified criteria.</p>
+                             <p class="text-sm text-slate-700"><strong class="text-sky-600">Common in Sports:</strong> Similar to Elo ratings in chess, where rankings are based on head-to-head match outcomes.</p>
+                        </div>
+                        <div class="text-center p-4 bg-slate-100 rounded-lg">
+                            <p class="text-sm text-slate-500 mb-2">Input: "Summarize this article"</p>
+                            <div class="flex justify-around items-start space-x-2">
+                                <div class="comparison-box flex-1">Model A Output</div>
+                                <div class="self-center text-xl text-slate-400">vs</div>
+                                <div class="comparison-box flex-1">Model B Output</div>
+                            </div>
+                            <p class="text-2xl my-2 text-slate-400">➔</p>
+                            <div class="comparison-box bg-sky-100 border-sky-300">Evaluator (Human/AI) Chooses Better Output</div>
+                             <p class="text-xs text-slate-500 mt-1">Conceptual flow of Comparative Evaluation</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-lg font-semibold text-sky-600 mt-8 mb-3">Challenges:</h3>
+                    <ul class="list-disc list-inside text-sm space-y-1 text-slate-700 mb-4">
+                        <li>Collecting preference signals can be expensive (especially for human evaluation).</li>
+                        <li>Defining "better" can be subjective and highly context-dependent.</li>
+                        <li>Requires careful design of the comparison setup to avoid biases.</li>
+                        <li>May not provide granular insights into specific model weaknesses.</li>
+                    </ul>
+                    <p class="text-sm text-slate-700"><strong class="text-sky-600">Future:</strong> This approach is gaining traction in AI evaluation, motivating the development of specialized "preference models" (AI judges designed to predict user preferences more accurately).</p>
+                </div>
+            </section>
+
+            <section id="slide7-ch3" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Conclusion: The Importance of Robust Evaluation</h2>
+                    <p class="mb-6 text-slate-600">Chapter 3 underscores that a comprehensive and robust evaluation strategy is not just beneficial but paramount for the successful and safe deployment of AI applications, particularly those built on open-ended foundation models. No single method is a silver bullet; a combination is often required.</p>
+                    <ul class="space-y-3 list-disc list-inside text-slate-700">
+                        <li>Robust evaluation is critical for mitigating risks and ensuring the quality of AI systems.</li>
+                        <li>A multifaceted approach is often necessary, combining:
+                            <ul class="list-circle list-inside ml-6 text-sm text-slate-600">
+                                <li>Quantitative language modeling metrics (e.g., perplexity).</li>
+                                <li>Exact evaluation methods (functional correctness, similarity to references).</li>
+                                <li>Subjective but scalable approaches like AI-as-a-Judge.</li>
+                                <li>Comparative ranking methods.</li>
+                            </ul>
+                        </li>
+                        <li>Despite its complexity and resource intensity, investing in a reliable evaluation pipeline is essential to identify improvement opportunities, benchmark progress, and build trustworthy AI.</li>
+                        <li>Evaluation must be considered holistically, integrated throughout the AI development lifecycle, not as an afterthought.</li>
+                    </ul>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            
+            function showSection(targetId) {
+                contentSections.forEach(section => section.classList.remove('active'));
+                const activeSection = document.getElementById(targetId);
+                if (activeSection) activeSection.classList.add('active');
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.target === targetId) link.classList.add('active');
+                });
+                document.querySelector('main').scrollTop = 0;
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    showSection(this.dataset.target);
+                });
+            });
+
+            // Generic Accordion Initializer
+            function initializeAccordion(containerId, itemsData, itemClasses, headerClasses, contentClasses, arrowClasses) {
+                const accordionContainer = document.getElementById(containerId);
+                if (!accordionContainer) return;
+                accordionContainer.innerHTML = ''; // Clear previous items
+
+                itemsData.forEach(itemData => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = itemClasses || 'accordion-item border border-slate-200 rounded-lg';
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = headerClasses || 'accordion-header bg-slate-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-slate-100 transition';
+                    headerDiv.innerHTML = `<span class="font-medium text-slate-700">${itemData.title}</span><span class="arrow ${arrowClasses || 'text-slate-700'} transform transition-transform duration-300">▼</span>`;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = contentClasses || 'accordion-content p-3 bg-white rounded-b-lg';
+                    contentDiv.innerHTML = `<p class="text-slate-600 text-sm">${itemData.content}</p>`;
+                    
+                    itemDiv.appendChild(headerDiv);
+                    itemDiv.appendChild(contentDiv);
+                    accordionContainer.appendChild(itemDiv);
+
+                    headerDiv.addEventListener('click', () => {
+                        const isOpen = contentDiv.classList.contains('open');
+                        if (isOpen) {
+                            contentDiv.classList.remove('open');
+                            contentDiv.style.maxHeight = null;
+                            headerDiv.querySelector('.arrow').classList.remove('rotate-180');
+                        } else {
+                            contentDiv.classList.add('open');
+                            contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
+                            headerDiv.querySelector('.arrow').classList.add('rotate-180');
+                        }
+                    });
+                });
+            }
+
+            // Data for Challenges Accordion (Slide 2)
+            const challengesDataCh3 = [
+                { title: 'Complexity & Open-Ended Nature', content: 'FMs produce diverse, often unpredictable outputs, making it hard to define a single "correct" answer or pre-specify all desired behaviors.' },
+                { title: 'Output Variability', content: 'Slight changes in input prompts or model parameters can lead to significantly different outputs, complicating consistent evaluation.' },
+                { title: 'Lack of Guardrails', content: 'Implementing strict controls or ensuring outputs adhere to specific formats/constraints is challenging with generative models.' },
+                { title: 'Human-in-the-Loop Necessity', content: 'Automated metrics often miss nuances. Human judgment is crucial for assessing quality, relevance, safety, and fairness, but it is slow and expensive.' }
+            ];
+            initializeAccordion('challengesAccordionCh3', challengesDataCh3, 
+                'accordion-item border border-rose-200 rounded-lg', 
+                'accordion-header bg-rose-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-rose-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-rose-700'
+            );
+            
+            // Data for AI Judge Limitations Accordion (Slide 5)
+            const aiJudgeLimitations = [
+                { title: 'Subjectivity & Bias', content: 'The AI judge\'s evaluation is influenced by its own training data and inherent biases, which may not align with desired evaluation criteria.' },
+                { title: 'Potential for Hallucinations', content: 'The AI judge itself can hallucinate, providing incorrect or nonsensical assessments of the evaluated output.' },
+                { title: 'Requires Validation', content: 'AI judge outputs must be regularly validated and correlated with human judgments to ensure reliability and trustworthiness.' },
+                { title: 'Prompt Sensitivity', content: 'The quality and consistency of the AI judge\'s evaluation heavily depend on the clarity, specificity, and design of the prompt given to it.' }
+            ];
+            initializeAccordion('aiJudgeLimitationsAccordion', aiJudgeLimitations,
+                'accordion-item border border-amber-200 rounded-lg',
+                'accordion-header bg-amber-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-amber-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-amber-700'
+            );
+
+            // Chart.js for Investment Gap (Slide 2)
+            const investmentCtx = document.getElementById('investmentGapChart');
+            if (investmentCtx) {
+                new Chart(investmentCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Model & App Development', 'Evaluation Investment'],
+                        datasets: [{
+                            label: 'Relative Focus/Investment',
+                            data: [85, 15], // Conceptual values
+                            backgroundColor: [
+                                'rgba(59, 130, 246, 0.6)', // blue-500
+                                'rgba(249, 115, 22, 0.6)'  // orange-500
+                            ],
+                            borderColor: [
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(249, 115, 22, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Conceptual Investment Units' }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.raw + ' units';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            if (navLinks.length > 0) showSection(navLinks[0].dataset.target);
+        });
+    </script>
+</body>
+</html>

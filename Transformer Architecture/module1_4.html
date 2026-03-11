@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 1.4 - Multi-Head Attention</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1976D2 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content: ''; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+  .header-eyebrow { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.7; margin-bottom: 8px; font-family: Arial, sans-serif; }
+  .header h1 { font-size: 28px; margin-bottom: 8px; line-height: 1.2; }
+  .header p { opacity: 0.85; font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
+  .tags { display: flex; gap: 12px; flex-wrap: wrap; }
+  .tag { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 14px; font-size: 13px; font-family: Arial, sans-serif; }
+
+  /* Nav */
+  .nav-bar { display: flex; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+  .nav-btn { flex: 1; border-radius: 10px; padding: 12px 16px; border: 1px solid #C5CAE9; background: white; font-family: Arial, sans-serif; font-size: 13px; }
+  .nav-btn .nav-dir { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #999; margin-bottom: 3px; }
+  .nav-btn .nav-title { font-weight: bold; color: #333; font-size: 13.5px; }
+  .nav-btn.prev { text-align: left; border-left: 4px solid #7B1FA2; }
+  .nav-btn.next { text-align: right; border-right: 4px solid #1565C0; }
+
+  /* Intro */
+  .intro-card { background: white; border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; border: 1px solid #E8E8E8; line-height: 1.8; font-size: 15.5px; }
+  .intro-card p { margin-bottom: 12px; }
+  .intro-card p:last-child { margin-bottom: 0; color: #555; }
+
+  /* Sections */
+  .section-card { background: white; border-radius: 12px; margin-bottom: 12px; border: 1px solid #E8E8E8; overflow: hidden; }
+  .section-header { padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-left: 4px solid #E8E8E8; transition: all 0.2s; user-select: none; }
+  .section-header:hover { background: #FAFAFA; }
+  .section-title { display: flex; align-items: center; gap: 12px; font-weight: bold; font-size: 15.5px; }
+  .section-num { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; font-family: Arial, sans-serif; color: white; flex-shrink: 0; }
+  .chevron { font-size: 16px; color: #999; transition: transform 0.2s; display: inline-block; }
+  .chevron.open { transform: rotate(180deg); }
+  .section-body { padding: 20px 24px; border-top: 1px solid #F0F0F0; display: none; }
+  .section-body.open { display: block; }
+  .section-body p { line-height: 1.8; font-size: 15px; margin-bottom: 14px; }
+
+  /* Callouts */
+  .callout { border-radius: 0 8px 8px 0; padding: 14px 18px; font-size: 14.5px; line-height: 1.7; margin-top: 8px; margin-bottom: 8px; }
+  .callout-blue   { background: #E3F2FD; border-left: 4px solid #1565C0; }
+  .callout-purple { background: #F3E8FD; border-left: 4px solid #7B1FA2; }
+  .callout-orange { background: #FFF3E0; border-left: 4px solid #FF9800; }
+  .callout-green  { background: #E8F5E9; border-left: 4px solid #4CAF50; }
+  .callout-teal   { background: #E0F2F1; border-left: 4px solid #00796B; }
+  .callout-red    { background: #FDE8E8; border-left: 4px solid #E53935; }
+
+  /* Head visualiser */
+  .head-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 18px 0; }
+  .head-card { border-radius: 10px; padding: 14px 12px; text-align: center; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; }
+  .head-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .head-card.active { border-color: #1565C0; box-shadow: 0 4px 16px rgba(21,101,192,0.25); }
+  .head-num { font-size: 11px; font-family: Arial, sans-serif; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.7; }
+  .head-name { font-size: 13px; font-weight: bold; font-family: Arial, sans-serif; margin-bottom: 6px; }
+  .head-desc { font-size: 12px; line-height: 1.5; color: #555; }
+  .head-detail { background: #F0F4FF; border-radius: 10px; padding: 16px 20px; margin: 0 0 16px 0; border-left: 4px solid #1565C0; font-size: 14px; line-height: 1.75; display: none; }
+  .head-detail.visible { display: block; }
+  .head-detail strong { color: #1565C0; }
+
+  /* Single vs multi comparison */
+  .compare-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare-panel { border-radius: 12px; padding: 18px; }
+  .compare-panel-title { font-size: 13px; font-weight: bold; font-family: Arial, sans-serif; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .compare-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; font-size: 13.5px; line-height: 1.6; }
+  .compare-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* Concat diagram */
+  .concat-diagram { background: #F8F9FF; border: 1px solid #D0D8FF; border-radius: 12px; padding: 20px 22px; margin: 18px 0; }
+  .concat-title { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #666; font-family: Arial, sans-serif; margin-bottom: 16px; }
+  .concat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .concat-label { font-size: 12px; font-family: Arial, sans-serif; color: #888; min-width: 80px; }
+  .concat-blocks { display: flex; gap: 4px; flex-wrap: wrap; }
+  .c-block { border-radius: 5px; padding: 5px 10px; font-size: 12px; font-family: monospace; font-weight: bold; }
+  .concat-arrow { font-size: 20px; color: #999; margin: 0 4px; }
+  .concat-result { border-radius: 5px; padding: 5px 14px; font-size: 12px; font-family: monospace; font-weight: bold; background: #1565C0; color: white; }
+  .concat-note { font-size: 12.5px; color: #666; font-family: Arial, sans-serif; margin-top: 12px; line-height: 1.6; }
+
+  /* MHA vs variants table */
+  .variant-table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 13.5px; font-family: Arial, sans-serif; }
+  .variant-table th { background: #0D47A1; color: white; padding: 10px 14px; text-align: left; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  .variant-table td { padding: 11px 14px; border-bottom: 1px solid #F0F0F0; vertical-align: top; line-height: 1.6; }
+  .variant-table tr:last-child td { border-bottom: none; }
+  .variant-table tr:nth-child(even) td { background: #F8F8F8; }
+  .vt-name { font-weight: bold; color: #0D47A1; }
+  .vt-badge { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: bold; margin-left: 6px; vertical-align: middle; }
+  .badge-standard { background: #E3F2FD; color: #1565C0; }
+  .badge-optimised { background: #E8F5E9; color: #2E7D32; }
+  .badge-fast { background: #FFF3E0; color: #E65100; }
+
+  /* Key items */
+  .key-item { display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start; }
+  .key-num { font-size: 22px; font-weight: bold; font-family: monospace; min-width: 36px; padding-top: 2px; }
+  .key-title { font-weight: bold; font-size: 15px; margin-bottom: 4px; }
+  .key-desc { font-size: 14px; line-height: 1.7; color: #444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background: #0D47A1; border-radius: 14px; padding: 24px 28px; margin-top: 24px; color: white; }
+  .cheatsheet-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; margin-bottom: 14px; font-family: Arial, sans-serif; }
+  .cheat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cheat-item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 14px; border-left: 3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight: bold; font-size: 13px; margin-bottom: 4px; color: #90CAF9; font-family: Arial, sans-serif; }
+  .cheat-def { font-size: 13px; opacity: 0.85; line-height: 1.5; }
+
+  /* Quiz */
+  .quiz-section { background: white; border-radius: 14px; padding: 24px 28px; margin-top: 16px; border: 1px solid #E8E8E8; }
+  .quiz-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #999; margin-bottom: 10px; font-family: Arial, sans-serif; }
+  .quiz-q { font-weight: bold; font-size: 16px; margin-bottom: 16px; line-height: 1.5; }
+  .quiz-option { padding: 12px 16px; border-radius: 8px; border: 2px solid #E0E0E0; background: #F8F8F8; cursor: pointer; display: flex; gap: 12px; align-items: flex-start; transition: all 0.15s; font-size: 14px; line-height: 1.6; margin-bottom: 10px; font-family: Arial, sans-serif; }
+  .quiz-option:hover { border-color: #1565C0; background: #E3F2FD; }
+  .quiz-option.selected { border-color: #1565C0; background: #E3F2FD; }
+  .quiz-option.correct { border-color: #4CAF50 !important; background: #E8F5E9 !important; }
+  .quiz-option.wrong   { border-color: #EF5350 !important; background: #FFEBEE !important; }
+  .opt-letter { font-weight: bold; color: #999; min-width: 20px; }
+  .opt-letter.active { color: #1565C0; }
+  .quiz-btn { margin-top: 14px; background: #0D47A1; color: white; border: none; border-radius: 8px; padding: 10px 24px; cursor: pointer; font-size: 14px; font-weight: bold; font-family: Arial, sans-serif; }
+  .quiz-btn:hover { background: #1565C0; }
+  .quiz-result { margin-top: 14px; border-radius: 8px; padding: 12px 16px; font-size: 14px; line-height: 1.7; color: #333; font-family: Arial, sans-serif; }
+
+  /* Next */
+  .next-module { margin-top: 16px; margin-bottom: 32px; border-radius: 12px; padding: 16px 20px; background: linear-gradient(135deg, #E3F2FD, #E8EAF6); border: 1px solid #90CAF9; display: flex; justify-content: space-between; align-items: center; }
+  .next-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #777; margin-bottom: 4px; font-family: Arial, sans-serif; }
+  .next-title { font-weight: bold; font-size: 15px; }
+  .next-sub { font-size: 13px; color: #666; margin-top: 2px; font-family: Arial, sans-serif; }
+  .next-arrow { font-size: 28px; color: #555; }
+
+  @media (max-width: 600px) {
+    .head-grid { grid-template-columns: 1fr 1fr; }
+    .compare-wrap { grid-template-columns: 1fr; }
+    .cheat-grid { grid-template-columns: 1fr; }
+    .header { padding: 24px 20px; }
+    .nav-bar { flex-direction: column; }
+    .concat-row { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-eyebrow">PART 1 · MODULE 1.4</div>
+    <h1>Multi-Head Attention</h1>
+    <p>Why one attention pass is not enough — and what happens when you run many in parallel</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+      <span class="tag">No math</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav-bar">
+    <div class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">1.3 — Attention Mechanism</div>
+    </div>
+    <div class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">1.5 — Feed Forward Network (FFN)</div>
+    </div>
+  </div>
+
+  <!-- Intro -->
+  <div class="intro-card">
+    <p>In Module 1.3 you learned that Attention lets every token look at every other token to decide what is relevant. But a single attention pass can only look for one <em>type</em> of relationship at a time — like only being able to ask one question at a time about a document.</p>
+    <p>Multi-Head Attention (MHA) solves this by running many attention passes <em>simultaneously</em>, each looking for a different kind of relationship. This module explains what that means, why it matters for model quality, and — critically for your customer conversations — how it directly drives KV Cache size and memory usage during inference.</p>
+  </div>
+
+  <!-- Section 1: The problem with single attention -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">1</span>
+        The Problem with a Single Attention Pass
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>Imagine you are reviewing a technical proposal document. To fully understand it you need to ask many different questions simultaneously:</p>
+
+      <div style="background:#F0F4FF; border-radius:10px; padding:18px 22px; margin:16px 0; font-family:Arial,sans-serif;">
+        <div style="font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#888; margin-bottom:12px;">Questions a reader asks simultaneously</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="background:white; border-radius:8px; padding:12px 14px; border-left:3px solid #1565C0; font-size:13.5px; line-height:1.6;">
+            <strong>Who is the subject?</strong><br>Which noun does each pronoun refer to?
+          </div>
+          <div style="background:white; border-radius:8px; padding:12px 14px; border-left:3px solid #7B1FA2; font-size:13.5px; line-height:1.6;">
+            <strong>What is the action?</strong><br>What verb connects these parts of the sentence?
+          </div>
+          <div style="background:white; border-radius:8px; padding:12px 14px; border-left:3px solid #E65100; font-size:13.5px; line-height:1.6;">
+            <strong>What is the tone?</strong><br>Is this section positive, negative, or neutral?
+          </div>
+          <div style="background:white; border-radius:8px; padding:12px 14px; border-left:3px solid #2E7D32; font-size:13.5px; line-height:1.6;">
+            <strong>What is the structure?</strong><br>How does this paragraph relate to the previous one?
+          </div>
+        </div>
+      </div>
+
+      <p>A single attention pass can only focus on one of these questions at a time. If it asks "who is the subject?", it may miss information about tone or structure. <strong>Multi-Head Attention lets the model ask all of these questions in parallel</strong> — each attention head specialises in a different type of relationship.</p>
+
+      <div class="callout callout-blue">
+        <strong>The analogy:</strong> Think of a panel of expert reviewers reading the same document simultaneously. One reviewer focuses on logical structure. Another focuses on technical accuracy. Another focuses on tone. Each produces independent notes, which are then combined into one comprehensive assessment. Multi-Head Attention works the same way — parallel specialised passes, combined at the end.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: What each head learns -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#5C35A0;">2</span>
+        What Each Head Specialises In — Interactive Explorer
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>Each attention head learns to specialise in a different type of relationship during training. The specialisations emerge naturally — they are not manually programmed. Click each head below to see what type of relationship it typically focuses on:</p>
+
+      <div class="head-grid" id="head-grid">
+        <div class="head-card" style="background:#EEF2FF;" onclick="showHead(0)">
+          <div class="head-num">Head 1</div>
+          <div class="head-name" style="color:#1565C0;">Syntactic</div>
+          <div class="head-desc">Grammatical relationships between words</div>
+        </div>
+        <div class="head-card" style="background:#F3E8FD;" onclick="showHead(1)">
+          <div class="head-num">Head 2</div>
+          <div class="head-name" style="color:#7B1FA2;">Coreference</div>
+          <div class="head-desc">Pronouns linking back to nouns</div>
+        </div>
+        <div class="head-card" style="background:#FFF3E0;" onclick="showHead(2)">
+          <div class="head-num">Head 3</div>
+          <div class="head-name" style="color:#E65100;">Positional</div>
+          <div class="head-desc">Nearby token relationships</div>
+        </div>
+        <div class="head-card" style="background:#E8F5E9;" onclick="showHead(3)">
+          <div class="head-num">Head 4</div>
+          <div class="head-name" style="color:#2E7D32;">Semantic</div>
+          <div class="head-desc">Meaning and topic relationships</div>
+        </div>
+        <div class="head-card" style="background:#E0F2F1;" onclick="showHead(4)">
+          <div class="head-num">Head 5</div>
+          <div class="head-name" style="color:#00796B;">Long-range</div>
+          <div class="head-desc">Connections across distant positions</div>
+        </div>
+        <div class="head-card" style="background:#FCE4EC;" onclick="showHead(5)">
+          <div class="head-num">Head 6</div>
+          <div class="head-name" style="color:#C62828;">Entity</div>
+          <div class="head-desc">Named entities and their properties</div>
+        </div>
+        <div class="head-card" style="background:#FFF8E1;" onclick="showHead(6)">
+          <div class="head-num">Head 7</div>
+          <div class="head-name" style="color:#F57F17;">Causal</div>
+          <div class="head-desc">Cause-and-effect relationships</div>
+        </div>
+        <div class="head-card" style="background:#E8EAF6;" onclick="showHead(7)">
+          <div class="head-num">Head 8</div>
+          <div class="head-name" style="color:#283593;">Structural</div>
+          <div class="head-desc">Document and paragraph structure</div>
+        </div>
+      </div>
+
+      <div class="head-detail" id="head-detail">Click a head above to see details.</div>
+
+      <div class="callout callout-purple">
+        <strong>Important note:</strong> Real models have many more heads than 8. A 7B parameter model typically has 32 heads per layer. A 70B model typically has 64 heads. Each head runs its own complete Q, K, V computation — which is why the number of heads has a direct impact on KV Cache size and inference memory requirements.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: How it works mechanically -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#00796B;">3</span>
+        How It Works — Split, Attend, Combine
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Multi-Head Attention follows a simple three-step process. No formulas — just the logic:</p>
+
+      <div style="display:flex; flex-direction:column; gap:14px; margin:18px 0;">
+        <div style="display:flex; gap:16px; align-items:flex-start;">
+          <div style="width:36px; height:36px; border-radius:50%; background:#1565C0; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:15px; flex-shrink:0; font-family:Arial,sans-serif;">1</div>
+          <div style="flex:1; background:#E3F2FD; border-left:3px solid #1565C0; border-radius:0 10px 10px 0; padding:14px 16px;">
+            <div style="font-weight:bold; font-size:14px; margin-bottom:6px; font-family:Arial,sans-serif;">Split</div>
+            <div style="font-size:14px; line-height:1.7; color:#333;">Each token's embedding is split into <em>h</em> smaller pieces — one for each attention head. If the embedding has 4,096 numbers and there are 32 heads, each head gets a 128-number slice to work with.</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:16px; align-items:flex-start;">
+          <div style="width:36px; height:36px; border-radius:50%; background:#7B1FA2; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:15px; flex-shrink:0; font-family:Arial,sans-serif;">2</div>
+          <div style="flex:1; background:#F3E8FD; border-left:3px solid #7B1FA2; border-radius:0 10px 10px 0; padding:14px 16px;">
+            <div style="font-weight:bold; font-size:14px; margin-bottom:6px; font-family:Arial,sans-serif;">Attend in Parallel</div>
+            <div style="font-size:14px; line-height:1.7; color:#333;">Each head runs a full, independent attention computation on its slice. All heads run simultaneously on the GPU — this is one of the biggest sources of parallelism in the Transformer. Each head produces its own output, capturing a different aspect of the relationships in the input.</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:16px; align-items:flex-start;">
+          <div style="width:36px; height:36px; border-radius:50%; background:#2E7D32; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:15px; flex-shrink:0; font-family:Arial,sans-serif;">3</div>
+          <div style="flex:1; background:#E8F5E9; border-left:3px solid #2E7D32; border-radius:0 10px 10px 0; padding:14px 16px;">
+            <div style="font-weight:bold; font-size:14px; margin-bottom:6px; font-family:Arial,sans-serif;">Concatenate and Project</div>
+            <div style="font-size:14px; line-height:1.7; color:#333;">The outputs from all heads are joined back together (concatenated) into a single full-size vector. A final linear transformation blends the insights from all heads into one unified representation that flows to the next layer.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="concat-diagram">
+        <div class="concat-title">Simplified — how 4 heads combine into one output</div>
+        <div class="concat-row">
+          <div class="concat-label">Head outputs</div>
+          <div class="concat-blocks">
+            <span class="c-block" style="background:#BBDEFB; color:#0D47A1;">Head 1</span>
+            <span class="c-block" style="background:#E1BEE7; color:#4A148C;">Head 2</span>
+            <span class="c-block" style="background:#FFE0B2; color:#BF360C;">Head 3</span>
+            <span class="c-block" style="background:#C8E6C9; color:#1B5E20;">Head 4</span>
+          </div>
+          <span class="concat-arrow">&#8594;</span>
+          <span class="concat-result">Combined output</span>
+        </div>
+        <div class="concat-note">Each head contributes its own perspective. The final projection layer learns how to weight and blend each head's contribution for downstream use.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: MHA vs MQA vs GQA -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">4</span>
+        MHA vs MQA vs GQA — The Inference Optimisation Variants
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>This is where Multi-Head Attention connects directly to inference optimisation. You will hear these three terms in customer conversations — here is what they mean and why they matter:</p>
+
+      <table class="variant-table">
+        <thead>
+          <tr>
+            <th>Variant</th>
+            <th>Full Name</th>
+            <th>How it works</th>
+            <th>Impact on inference</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="vt-name">MHA <span class="vt-badge badge-standard">Standard</span></td>
+            <td>Multi-Head Attention</td>
+            <td>Every head has its own separate K and V matrices. Most expressive.</td>
+            <td>Largest KV Cache. Highest memory usage. Best quality.</td>
+          </tr>
+          <tr>
+            <td class="vt-name">MQA <span class="vt-badge badge-optimised">Optimised</span></td>
+            <td>Multi-Query Attention</td>
+            <td>All heads <em>share</em> a single K and V. Each head still has its own Q.</td>
+            <td>Dramatically smaller KV Cache. Faster inference. Slight quality trade-off.</td>
+          </tr>
+          <tr>
+            <td class="vt-name">GQA <span class="vt-badge badge-fast">Balanced</span></td>
+            <td>Grouped Query Attention</td>
+            <td>Heads are grouped — each group shares one K and V. Middle ground between MHA and MQA.</td>
+            <td>Significantly reduced KV Cache with minimal quality loss. Used in most modern models (Llama 3, Mistral, Gemma).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-orange">
+        <strong>Why this matters for your customer conversations:</strong> When a customer asks why Llama 3 is more memory-efficient than an older model of similar size, a big part of the answer is GQA. Llama 3 70B uses GQA with 8 key-value heads instead of 64 — meaning the KV Cache is 8x smaller than it would be with full MHA. This is a real, practical inference cost reduction you can point to.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Impact on KV Cache size -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#C62828;">5</span>
+        How Head Count Drives KV Cache Size
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>Now you can understand exactly what the KV Cache is made of and why it grows so large. For every token processed, the model stores K and V vectors for every head, at every layer.</p>
+
+      <div style="background:#FFF8E1; border:1px solid #FFE082; border-radius:12px; padding:20px 22px; margin:16px 0;">
+        <div style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; margin-bottom:14px;">KV Cache size — what it depends on</div>
+        <div style="display:flex; flex-direction:column; gap:10px; font-family:Arial,sans-serif;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="background:#1565C0; color:white; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:bold; min-width:120px; text-align:center;">Number of tokens</div>
+            <div style="font-size:14px; color:#444;">Longer context = proportionally larger cache. A 32k context is 4x larger than an 8k context.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="background:#7B1FA2; color:white; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:bold; min-width:120px; text-align:center;">Number of heads</div>
+            <div style="font-size:14px; color:#444;">MHA stores K+V for every head. GQA reduces this by sharing heads across groups.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="background:#E65100; color:white; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:bold; min-width:120px; text-align:center;">Number of layers</div>
+            <div style="font-size:14px; color:#444;">Each transformer layer has its own attention heads. A 32-layer model stores 32x more KV data than a 1-layer model.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="background:#2E7D32; color:white; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:bold; min-width:120px; text-align:center;">Data precision</div>
+            <div style="font-size:14px; color:#444;">FP16 uses 2 bytes per number. INT8 uses 1 byte. KV Cache quantisation halves memory with minimal quality impact.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>Practical example:</strong> A 70B parameter model serving a 32k-token request with full MHA (64 heads, 80 layers, FP16) can generate a KV Cache of over 80GB — more than the GPU memory on most single A100s. This is exactly why Paged Attention, KV Cache quantisation, and disaggregation exist. Every optimisation technique you will learn in Part 3 is ultimately fighting this memory pressure.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">6</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">01</div>
+        <div>
+          <div class="key-title">Multi-Head Attention runs many attention passes in parallel, each capturing a different relationship</div>
+          <div class="key-desc">Syntax, coreference, semantics, long-range dependencies — each head specialises independently. This is why LLMs understand language so richly compared to earlier models.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#7B1FA2;">02</div>
+        <div>
+          <div class="key-title">Each head has its own K and V in standard MHA — multiplying KV Cache size</div>
+          <div class="key-desc">More heads = richer understanding but larger KV Cache. A 64-head model stores 64 sets of K and V vectors per token per layer. This is the root cause of GPU memory pressure at inference time.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">03</div>
+        <div>
+          <div class="key-title">GQA is the modern solution — shared K and V across head groups</div>
+          <div class="key-desc">Most modern models (Llama 3, Mistral, Gemma) use Grouped Query Attention to cut KV Cache size dramatically with minimal quality impact. When customers ask about memory efficiency improvements, GQA is a key part of the answer.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#2E7D32;">04</div>
+        <div>
+          <div class="key-title">KV Cache size = tokens x heads x layers x precision</div>
+          <div class="key-desc">These four factors multiply together. Reducing any one of them reduces memory pressure. This is why techniques like KV Cache quantisation (reducing precision), GQA (reducing heads), and context window management (reducing tokens) all matter for inference optimisation.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat Sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 1.4 — CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Multi-Head Attention (MHA)</div>
+        <div class="cheat-def">Running many independent attention passes in parallel. Each head captures a different type of relationship.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Attention Head</div>
+        <div class="cheat-def">One independent attention pass. Has its own Q, K, V projections. Specialises in one type of relationship.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">MQA (Multi-Query Attention)</div>
+        <div class="cheat-def">All heads share one K and V. Dramatically reduces KV Cache. Slight quality trade-off.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">GQA (Grouped Query Attention)</div>
+        <div class="cheat-def">Groups of heads share K and V. Best balance of quality and memory. Used in Llama 3, Mistral, Gemma.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Head Count</div>
+        <div class="cheat-def">Number of parallel attention heads per layer. Larger models have more heads. Directly multiplies KV Cache size.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">KV Cache Formula</div>
+        <div class="cheat-def">Size = tokens x KV heads x layers x head dimension x precision. Every factor matters for memory budgeting.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Concatenation</div>
+        <div class="cheat-def">The step where all head outputs are joined back together. Followed by a projection to blend insights from all heads.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Head Specialisation</div>
+        <div class="cheat-def">Heads learn different roles during training automatically — not manually programmed. Different heads focus on syntax, semantics, coreference, etc.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer is evaluating two models of similar size: an older model using standard MHA with 64 heads, and a newer model using GQA with 8 KV heads. Both have the same number of layers and context length. What is the most significant practical difference for inference?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')"><span class="opt-letter" id="lbl-a">A.</span> The GQA model will be significantly slower because sharing K and V reduces parallelism</div>
+      <div class="quiz-option" onclick="selectOption(this,'b')"><span class="opt-letter" id="lbl-b">B.</span> The GQA model will have a KV Cache roughly 8x smaller, allowing more requests to be served concurrently or longer contexts to fit in the same GPU memory</div>
+      <div class="quiz-option" onclick="selectOption(this,'c')"><span class="opt-letter" id="lbl-c">C.</span> The MHA model is always better quality so customers should never use GQA</div>
+      <div class="quiz-option" onclick="selectOption(this,'d')"><span class="opt-letter" id="lbl-d">D.</span> There is no meaningful difference — head count does not affect memory usage</div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <!-- Next -->
+  <div class="next-module">
+    <div>
+      <div class="next-label">UP NEXT</div>
+      <div class="next-title">Module 1.5 — Feed Forward Network (FFN)</div>
+      <div class="next-sub">The other half of every transformer block — what it does and why it matters for inference</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </div>
+
+</div>
+
+<script>
+  /* ── section toggles ── */
+  var colors = {1:'#1565C0',2:'#5C35A0',3:'#00796B',4:'#E65100',5:'#C62828',6:'#283593'};
+  var bgs    = {1:'#E3F2FD',2:'#EDE7F6',3:'#E0F2F1',4:'#FFF3E0',5:'#FFEBEE',6:'#E8EAF6'};
+
+  function toggle(n) {
+    var body = document.getElementById('bdy'+n);
+    var chv  = document.getElementById('chv'+n);
+    var hdr  = document.getElementById('hdr'+n);
+    var isOpen = body.classList.contains('open');
+    body.classList.toggle('open');
+    chv.classList.toggle('open');
+    hdr.style.borderLeftColor = isOpen ? '#E8E8E8' : colors[n];
+    hdr.style.background      = isOpen ? 'white'   : bgs[n];
+  }
+
+  /* ── head explorer ── */
+  var headData = [
+    {
+      name: 'Head 1 — Syntactic Relationships',
+      color: '#1565C0',
+      content: 'This head focuses on grammatical structure. It learns which words are subjects, objects, and modifiers. For example, in "The large server crashed", it connects "server" to "crashed" (subject-verb) and "large" to "server" (modifier). This kind of structural understanding is fundamental for the model to form coherent sentences.'
+    },
+    {
+      name: 'Head 2 — Coreference Resolution',
+      color: '#7B1FA2',
+      content: 'This head specialises in linking pronouns back to the nouns they refer to. In "The engineer deployed the server. It crashed immediately.", this head connects "It" back to "server" — not "engineer". Without this, the model could not track entities consistently across long documents.'
+    },
+    {
+      name: 'Head 3 — Positional / Local Relationships',
+      color: '#E65100',
+      content: 'This head pays strong attention to nearby tokens — words that are immediately adjacent or within a short window. It captures local phrase structure and compound terms. For example, "out of memory" is understood as a phrase because this head keeps "out", "of", and "memory" tightly linked.'
+    },
+    {
+      name: 'Head 4 — Semantic / Topic Relationships',
+      color: '#2E7D32',
+      content: 'This head focuses on meaning and topic consistency. It connects words that belong to the same semantic field — for example, "server", "deploy", "memory", "GPU" all belong to the infrastructure domain. This helps the model stay on-topic and produce contextually coherent responses.'
+    },
+    {
+      name: 'Head 5 — Long-Range Dependencies',
+      color: '#00796B',
+      content: 'This head specialises in connecting tokens that are far apart in the sequence — potentially hundreds or thousands of tokens away. It is what allows the model to answer a question at token 4,000 using context introduced at token 200. This is one of the most distinctive capabilities of the Transformer compared to older architectures.'
+    },
+    {
+      name: 'Head 6 — Entity Tracking',
+      color: '#C62828',
+      content: 'This head tracks named entities — people, companies, products, locations — and their properties throughout the text. It connects every mention of "NVIDIA" across a long document, associating it with its properties and actions. This is critical for question-answering and summarisation tasks.'
+    },
+    {
+      name: 'Head 7 — Causal Relationships',
+      color: '#F57F17',
+      content: 'This head focuses on cause-and-effect links. In "The server crashed because it ran out of memory", it connects "crashed" to "ran out of memory" as cause-and-effect. This type of reasoning is critical for tasks that require logical inference, such as root-cause analysis or step-by-step reasoning.'
+    },
+    {
+      name: 'Head 8 — Document Structure',
+      color: '#283593',
+      content: 'This head tracks higher-level document organisation — how paragraphs relate to each other, where section boundaries are, and how topics transition. It is what allows the model to produce structured outputs like summaries, reports, or multi-section documents with coherent organisation.'
+    }
+  ];
+
+  function showHead(idx) {
+    var cards = document.querySelectorAll('.head-card');
+    cards.forEach(function(c){ c.classList.remove('active'); });
+    cards[idx].classList.add('active');
+    var detail = document.getElementById('head-detail');
+    var d = headData[idx];
+    detail.innerHTML = '<strong style="color:'+d.color+';">'+d.name+'</strong><br><br>'+d.content;
+    detail.classList.add('visible');
+  }
+
+  /* ── quiz ── */
+  var selected = null;
+  var answered = false;
+
+  function selectOption(el, id) {
+    if (answered) return;
+    document.querySelectorAll('.quiz-option').forEach(function(o) {
+      o.classList.remove('selected');
+      o.querySelector('.opt-letter').classList.remove('active');
+    });
+    el.classList.add('selected');
+    el.querySelector('.opt-letter').classList.add('active');
+    selected = id;
+    document.getElementById('check-btn').style.display = 'inline-block';
+  }
+
+  function checkAnswer() {
+    if (!selected || answered) return;
+    answered = true;
+    var opts = document.querySelectorAll('.quiz-option');
+    var letters = ['a','b','c','d'];
+    opts.forEach(function(o, i) {
+      o.style.cursor = 'default'; o.onclick = null;
+      if (letters[i] === 'b') o.classList.add('correct');
+      else if (letters[i] === selected) o.classList.add('wrong');
+    });
+    var result = document.getElementById('quiz-result');
+    result.style.display = 'block';
+    if (selected === 'b') {
+      result.style.background = '#E8F5E9';
+      result.innerHTML = '<strong>Correct!</strong> With GQA using 8 KV heads versus MHA using 64, the KV Cache is 8x smaller. In practice this means: serving 8x more concurrent users on the same GPU, fitting 8x longer context windows in the same memory, or using a smaller and cheaper GPU for the same workload. The quality difference is generally minimal for most production use cases — which is why GQA has become the standard in modern models.';
+    } else {
+      result.style.background = '#FFF3E0';
+      result.innerHTML = '<strong>Not quite.</strong> The correct answer is B. Fewer KV heads means a proportionally smaller KV Cache — GQA with 8 KV heads stores 8x less K and V data than MHA with 64 heads, for the same number of tokens and layers. This is one of the most impactful architectural changes for inference efficiency in recent model generations.';
+    }
+    document.getElementById('check-btn').style.display = 'none';
+  }
+</script>
+</body>
+</html>

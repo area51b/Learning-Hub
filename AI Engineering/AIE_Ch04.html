@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Engineering: Chapter 4 Interactive Summary - Evaluate AI Systems</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Navigation: Sidebar with 7 links (JS content switching). Goal: Easy access.
+        - Evaluation Criteria (Slide 2): Accordion for major criteria (Domain-Specific, Generation, Instruction-Following, Cost/Latency), with sub-points. Chart.js Polar Area chart to show the multi-faceted nature of criteria. Goal: Structured info & visual summary.
+        - Model Selection Workflow (Slide 3): HTML/CSS step-by-step diagram. Clickable cards for 'Build vs. Buy'. Goal: Clear process flow.
+        - Navigating Public Benchmarks (Slide 4): Accordion for 'Limitations & Caveats'. Goal: Digestible list of points.
+        - Designing Evaluation Pipeline (Slide 5): HTML/CSS step-by-step diagram. Goal: Clear process flow.
+        - Continuous Monitoring (Slide 6): Styled info cards for key aspects. Goal: Highlight important practices.
+        - All textual content from source.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            background-color: #f0f9ff; /* sky-50 */
+            color: #0369a1; /* sky-700 */
+        }
+        .nav-link.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+            font-weight: 600;
+        }
+        .accordion-header {
+            cursor: pointer;
+        }
+        .accordion-content {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+        .accordion-content.open {
+            display: block;
+            max-height: 1000px; /* Adjust as needed for potentially long content */
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px; 
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; 
+            max-height: 400px;
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 400px;
+                max-width: 500px;
+            }
+        }
+        .step-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem; /* space between step and arrow */
+        }
+        .step-item {
+            background-color: #f0f9ff; /* sky-50 */
+            border: 1px solid #bae6fd; /* sky-200 */
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+        .step-item:hover {
+            background-color: #e0f2fe; /* sky-100 */
+        }
+        .step-arrow {
+            text-align: center;
+            font-size: 1.5rem; /* 24px */
+            color: #38bdf8; /* sky-400 */
+            line-height: 1;
+        }
+        .info-card {
+            background-color: #f0fdfa; /* teal-50 */
+            border: 1px solid #99f6e4; /* teal-200 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            transition: box-shadow 0.2s;
+        }
+        .info-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <nav class="w-full md:w-72 bg-white p-6 shadow-lg flex-shrink-0">
+            <h1 class="text-2xl font-bold text-sky-700 mb-6 border-b pb-3">AI Engineering Ch.4</h1>
+            <ul class="space-y-2">
+                <li><a class="nav-link active" data-target="slide1-ch4">1. Intro to Evaluating Systems</a></li>
+                <li><a class="nav-link" data-target="slide2-ch4">2. Evaluation Criteria</a></li>
+                <li><a class="nav-link" data-target="slide3-ch4">3. Model Selection Workflow</a></li>
+                <li><a class="nav-link" data-target="slide4-ch4">4. Navigating Benchmarks</a></li>
+                <li><a class="nav-link" data-target="slide5-ch4">5. Designing Eval Pipelines</a></li>
+                <li><a class="nav-link" data-target="slide6-ch4">6. Continuous Monitoring</a></li>
+                <li><a class="nav-link" data-target="slide7-ch4">7. Conclusion</a></li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            
+            <section id="slide1-ch4" class="content-section active">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Introduction to Evaluating AI Systems</h2>
+                    <p class="mb-6 text-slate-600">This section introduces Chapter 4, which builds upon the evaluation methodologies discussed in Chapter 3. It shifts the focus to the practical application of these methods: how to select appropriate models for specific AI applications and how to construct robust, ongoing evaluation pipelines. The chapter aims to connect theoretical evaluation concepts with the tangible needs of AI systems in production.</p>
+                    <ul class="space-y-3 text-slate-700">
+                        <li><strong class="text-sky-600">Context:</strong> Chapter 3 introduced evaluation methodologies; Chapter 4 focuses on *how to use* these methods to select models and build robust evaluation pipelines for your specific AI applications.</li>
+                        <li><strong class="text-sky-600">Goal:</strong> To bridge the gap between academic evaluation rigor and the practical needs of production AI systems.</li>
+                        <li><strong class="text-sky-600">Structure:</strong> This chapter is organized into three main parts:
+                            <ol class="list-decimal list-inside ml-6 mt-1 space-y-1 text-sm">
+                                <li>Evaluation Criteria Fundamentals</li>
+                                <li>Model Selection and Benchmark Navigation</li>
+                                <li>Practical Pipeline Implementation</li>
+                            </ol>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="slide2-ch4" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Evaluation Criteria</h2>
+                    <p class="mb-6 text-slate-600">Effective evaluation begins with defining the right criteria. This section emphasizes that generic metrics are often insufficient; evaluation criteria must be tailored to an application's specific requirements and business goals. It covers key categories of criteria essential for assessing AI systems comprehensively.</p>
+                    
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="lg:w-3/5">
+                            <p class="mb-4 text-slate-700"><strong class="text-sky-600">Beyond Generic Metrics:</strong> Evaluation criteria must align with your application's specific requirements and business objectives.</p>
+                            <div id="criteriaAccordion" class="space-y-2">
+                                </div>
+                        </div>
+                        <div class="lg:w-2/5">
+                            <h3 class="text-xl font-semibold text-sky-600 mb-4 text-center">Multi-Faceted Criteria</h3>
+                            <div class="chart-container bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                <canvas id="criteriaChart"></canvas>
+                            </div>
+                            <p class="text-sm text-slate-500 mt-2 text-center">Conceptual: Balancing various evaluation aspects.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide3-ch4" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Model Selection Workflow</h2>
+                    <p class="mb-6 text-slate-600">Choosing the right AI model is a critical, iterative process, not a one-off task. This section outlines a systematic workflow for model selection, starting from broad filtering based on constraints to detailed experimental evaluation, and considers the "build versus buy" decision.</p>
+                    <p class="mb-4 text-slate-700"><strong class="text-sky-600">Systematic Approach:</strong> An iterative process, not a one-time decision.</p>
+                    
+                    <div class="step-diagram mb-8">
+                        <div class="step-item">
+                            <h4 class="font-semibold text-sky-700">Step 1: Initial Filtering (Hard Constraints)</h4>
+                            <p class="text-xs text-slate-600">E.g., Deployment needs, security, licensing, resources.</p>
+                        </div>
+                        <div class="step-arrow">▼</div>
+                        <div class="step-item">
+                            <h4 class="font-semibold text-sky-700">Step 2: Public Information Assessment</h4>
+                            <p class="text-xs text-slate-600">E.g., Benchmarks, leaderboards, published latency/cost.</p>
+                        </div>
+                        <div class="step-arrow">▼</div>
+                        <div class="step-item">
+                            <h4 class="font-semibold text-sky-700">Step 3: Experimental Evaluation (Hands-on Testing)</h4>
+                            <p class="text-xs text-slate-600">E.g., Custom metrics, integration tests, real-world performance.</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold text-sky-600 mb-3">Model Build Versus Buy:</h3>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="p-4 border border-teal-200 rounded-lg bg-teal-50 cursor-pointer hover:shadow-md" onclick="toggleDetails('buildDetails')">
+                            <h4 class="font-semibold text-teal-700">🛠️ Build (Custom Model)</h4>
+                            <div id="buildDetails" class="text-sm text-slate-600 mt-2 hidden">
+                                <p>Training a model from scratch or significantly fine-tuning.</p>
+                                <ul class="list-disc list-inside ml-4 text-xs">
+                                    <li>Pros: High control, potential for unique capabilities, IP ownership.</li>
+                                    <li>Cons: High cost, time-consuming, requires deep expertise, significant data needs.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="p-4 border border-sky-200 rounded-lg bg-sky-50 cursor-pointer hover:shadow-md" onclick="toggleDetails('buyDetails')">
+                            <h4 class="font-semibold text-sky-700">🛒 Buy (Foundation Model)</h4>
+                             <div id="buyDetails" class="text-sm text-slate-600 mt-2 hidden">
+                                <p>Using readily available pre-trained foundation models (via APIs or open-source).</p>
+                                <ul class="list-disc list-inside ml-4 text-xs">
+                                    <li>Pros: Lower initial cost, faster deployment, access to state-of-the-art capabilities.</li>
+                                    <li>Cons: Less control, potential vendor lock-in, generalization may not fit niche tasks perfectly.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 mt-4"><strong>Decision depends on:</strong> Unique requirements, available resources, timeline, and desired strategic differentiation.</p>
+                </div>
+            </section>
+
+            <section id="slide4-ch4" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Navigating Public Benchmarks</h2>
+                    <p class="mb-6 text-slate-600">Public benchmarks and leaderboards can offer a quick overview of model capabilities, but they must be interpreted with caution. This section discusses their utility and, more importantly, their limitations and potential pitfalls when used for model selection.</p>
+                    <p class="mb-4 text-slate-700"><strong class="text-sky-600">Utility:</strong> Provide a quick overview of model performance on standardized tasks.</p>
+                    
+                    <h3 class="text-xl font-semibold text-sky-600 mb-3">Limitations & Caveats (Click to Expand):</h3>
+                    <div id="benchmarksAccordion" class="space-y-2">
+                        </div>
+                     <p class="mt-6 text-center p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 font-medium">💡 Always "Look Beyond Raw Numbers" - understand context, methodology, and limitations.</p>
+                </div>
+            </section>
+
+            <section id="slide5-ch4" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Designing Your Evaluation Pipeline</h2>
+                    <p class="mb-6 text-slate-600">A robust evaluation pipeline is not a one-time setup but an ongoing process integral to the AI system's lifecycle. This section outlines the key steps involved in designing such a pipeline, from component-wise evaluation to defining methods and data.</p>
+                    <p class="mb-4 text-slate-700"><strong class="text-sky-600">Evaluation as an Ongoing Process:</strong> A continuous cycle of monitoring and improvement.</p>
+
+                    <div class="step-diagram">
+                        <div class="step-item">
+                            <h4 class="font-semibold text-sky-700">Step 1: Evaluate All Components in a System</h4>
+                            <p class="text-xs text-slate-600">Break down the AI app (e.g., retrieval, generation, ranking). Evaluate each independently to find bottlenecks. Understand component interactions.</p>
+                        </div>
+                        <div class="step-arrow">▼</div>
+                        <div class="step-item">
+                            <h4 class="font-semibold text-sky-700">Step 2: Create an Evaluation Guideline</h4>
+                            <p class="text-xs text-slate-600">Define clear, objective criteria for "good/bad" output. Establish consistent scoring rubrics. Specify metric weighting and interpretation.</p>
+                        </div>
+                        <div class="step-arrow">▼</div>
+                        <div class="step-item">
+                            <h4 class="font-semibold text-sky-700">Step 3: Define Evaluation Methods and Data</h4>
+                            <p class="text-xs text-slate-600">Choose appropriate methods (exact, AI judge, comparative). Curate/generate relevant evaluation datasets (real-world scenarios, edge cases). Ensure data quality and diversity.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide6-ch4" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Continuous Monitoring and Improvement</h2>
+                    <p class="mb-6 text-slate-600">Evaluation doesn't end at deployment. Continuous monitoring and a commitment to improvement are vital for maintaining the performance, reliability, and safety of AI systems over time. This section covers key aspects of this ongoing process.</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="info-card">
+                            <h4 class="font-semibold text-teal-700 mb-2">📊 Regular Performance Monitoring</h4>
+                            <p class="text-sm text-slate-600">Implement systems to continuously track model performance in production against key metrics.</p>
+                        </div>
+                        <div class="info-card">
+                            <h4 class="font-semibold text-teal-700 mb-2">⚠️ Failure Detection and Analysis</h4>
+                            <p class="text-sm text-slate-600">Proactively identify when performance degrades or unexpected behaviors occur. Analyze root causes.</p>
+                        </div>
+                        <div class="info-card">
+                            <h4 class="font-semibold text-teal-700 mb-2">🗣️ Feedback Collection and Incorporation</h4>
+                            <p class="text-sm text-slate-600">Establish mechanisms for collecting user feedback (explicit and implicit) and integrate it into the evaluation and improvement loop.</p>
+                        </div>
+                        <div class="info-card">
+                            <h4 class="font-semibold text-teal-700 mb-2">🔄 Continuous Improvement Cycles</h4>
+                            <p class="text-sm text-slate-600">Use evaluation insights and feedback to iterate on models, prompts, data, and application design.</p>
+                        </div>
+                    </div>
+                     <div class="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <h4 class="font-semibold text-amber-700 mb-2">💸 Hidden Costs of Self-Hosting</h4>
+                        <p class="text-sm text-slate-600">The chapter highlights often-overlooked costs of maintaining self-hosted models (e.g., infrastructure, updates, security, expertise) versus vendor-provided solutions which may include ongoing improvements.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="slide7-ch4" class="content-section">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-semibold text-sky-700 mb-6">Conclusion: A Framework for AI System Evaluation</h2>
+                    <p class="mb-6 text-slate-600">Chapter 4 provides a practical and comprehensive framework for evaluating AI systems, effectively bridging theoretical concepts with the demands of real-world applications. It emphasizes that robust evaluation is an iterative, ongoing process crucial for building trustworthy and valuable AI.</p>
+                    <ul class="space-y-3 list-disc list-inside text-slate-700">
+                        <li>Effective evaluation requires defining specific criteria tailored to the application, systematically selecting appropriate models, and implementing continuous monitoring pipelines.</li>
+                        <li>This iterative process is key to mitigating risks, uncovering opportunities for improvement, and ensuring the long-term reliability and value of AI applications.</li>
+                        <li>The ultimate goal is to build AI systems that are not only powerful but also trustworthy, safe, and aligned with user needs and overarching business objectives.</li>
+                        <li>Understanding the nuances of benchmarks, the full lifecycle of pipeline design, and the importance of continuous feedback loops are central to successful AI engineering.</li>
+                    </ul>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            
+            function showSection(targetId) {
+                contentSections.forEach(section => section.classList.remove('active'));
+                const activeSection = document.getElementById(targetId);
+                if (activeSection) activeSection.classList.add('active');
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.target === targetId) link.classList.add('active');
+                });
+                document.querySelector('main').scrollTop = 0;
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    showSection(this.dataset.target);
+                });
+            });
+
+            function initializeAccordion(containerId, itemsData, itemClasses, headerClasses, contentClasses, arrowClasses) {
+                const accordionContainer = document.getElementById(containerId);
+                if (!accordionContainer) return;
+                accordionContainer.innerHTML = ''; 
+
+                itemsData.forEach(itemData => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = itemClasses || 'accordion-item border border-slate-200 rounded-lg';
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = headerClasses || 'accordion-header bg-slate-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-slate-100 transition';
+                    headerDiv.innerHTML = `<span class="font-medium text-slate-700 text-sm">${itemData.title}</span><span class="arrow ${arrowClasses || 'text-slate-700'} transform transition-transform duration-300 text-sm">▼</span>`;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = contentClasses || 'accordion-content p-3 bg-white rounded-b-lg';
+                    
+                    let contentHTML = `<p class="text-slate-600 text-xs">${itemData.content}</p>`;
+                    if (itemData.subpoints) {
+                        contentHTML += '<ul class="list-disc list-inside ml-4 mt-2 space-y-1 text-xs text-slate-500">';
+                        itemData.subpoints.forEach(sub => contentHTML += `<li>${sub}</li>`);
+                        contentHTML += '</ul>';
+                    }
+                    contentDiv.innerHTML = contentHTML;
+                    
+                    itemDiv.appendChild(headerDiv);
+                    itemDiv.appendChild(contentDiv);
+                    accordionContainer.appendChild(itemDiv);
+
+                    headerDiv.addEventListener('click', () => {
+                        const isOpen = contentDiv.classList.contains('open');
+                        if (isOpen) {
+                            contentDiv.classList.remove('open');
+                            contentDiv.style.maxHeight = null;
+                            headerDiv.querySelector('.arrow').classList.remove('rotate-180');
+                        } else {
+                            contentDiv.classList.add('open');
+                            contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
+                            headerDiv.querySelector('.arrow').classList.add('rotate-180');
+                        }
+                    });
+                });
+            }
+
+            const criteriaData = [
+                { title: 'Domain-Specific Capability', content: 'Focus: How well the model performs tasks unique to a particular domain (e.g., medical diagnosis, legal text analysis). Assessment: Requires domain expertise, specialized datasets, and metrics relevant to the domain.' },
+                { 
+                    title: 'Generation Capability', 
+                    content: 'Focus: The quality of the model\'s generated outputs, especially for open-ended tasks.',
+                    subpoints: [
+                        '<strong>Factual Consistency:</strong> Is the generated content accurate and truthful?',
+                        '<strong>Safety:</strong> Does the output avoid harmful, biased, or offensive content?',
+                        '<strong>Fluency/Coherence:</strong> Is the output grammatically correct, natural-sounding, and logically structured?',
+                        '<strong>Relevance:</strong> Is the output pertinent to the input query or context?'
+                    ]
+                },
+                { title: 'Instruction-Following Capability', content: 'Focus: How well the model adheres to explicit instructions, constraints, and formats provided in the prompt. Importance: Crucial for building reliable AI applications where predictable behavior is required.' },
+                { title: 'Cost and Latency', content: 'Focus: The computational resources (cost) and time (latency) required for the model to generate outputs. Trade-offs: Often involves Pareto optimization, balancing performance metrics against cost and latency.' }
+            ];
+            initializeAccordion('criteriaAccordion', criteriaData, 
+                'accordion-item border border-sky-200 rounded-lg',
+                'accordion-header bg-sky-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-sky-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-sky-700'
+            );
+
+            const benchmarksData = [
+                { title: 'Generic vs. Specific', content: 'Benchmarks are often generic and may not reflect performance on your specific, niche use case.' },
+                { title: 'Dataset Bias', content: 'Underlying datasets might not be representative of your real-world data or may contain inherent biases.' },
+                { title: 'Evaluation Setup Differences', content: 'The exact evaluation methodology, metrics, and prompts used for benchmarks might differ from your specific needs or application context.' },
+                { title: 'Potential for "Gaming the System"', content: 'Models can sometimes be over-optimized ("tuned") to perform well on specific benchmarks without true generalizability to broader tasks.' },
+            ];
+            initializeAccordion('benchmarksAccordion', benchmarksData,
+                'accordion-item border border-amber-200 rounded-lg',
+                'accordion-header bg-amber-50 p-3 flex justify-between items-center rounded-t-lg hover:bg-amber-100 transition',
+                'accordion-content p-3 bg-white rounded-b-lg',
+                'text-amber-700'
+            );
+
+            // Chart.js for Criteria (Slide 2)
+            const criteriaCtx = document.getElementById('criteriaChart');
+            if (criteriaCtx) {
+                new Chart(criteriaCtx, {
+                    type: 'polarArea',
+                    data: {
+                        labels: ['Domain-Specific', 'Generation Quality', 'Instruction Following', 'Cost Efficiency', 'Latency'],
+                        datasets: [{
+                            label: 'Importance/Focus Area',
+                            data: [8, 9, 7, 6, 7], // Conceptual values
+                            backgroundColor: [
+                                'rgba(56, 189, 248, 0.5)',  // sky-400
+                                'rgba(20, 184, 166, 0.5)',  // teal-500
+                                'rgba(16, 185, 129, 0.5)', // emerald-500
+                                'rgba(249, 115, 22, 0.5)',  // orange-500
+                                'rgba(139, 92, 246, 0.5)'   // violet-500
+                            ],
+                            borderWidth: 1,
+                            borderColor: [
+                                'rgba(56, 189, 248, 1)',
+                                'rgba(20, 184, 166, 1)',
+                                'rgba(16, 185, 129, 1)',
+                                'rgba(249, 115, 22, 1)',
+                                'rgba(139, 92, 246, 1)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                pointLabels: { display: true, centerPointLabels: true, font: {size: 9} },
+                                ticks: { display: true, z:1, backdropPadding:0, stepSize: 2 },
+                                suggestedMin: 0,
+                                suggestedMax: 10
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { font: { size: 10 }, boxWidth:15, padding:10 }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Build vs Buy details toggle
+            window.toggleDetails = function(detailsId) {
+                const detailsElement = document.getElementById(detailsId);
+                if (detailsElement) {
+                    detailsElement.classList.toggle('hidden');
+                }
+            }
+
+            if (navLinks.length > 0) showSection(navLinks[0].dataset.target);
+        });
+    </script>
+</body>
+</html>
