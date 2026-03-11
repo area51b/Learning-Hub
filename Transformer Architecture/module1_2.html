@@ -160,18 +160,18 @@
   <div class="nav-bar">
     <a href="module1_1.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">1.1 — What Is a Transformer?</div>
+      <div class="nav-title">1.1 - What Is a Transformer?</div>
     </a>
     <a href="module1_3.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">1.3 — Attention Mechanism</div>
+      <div class="nav-title">1.3 - Attention Mechanism</div>
     </a>
   </div>
 
   <!-- Intro -->
   <div class="intro-card">
     <p>In Module 1.1, you learned that a Transformer reads all input tokens simultaneously. But what exactly <em>is</em> a token? And how does the model understand the <em>meaning</em> of a word, not just its letters?</p>
-    <p>This module answers those two questions. They matter for inference because the number of tokens directly determines how much memory and compute your system needs — and it's how all inference costs are measured.</p>
+    <p>This module answers those two questions. They matter for inference because the number of tokens directly determines how much memory and compute your system needs - and it's how all inference costs are measured.</p>
   </div>
 
   <!-- Section 1: What is a Token -->
@@ -184,11 +184,11 @@
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>A <strong>token</strong> is the basic unit of text that a language model works with. It is not exactly a word — it is a chunk of text that the model has learned to recognize as a meaningful piece.</p>
+      <p>A <strong>token</strong> is the basic unit of text that a language model works with. It is not exactly a word - it is a chunk of text that the model has learned to recognize as a meaningful piece.</p>
       <p>Think of it like this: a word can be one token, or it can be split into several tokens depending on how common it is. Very common short words like "the" or "is" are usually one token. Longer or rarer words get broken into smaller pieces.</p>
 
       <div class="token-demo">
-        <div class="token-demo-label">Example — how a sentence is tokenized</div>
+        <div class="token-demo-label">Example - how a sentence is tokenized</div>
         <div class="sentence">"Inference optimization improves throughput."</div>
         <div class="tokens-row">
           <span class="token-chip" style="background:#E3F2FD; border-color:#1976D2; color:#1a237e;">Inf</span>
@@ -205,7 +205,7 @@
       </div>
 
       <div class="callout callout-teal">
-        <strong>Rule of thumb:</strong> 1 token is roughly 3/4 of a word in English. A page of text is about 500 tokens. A 10-page document is roughly 5,000 tokens. This is why you hear "context window" measured in tokens — e.g. "128k context" means the model can handle 128,000 tokens at once.
+        <strong>Rule of thumb:</strong> 1 token is roughly 3/4 of a word in English. A page of text is about 500 tokens. A 10-page document is roughly 5,000 tokens. This is why you hear "context window" measured in tokens - e.g. "128k context" means the model can handle 128,000 tokens at once.
       </div>
     </div>
   </div>
@@ -225,7 +225,7 @@
       <div class="two-col">
         <div class="col-box" style="background:#FFEBEE; border:1px solid #FFCDD2;">
           <div class="col-box-title">Problem with word-level</div>
-          <div class="col-item">English has 170,000+ words — impossible to track them all</div>
+          <div class="col-item">English has 170,000+ words - impossible to track them all</div>
           <div class="col-item">New words, brand names, typos break the system</div>
           <div class="col-item">Different languages need completely separate systems</div>
           <div class="col-item">Technical terms like "TensorRT-LLM" would be unknown</div>
@@ -256,10 +256,10 @@
     </div>
     <div class="section-body" id="bdy3">
       <p>Once your text is split into tokens, the model still can't process plain text. It needs <em>numbers</em>. Each token gets converted into a list of numbers called an <strong>embedding</strong>.</p>
-      <p>An embedding is not random. It is a carefully learned representation where <strong>similar meanings produce similar numbers</strong>. This is how the model "understands" language — not through grammar rules, but through numerical relationships.</p>
+      <p>An embedding is not random. It is a carefully learned representation where <strong>similar meanings produce similar numbers</strong>. This is how the model "understands" language - not through grammar rules, but through numerical relationships.</p>
 
       <div class="embed-visual">
-        <div class="embed-visual-title">Simplified illustration — tokens as number lists</div>
+        <div class="embed-visual-title">Simplified illustration - tokens as number lists</div>
         <div class="embed-row">
           <div class="embed-word">"King"</div>
           <div class="embed-arrow">&#8594;</div>
@@ -285,7 +285,7 @@
       </div>
 
       <div class="callout callout-purple">
-        <strong>The analogy:</strong> Think of embeddings like GPS coordinates. Two cities near each other have similar coordinates. Two cities on opposite sides of the world have very different coordinates. Embeddings do the same thing for meaning — words with similar meanings end up "close" to each other in numerical space.
+        <strong>The analogy:</strong> Think of embeddings like GPS coordinates. Two cities near each other have similar coordinates. Two cities on opposite sides of the world have very different coordinates. Embeddings do the same thing for meaning - words with similar meanings end up "close" to each other in numerical space.
       </div>
     </div>
   </div>
@@ -340,21 +340,21 @@
     <div class="section-header" id="hdr5" onclick="toggle(5)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#2E7D32;">5</span>
-        One More Thing — Position Matters
+        One More Thing - Position Matters
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
-      <p>Remember that the Transformer reads all tokens at once — it doesn't process them left to right. This creates a problem: if you read everything simultaneously, how do you know which word came first?</p>
-      <p>The answer is <strong>positional encoding</strong>. Before passing tokens into the model, each embedding gets extra information added to it that tells the model its position in the sequence — token 1, token 2, token 3, and so on.</p>
+      <p>Remember that the Transformer reads all tokens at once - it doesn't process them left to right. This creates a problem: if you read everything simultaneously, how do you know which word came first?</p>
+      <p>The answer is <strong>positional encoding</strong>. Before passing tokens into the model, each embedding gets extra information added to it that tells the model its position in the sequence - token 1, token 2, token 3, and so on.</p>
 
       <div class="analogy-box" style="background:#F1F8E9; border-left: 4px solid #558B2F;">
         <div class="analogy-label">The analogy</div>
-        <div class="analogy-desc">Imagine you receive 10 sticky notes from a colleague all at once, mixed together. You can read them all instantly, but you need to know the order they were written in. Positional encoding is like numbering each sticky note before handing them to you — so you know note 1 came before note 2, even though you're reading all 10 at the same time.</div>
+        <div class="analogy-desc">Imagine you receive 10 sticky notes from a colleague all at once, mixed together. You can read them all instantly, but you need to know the order they were written in. Positional encoding is like numbering each sticky note before handing them to you - so you know note 1 came before note 2, even though you're reading all 10 at the same time.</div>
       </div>
 
       <div class="callout callout-green">
-        <strong>Why this matters for inference:</strong> Positional encoding is part of why there is a <strong>context window limit</strong>. The model was trained up to a certain position number. If your prompt + response exceeds that position count, the model's quality degrades. This is why you hear about "128k context" or "1M context" — it's the max position the model was trained to handle.
+        <strong>Why this matters for inference:</strong> Positional encoding is part of why there is a <strong>context window limit</strong>. The model was trained up to a certain position number. If your prompt + response exceeds that position count, the model's quality degrades. This is why you hear about "128k context" or "1M context" - it's the max position the model was trained to handle.
       </div>
     </div>
   </div>
@@ -372,22 +372,22 @@
       <div class="key-item">
         <div class="key-num" style="color:#00796B;">01</div>
         <div>
-          <div class="key-title">Tokens are not words — they are sub-word chunks</div>
-          <div class="key-desc">A model never sees raw text. It sees a sequence of token IDs. One word can be one token or several. Token count is the true measure of input size — and of cost.</div>
+          <div class="key-title">Tokens are not words - they are sub-word chunks</div>
+          <div class="key-desc">A model never sees raw text. It sees a sequence of token IDs. One word can be one token or several. Token count is the true measure of input size - and of cost.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#7B1FA2;">02</div>
         <div>
           <div class="key-title">Embeddings turn tokens into meaning-rich numbers</div>
-          <div class="key-desc">Each token becomes a large vector of numbers. Similar meanings produce similar vectors. This is the foundation of how a model "understands" language — through geometric relationships, not rules.</div>
+          <div class="key-desc">Each token becomes a large vector of numbers. Similar meanings produce similar vectors. This is the foundation of how a model "understands" language - through geometric relationships, not rules.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">03</div>
         <div>
-          <div class="key-title">Every token costs memory and compute — at every layer</div>
-          <div class="key-desc">The embedding of each token flows through all the transformer layers. Longer context = more tokens = more work. This is why context length directly drives inference cost and why KV Cache exists — to avoid recomputing these vectors on every step.</div>
+          <div class="key-title">Every token costs memory and compute - at every layer</div>
+          <div class="key-desc">The embedding of each token flows through all the transformer layers. Longer context = more tokens = more work. This is why context length directly drives inference cost and why KV Cache exists - to avoid recomputing these vectors on every step.</div>
         </div>
       </div>
     </div>
@@ -395,7 +395,7 @@
 
   <!-- Cheat Sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 1.2 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 1.2 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Token</div>
@@ -427,7 +427,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Token Count</div>
-        <div class="cheat-def">The true unit of inference cost and memory usage — not words, not characters.</div>
+        <div class="cheat-def">The true unit of inference cost and memory usage - not words, not characters.</div>
       </div>
     </div>
   </div>
@@ -438,7 +438,7 @@
     <div class="quiz-q">A customer asks why their inference bill is so high when their prompts are "only a few sentences." What is the most accurate explanation?</div>
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')"><span class="opt-letter" id="lbl-a">A.</span> The model is inefficient and wastes compute on short inputs</div>
-      <div class="quiz-option" onclick="selectOption(this,'b')"><span class="opt-letter" id="lbl-b">B.</span> Cost is based on tokens, not sentences — and each word can be multiple tokens, plus the model output adds more</div>
+      <div class="quiz-option" onclick="selectOption(this,'b')"><span class="opt-letter" id="lbl-b">B.</span> Cost is based on tokens, not sentences - and each word can be multiple tokens, plus the model output adds more</div>
       <div class="quiz-option" onclick="selectOption(this,'c')"><span class="opt-letter" id="lbl-c">C.</span> Short prompts actually cost more because the model has to search harder for context</div>
       <div class="quiz-option" onclick="selectOption(this,'d')"><span class="opt-letter" id="lbl-d">D.</span> The embedding dimension is too large and needs to be reduced</div>
     </div>
@@ -450,8 +450,8 @@
   <a href="module1_3.html" class="next-module">
     <div>
       <div class="next-label">UP NEXT</div>
-      <div class="next-title">Module 1.3 — Attention Mechanism</div>
-      <div class="next-sub">How the model decides which tokens matter most — without any math</div>
+      <div class="next-title">Module 1.3 - Attention Mechanism</div>
+      <div class="next-sub">How the model decides which tokens matter most - without any math</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -502,10 +502,10 @@
     result.style.display = 'block';
     if (selected === 'b') {
       result.style.background = '#E8F5E9';
-      result.innerHTML = '<strong>Correct!</strong> Inference is priced per token, not per sentence. A "few sentences" might be 100–200 input tokens, but the model output can be 500–1000 tokens on top of that — and each token costs compute at every layer of the model.';
+      result.innerHTML = '<strong>Correct!</strong> Inference is priced per token, not per sentence. A "few sentences" might be 100–200 input tokens, but the model output can be 500–1000 tokens on top of that - and each token costs compute at every layer of the model.';
     } else {
       result.style.background = '#FFF3E0';
-      result.innerHTML = '<strong>Not quite.</strong> The key is that billing is per token (Option B), not per sentence or word. Sentences are a human concept — the model only sees token counts, and output tokens are often far more than input tokens.';
+      result.innerHTML = '<strong>Not quite.</strong> The key is that billing is per token (Option B), not per sentence or word. Sentences are a human concept - the model only sees token counts, and output tokens are often far more than input tokens.';
     }
     document.getElementById('check-btn').style.display = 'none';
   }

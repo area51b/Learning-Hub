@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 2.5 - Memory Bottleneck</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #880E4F 0%, #AD1457 50%, #C2185B 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #F8BBD9; background:white; font-family:Arial,sans-serif; font-size:13px; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #BF360C; }
+  .nav-btn.next { text-align:right; border-right:4px solid #880E4F; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout        { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-pink   { background:#FCE4EC; border-left:4px solid #C2185B; }
+  .callout-blue   { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange { background:#FFF3E0; border-left:4px solid #FF9800; }
+  .callout-green  { background:#E8F5E9; border-left:4px solid #4CAF50; }
+  .callout-purple { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-teal   { background:#E0F2F1; border-left:4px solid #00796B; }
+  .callout-red    { background:#FFEBEE; border-left:4px solid #C62828; }
+
+  /* ── GPU memory anatomy ── */
+  .gpu-mem-wrap { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .gpu-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:16px; }
+  .gpu-bar-outer { background:rgba(255,255,255,0.06); border-radius:10px; height:48px; overflow:hidden; display:flex; margin-bottom:10px; position:relative; }
+  .gpu-seg { height:48px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; transition:all 0.4s; overflow:hidden; white-space:nowrap; padding:0 8px; }
+  .gpu-legend { display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; }
+  .gpu-legend-item { display:flex; align-items:center; gap:7px; font-size:12.5px; }
+  .gpu-legend-box  { width:14px; height:14px; border-radius:3px; flex-shrink:0; }
+  .gpu-model-select { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:white; font-family:Arial,sans-serif; font-size:13px; padding:6px 10px; cursor:pointer; margin-bottom:14px; }
+  .gpu-model-select option { background:#1e293b; color:white; }
+  .gpu-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+  .gpu-stat  { background:rgba(255,255,255,0.06); border-radius:8px; padding:10px 12px; }
+  .gpu-stat-label { font-size:10px; letter-spacing:1px; text-transform:uppercase; opacity:0.5; margin-bottom:4px; }
+  .gpu-stat-value { font-size:18px; font-weight:bold; font-family:monospace; }
+
+  /* ── Three-way split breakdown ── */
+  .split-row { display:flex; gap:14px; margin-bottom:12px; align-items:flex-start; }
+  .split-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:13px; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .split-body { flex:1; border-radius:0 10px 10px 0; padding:12px 16px; }
+  .split-title { font-weight:bold; font-size:14.5px; font-family:Arial,sans-serif; margin-bottom:5px; }
+  .split-desc  { font-size:13.5px; line-height:1.7; color:#444; }
+  .split-size  { display:inline-block; margin-top:6px; font-size:12px; font-family:monospace; border-radius:5px; padding:2px 9px; font-weight:bold; }
+
+  /* ── HBM bandwidth visual ── */
+  .bw-wrap { background:#F8F9FF; border:1px solid #C5CAE9; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .bw-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#555; font-family:Arial,sans-serif; margin-bottom:14px; }
+  .bw-row   { display:flex; align-items:center; gap:12px; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .bw-label { font-size:13px; min-width:150px; font-weight:bold; }
+  .bw-bar-bg { flex:1; background:#E8EAF6; border-radius:4px; height:22px; overflow:hidden; }
+  .bw-fill   { height:22px; border-radius:4px; display:flex; align-items:center; padding-left:8px; font-size:11.5px; font-weight:bold; color:white; }
+  .bw-note   { font-size:12px; color:#888; min-width:80px; text-align:right; }
+
+  /* ── OOM scenario cards ── */
+  .oom-card { border-radius:12px; padding:18px 20px; margin-bottom:12px; border-left:4px solid; }
+  .oom-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .oom-badge  { border-radius:6px; padding:3px 10px; font-size:11px; font-weight:bold; font-family:Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; }
+  .oom-title  { font-weight:bold; font-size:15px; }
+  .oom-desc   { font-size:14px; line-height:1.8; color:#333; margin-bottom:10px; }
+  .oom-signals { font-size:13px; font-family:Arial,sans-serif; }
+  .oom-fix    { border-radius:6px; padding:8px 12px; font-size:13px; font-family:Arial,sans-serif; margin-top:8px; line-height:1.6; }
+
+  /* ── Capacity planning calculator ── */
+  .cap-wrap { background:#FCE4EC; border:1px solid #F48FB1; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .cap-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#880E4F; font-family:Arial,sans-serif; margin-bottom:14px; font-weight:bold; }
+  .cap-row  { display:flex; align-items:center; gap:12px; margin-bottom:12px; font-family:Arial,sans-serif; flex-wrap:wrap; }
+  .cap-label { font-size:13px; min-width:170px; color:#444; }
+  .cap-select { border:1px solid #F48FB1; border-radius:6px; padding:6px 10px; font-size:13px; font-family:Arial,sans-serif; background:white; color:#333; cursor:pointer; }
+  .cap-input  { border:1px solid #F48FB1; border-radius:6px; padding:6px 10px; font-size:13px; font-family:Arial,sans-serif; width:80px; }
+  .cap-result { background:#880E4F; color:white; border-radius:10px; padding:16px 20px; margin-top:8px; }
+  .cap-result-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.65; font-family:Arial,sans-serif; margin-bottom:8px; }
+  .cap-result-main  { font-size:26px; font-weight:bold; font-family:monospace; margin-bottom:4px; }
+  .cap-result-sub   { font-size:13px; opacity:0.75; font-family:Arial,sans-serif; line-height:1.6; }
+  .cap-breakdown    { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+  .cap-bd-item { background:rgba(255,255,255,0.1); border-radius:6px; padding:8px 10px; font-family:Arial,sans-serif; }
+  .cap-bd-label { font-size:11px; opacity:0.65; margin-bottom:2px; text-transform:uppercase; letter-spacing:1px; }
+  .cap-bd-value { font-size:15px; font-weight:bold; }
+
+  /* ── Mitigation ladder ── */
+  .ladder { display:flex; flex-direction:column; gap:0; margin:18px 0; }
+  .ladder-rung { display:flex; gap:14px; align-items:stretch; }
+  .ladder-left { display:flex; flex-direction:column; align-items:center; width:40px; flex-shrink:0; }
+  .ladder-num  { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .ladder-line { flex:1; width:2px; background:#E0E0E0; margin:2px auto; }
+  .ladder-body { flex:1; border-radius:0 10px 10px 0; padding:12px 16px; margin-bottom:8px; }
+  .ladder-title { font-weight:bold; font-size:14.5px; font-family:Arial,sans-serif; margin-bottom:4px; }
+  .ladder-desc  { font-size:13.5px; line-height:1.7; color:#444; }
+  .ladder-gain  { display:inline-block; font-size:12px; font-family:Arial,sans-serif; border-radius:4px; padding:2px 9px; margin-top:6px; font-weight:bold; }
+  .ladder-cost  { display:inline-block; font-size:12px; font-family:Arial,sans-serif; border-radius:4px; padding:2px 9px; margin-top:6px; font-weight:bold; margin-left:6px; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#880E4F; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#F48FB1; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.85; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#C2185B; background:#FCE4EC; }
+  .quiz-option.selected { border-color:#C2185B; background:#FCE4EC; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#C2185B; }
+  .quiz-btn  { margin-top:14px; background:#880E4F; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#AD1457; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  /* Part 2 complete banner */
+  .part-complete { background:linear-gradient(135deg,#880E4F,#C2185B); border-radius:12px; padding:20px 24px; margin-top:16px; margin-bottom:16px; color:white; display:flex; align-items:center; gap:16px; }
+  .pc-icon  { font-size:26px; flex-shrink:0; }
+  .pc-title { font-weight:bold; font-size:15px; margin-bottom:3px; }
+  .pc-sub   { font-size:13px; opacity:0.85; font-family:Arial,sans-serif; line-height:1.5; }
+
+  .next-module { margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#FCE4EC,#F3E8FD); border:1px solid #F8BBD9; display:flex; justify-content:space-between; align-items:center; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .cheat-grid,.cap-breakdown,.gpu-stats { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-eyebrow">PART 2 · MODULE 2.5</div>
+    <h1>The Memory Bottleneck</h1>
+    <p>Why GPUs run out of memory, what happens when they do, and the practical toolkit for fitting more into the memory you have.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+      <span class="tag">No math</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module2_4.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">2.4 - Throughput vs Latency</div>
+    </a>
+    <a href="module3_1.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">Part 3 - Optimisation Techniques</div>
+    </div>
+  </a>
+
+  <div class="intro-card">
+    <p>GPU memory - HBM (High Bandwidth Memory) - is the most constrained resource in LLM inference. It is expensive, finite, and shared between three competing consumers that all need it at the same time. Understanding exactly how memory fills up, what happens when it runs out, and how to reclaim space is the practical foundation for every infrastructure sizing conversation.</p>
+    <p>This module completes Part 2 by tying the KV Cache, batching, and throughput concepts together into a single coherent picture of GPU memory pressure - and giving you the decision ladder for addressing it.</p>
+  </div>
+
+  <!-- Section 1: What lives in GPU memory -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#AD1457;">1</span>
+        What Lives in GPU Memory - The Three Tenants
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>Every byte of GPU HBM is occupied by one of three things. They do not take turns - all three are present simultaneously whenever inference is running.</p>
+
+      <div style="margin:16px 0;">
+        <div class="split-row">
+          <div class="split-icon" style="background:#1565C0;">WGT</div>
+          <div class="split-body" style="background:#E3F2FD; border-left:3px solid #1565C0;">
+            <div class="split-title">Model Weights</div>
+            <div class="split-desc">Every parameter of the model - all the learned values in every attention head, every FFN layer, every embedding. These are fixed once the model is loaded and never change during inference. They consume the same amount of memory regardless of how many requests are being served.</div>
+            <div class="split-size" style="background:#1565C0; color:white;">7B FP16: ~14GB &nbsp;|&nbsp; 70B FP16: ~140GB &nbsp;|&nbsp; 405B FP16: ~810GB</div>
+          </div>
+        </div>
+
+        <div class="split-row">
+          <div class="split-icon" style="background:#C2185B;">KV</div>
+          <div class="split-body" style="background:#FCE4EC; border-left:3px solid #C2185B;">
+            <div class="split-title">KV Cache</div>
+            <div class="split-desc">Key and Value vectors for every token in every active request, across every layer. This is the dynamic portion - it grows with each new token generated and shrinks when requests complete. With high concurrency and long contexts, KV Cache can consume more memory than the model weights themselves.</div>
+            <div class="split-size" style="background:#C2185B; color:white;">Grows with: active requests × context length × layers × precision</div>
+          </div>
+        </div>
+
+        <div class="split-row">
+          <div class="split-icon" style="background:#E65100;">ACT</div>
+          <div class="split-body" style="background:#FFF3E0; border-left:3px solid #E65100;">
+            <div class="split-title">Activations and Runtime Overhead</div>
+            <div class="split-desc">Intermediate tensors computed during the forward pass - the outputs of each layer before they are written to the next. These are temporary, existing only for the duration of a single decode step. They also include CUDA kernel buffers, framework overhead, and memory for sampling (picking the next token). Typically 1–5GB depending on batch size.</div>
+            <div class="split-size" style="background:#E65100; color:white;">Roughly constant per forward pass - not the primary concern</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-pink">
+        <strong>The fundamental constraint:</strong> Model weights are fixed and large. Activations are small and transient. KV Cache is dynamic and grows unboundedly with more requests and longer outputs. The contest for GPU memory is almost always between weights and KV Cache - and it determines how many users you can serve simultaneously.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Interactive memory anatomy -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">2</span>
+        Interactive: GPU Memory Anatomy by Model and Hardware
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>Select a model and GPU configuration to see exactly how memory is allocated - and how much headroom remains for KV Cache and concurrent requests.</p>
+
+      <div class="gpu-mem-wrap">
+        <div class="gpu-title">GPU memory allocation visualiser</div>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+          <select class="gpu-model-select" id="gpuModel" onchange="updateGPU()">
+            <option value="7b_fp16">Llama 3 8B - FP16</option>
+            <option value="7b_int8">Llama 3 8B - INT8</option>
+            <option value="7b_int4">Llama 3 8B - INT4</option>
+            <option value="13b_fp16">Llama 2 13B - FP16</option>
+            <option value="13b_int8">Llama 2 13B - INT8</option>
+            <option value="70b_fp16" selected>Llama 3 70B - FP16 (2×A100)</option>
+            <option value="70b_int8">Llama 3 70B - INT8 (1×A100)</option>
+            <option value="70b_int4">Llama 3 70B - INT4 (1×A100)</option>
+          </select>
+          <select class="gpu-model-select" id="gpuHW" onchange="updateGPU()">
+            <option value="40">A100 40GB</option>
+            <option value="80" selected>A100 80GB</option>
+            <option value="141">H100 80GB SXM (eff. per GPU in 2×)</option>
+            <option value="141h200">H200 141GB</option>
+          </select>
+        </div>
+
+        <div class="gpu-bar-outer" id="gpuBar">
+          <!-- filled by JS -->
+        </div>
+
+        <div class="gpu-legend">
+          <div class="gpu-legend-item"><div class="gpu-legend-box" style="background:#1565C0;"></div>Model weights</div>
+          <div class="gpu-legend-item"><div class="gpu-legend-box" style="background:#C2185B;"></div>KV Cache headroom</div>
+          <div class="gpu-legend-item"><div class="gpu-legend-box" style="background:#E65100;"></div>Activations + overhead</div>
+          <div class="gpu-legend-item"><div class="gpu-legend-box" style="background:#2E7D32;"></div>Free / unused</div>
+        </div>
+
+        <div class="gpu-stats" id="gpuStats">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>The INT8 and INT4 insight:</strong> Quantisation does not change the model's architecture - it reduces the number of bytes used to store each weight. INT8 halves model weight memory vs FP16; INT4 quarters it. This directly expands KV Cache headroom. Switching a 70B model from FP16 to INT8 frees roughly 70GB on a 2×A100 setup - enough to serve 3–4× more concurrent requests or handle significantly longer contexts.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: HBM bandwidth wall -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">3</span>
+        The HBM Bandwidth Wall
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Even when there is enough GPU memory to fit a model and its KV Cache, performance can still be limited by how fast data can be read from that memory. This is the HBM bandwidth bottleneck - the wall that makes Decode memory-bound.</p>
+      <p>Every decode step requires reading the model weights and the full KV Cache from HBM. The speed at which this can happen is capped by the GPU's memory bandwidth - measured in terabytes per second (TB/s).</p>
+
+      <div class="bw-wrap">
+        <div class="bw-title">HBM memory bandwidth - GPU generations</div>
+        <div class="bw-row">
+          <span class="bw-label">A100 SXM 80GB</span>
+          <div class="bw-bar-bg"><div class="bw-fill" style="background:#455A64; width:47%;">2.0 TB/s</div></div>
+          <span class="bw-note" style="color:#888;">2020</span>
+        </div>
+        <div class="bw-row">
+          <span class="bw-label">H100 SXM 80GB</span>
+          <div class="bw-bar-bg"><div class="bw-fill" style="background:#1565C0; width:67%;">3.35 TB/s</div></div>
+          <span class="bw-note" style="color:#1565C0;">+68% vs A100</span>
+        </div>
+        <div class="bw-row">
+          <span class="bw-label">H200 141GB</span>
+          <div class="bw-bar-bg"><div class="bw-fill" style="background:#C2185B; width:85%;">4.8 TB/s</div></div>
+          <span class="bw-note" style="color:#C2185B;">+140% vs A100</span>
+        </div>
+        <div class="bw-row">
+          <span class="bw-label">B200 192GB</span>
+          <div class="bw-bar-bg"><div class="bw-fill" style="background:#2E7D32; width:100%;">8.0 TB/s</div></div>
+          <span class="bw-note" style="color:#2E7D32;">+300% vs A100</span>
+        </div>
+        <div style="font-size:12.5px; color:#666; font-family:Arial,sans-serif; margin-top:12px; line-height:1.6; background:#F0F4FF; padding:10px 12px; border-radius:6px;">
+          Each GPU generation roughly doubles the bandwidth available for Decode. This is why upgrading from A100 to H100 improves TPOT more than it improves Prefill speed - Decode is bandwidth-bound, Prefill is compute-bound.
+        </div>
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>The roofline model in plain English:</strong> A GPU has two limits - maximum compute (FLOPS) and maximum memory bandwidth (TB/s). Prefill hits the compute ceiling. Decode hits the bandwidth ceiling. You cannot accelerate Decode with more FLOPS - you need more bandwidth. This is why H200's 4.8 TB/s (vs H100's 3.35 TB/s) matters so much for interactive applications: it directly reduces TPOT for every request on every model.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: OOM scenarios -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#C62828;">4</span>
+        When Memory Runs Out - Three OOM Scenarios
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>Out-of-memory (OOM) errors in inference are not all the same. There are three distinct scenarios, each with different causes and fixes. Knowing which one you are facing is the first step to solving it:</p>
+
+      <div class="oom-card" style="background:#FFEBEE; border-color:#C62828;">
+        <div class="oom-header">
+          <div class="oom-badge" style="background:#C62828; color:white;">OOM Type 1</div>
+          <div class="oom-title">Model does not fit at load time</div>
+        </div>
+        <div class="oom-desc">The model weights alone exceed available GPU memory before any requests arrive. The server crashes on startup. Common when trying to run a 70B FP16 model on a single 80GB GPU (needs ~140GB).</div>
+        <div class="oom-signals"><strong>Signals:</strong> Server fails to start. CUDA OOM error at model load. No requests can be served.</div>
+        <div class="oom-fix" style="background:#FFCDD2;">
+          <strong>Fix:</strong> Add GPUs (tensor/pipeline parallelism) OR quantise the model (INT8 reduces 70B to ~70GB - fits on one A100) OR switch to a smaller model.
+        </div>
+      </div>
+
+      <div class="oom-card" style="background:#FFF3E0; border-color:#E65100;">
+        <div class="oom-header">
+          <div class="oom-badge" style="background:#E65100; color:white;">OOM Type 2</div>
+          <div class="oom-title">KV Cache exhaustion under load</div>
+        </div>
+        <div class="oom-desc">The model loads fine, but as concurrent requests accumulate and contexts grow, the KV Cache fills all remaining GPU memory. New requests cannot be served or existing ones must be evicted. Happens gradually under load - the system degrades rather than crashes immediately.</div>
+        <div class="oom-signals"><strong>Signals:</strong> Increasing TTFT under load. vLLM logs showing cache evictions. Requests queuing despite GPU being "available". Throughput plateau even as traffic grows.</div>
+        <div class="oom-fix" style="background:#FFE0B2;">
+          <strong>Fix:</strong> Enable KV Cache quantisation (INT8 KV doubles effective KV capacity) OR reduce max context length OR enable Paged Attention (reduces fragmentation) OR add more GPUs OR reduce max concurrent requests.
+        </div>
+      </div>
+
+      <div class="oom-card" style="background:#E8F5E9; border-color:#2E7D32;">
+        <div class="oom-header">
+          <div class="oom-badge" style="background:#2E7D32; color:white;">OOM Type 3</div>
+          <div class="oom-title">Single long-context request OOM</div>
+        </div>
+        <div class="oom-desc">A single request with an extremely long context (e.g. 128k tokens) requires a KV Cache so large it exhausts all remaining memory on its own, even if only one request is being served. Increasingly common with 128k+ context window models.</div>
+        <div class="oom-signals"><strong>Signals:</strong> OOM error tied to specific long requests, not general load. Fails intermittently based on input length. Normal requests succeed fine.</div>
+        <div class="oom-fix" style="background:#C8E6C9;">
+          <strong>Fix:</strong> Enforce a max context length limit on the API OR use KV Cache quantisation to reduce per-token KV size OR use a model with GQA (fewer KV heads) OR add GPU memory (H200 141GB per GPU helps significantly for long-context workloads).
+        </div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>Diagnostic shortcut:</strong> OOM at startup = Type 1 (weights). OOM under sustained load with normal inputs = Type 2 (KV Cache accumulation). OOM on specific long requests = Type 3 (single context). Each has a different fix, and mixing up the diagnosis leads to wasted engineering effort.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Capacity planning calculator -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#00796B;">5</span>
+        Interactive: Concurrency Capacity Planner
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>Given a GPU configuration, model, and target context length, how many concurrent requests can you actually serve? This calculator works through the memory arithmetic in real time.</p>
+
+      <div class="cap-wrap">
+        <div class="cap-title">Concurrency capacity planner</div>
+
+        <div class="cap-row">
+          <div class="cap-label">GPU configuration</div>
+          <select class="cap-select" id="capGPU" onchange="updateCap()">
+            <option value="80">1 × A100 80GB</option>
+            <option value="160">2 × A100 80GB</option>
+            <option value="320">4 × A100 80GB</option>
+            <option value="80h">1 × H100 80GB</option>
+            <option value="141">1 × H200 141GB</option>
+          </select>
+        </div>
+        <div class="cap-row">
+          <div class="cap-label">Model + precision</div>
+          <select class="cap-select" id="capModel" onchange="updateCap()">
+            <option value="7_fp16">Llama 3 8B FP16 (14GB weights)</option>
+            <option value="7_int8">Llama 3 8B INT8 (7GB weights)</option>
+            <option value="13_fp16">Llama 2 13B FP16 (26GB weights)</option>
+            <option value="70_fp16">Llama 3 70B FP16 (140GB weights)</option>
+            <option value="70_int8">Llama 3 70B INT8 (70GB weights)</option>
+            <option value="70_int4">Llama 3 70B INT4 (35GB weights)</option>
+          </select>
+        </div>
+        <div class="cap-row">
+          <div class="cap-label">Avg context per request</div>
+          <input class="cap-input" type="number" id="capCtx" value="4000" min="100" max="128000" onchange="updateCap()">
+          <span style="font-size:13px; color:#666; font-family:Arial,sans-serif;">tokens</span>
+        </div>
+        <div class="cap-row">
+          <div class="cap-label">KV Cache precision</div>
+          <select class="cap-select" id="capKVPrec" onchange="updateCap()">
+            <option value="2">FP16 (2 bytes)</option>
+            <option value="1">INT8 (1 byte)</option>
+            <option value="0.5">INT4 (0.5 bytes)</option>
+          </select>
+        </div>
+
+        <div class="cap-result" id="capResult">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="callout callout-green">
+        <strong>The concurrency multiplier effect:</strong> Notice how KV Cache quantisation from FP16 to INT8 roughly doubles concurrency - without any change to the model itself. This is often the cheapest path to serving more users: a configuration change with minimal quality impact. Combined with model weight quantisation, it is possible to serve 4–8× more concurrent users on the same hardware with carefully chosen precision settings.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Mitigation ladder -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">6</span>
+        The Memory Mitigation Ladder - In Order of Cost
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>When a customer is hitting memory limits, these are the interventions - ordered by cost and complexity. Always work up the ladder before jumping to hardware:</p>
+
+      <div class="ladder">
+        <div class="ladder-rung">
+          <div class="ladder-left">
+            <div class="ladder-num" style="background:#2E7D32;">1</div>
+            <div class="ladder-line"></div>
+          </div>
+          <div class="ladder-body" style="background:#E8F5E9; border-left:3px solid #2E7D32;">
+            <div class="ladder-title">Enable Paged Attention</div>
+            <div class="ladder-desc">Eliminates KV Cache fragmentation - can recover 20–40% of "wasted" memory in naive systems. Zero quality impact. Config change only in vLLM (enabled by default).</div>
+            <span class="ladder-gain" style="background:#2E7D32; color:white;">+20–40% concurrency</span>
+            <span class="ladder-cost" style="background:#E8F5E9; color:#2E7D32; border:1px solid #2E7D32;">Zero cost</span>
+          </div>
+        </div>
+
+        <div class="ladder-rung">
+          <div class="ladder-left">
+            <div class="ladder-num" style="background:#1565C0;">2</div>
+            <div class="ladder-line"></div>
+          </div>
+          <div class="ladder-body" style="background:#E3F2FD; border-left:3px solid #1565C0;">
+            <div class="ladder-title">KV Cache quantisation (INT8)</div>
+            <div class="ladder-desc">Halves the memory used per KV Cache entry. Roughly doubles the number of concurrent requests or max context length. Minimal quality impact - KV Cache values are less sensitive to precision than model weights.</div>
+            <span class="ladder-gain" style="background:#1565C0; color:white;">~2× KV capacity</span>
+            <span class="ladder-cost" style="background:#E3F2FD; color:#1565C0; border:1px solid #1565C0;">Near-zero cost</span>
+          </div>
+        </div>
+
+        <div class="ladder-rung">
+          <div class="ladder-left">
+            <div class="ladder-num" style="background:#7B1FA2;">3</div>
+            <div class="ladder-line"></div>
+          </div>
+          <div class="ladder-body" style="background:#F3E8FD; border-left:3px solid #7B1FA2;">
+            <div class="ladder-title">Model weight quantisation (INT8 or INT4)</div>
+            <div class="ladder-desc">Reduces model weight footprint by 50–75%, directly expanding the KV Cache headroom. INT8 has minimal quality impact. INT4 can have measurable impact on complex tasks - validate on your use case first.</div>
+            <span class="ladder-gain" style="background:#7B1FA2; color:white;">2–4× weight reduction</span>
+            <span class="ladder-cost" style="background:#F3E8FD; color:#7B1FA2; border:1px solid #7B1FA2;">Low - quality validation needed</span>
+          </div>
+        </div>
+
+        <div class="ladder-rung">
+          <div class="ladder-left">
+            <div class="ladder-num" style="background:#E65100;">4</div>
+            <div class="ladder-line"></div>
+          </div>
+          <div class="ladder-body" style="background:#FFF3E0; border-left:3px solid #E65100;">
+            <div class="ladder-title">Switch to a model with GQA</div>
+            <div class="ladder-desc">Models using Grouped Query Attention (Llama 3, Mistral, Gemma) have far fewer KV heads than MHA models. Llama 3 70B has 8 KV heads vs Llama 2 70B's 64 - reducing KV Cache size by 8×. If the model supports GQA, this is a large, free KV saving.</div>
+            <span class="ladder-gain" style="background:#E65100; color:white;">Up to 8× KV reduction</span>
+            <span class="ladder-cost" style="background:#FFF3E0; color:#E65100; border:1px solid #E65100;">Model swap - re-evaluate quality</span>
+          </div>
+        </div>
+
+        <div class="ladder-rung">
+          <div class="ladder-left">
+            <div class="ladder-num" style="background:#C62828;">5</div>
+            <div class="ladder-line"></div>
+          </div>
+          <div class="ladder-body" style="background:#FFEBEE; border-left:3px solid #C62828;">
+            <div class="ladder-title">Downsize the model</div>
+            <div class="ladder-desc">A 13B model requires ~8× less KV Cache memory than a 70B model for the same context, and ~5× less weight memory. If quality requirements can be met with a smaller model, this is the most impactful memory reduction available - at the cost of capability.</div>
+            <span class="ladder-gain" style="background:#C62828; color:white;">5–10× total memory reduction</span>
+            <span class="ladder-cost" style="background:#FFEBEE; color:#C62828; border:1px solid #C62828;">Quality trade-off - benchmark first</span>
+          </div>
+        </div>
+
+        <div class="ladder-rung">
+          <div class="ladder-left">
+            <div class="ladder-num" style="background:#455A64;">6</div>
+          </div>
+          <div class="ladder-body" style="background:#ECEFF1; border-left:3px solid #455A64;">
+            <div class="ladder-title">Add GPU memory (more or larger GPUs)</div>
+            <div class="ladder-desc">More GPU memory is always effective but is the most expensive option. Justified when: software optimisations are exhausted, quality requirements prevent model changes, and workload growth projections warrant the investment. H200 (141GB) vs A100 (80GB) nearly doubles memory per GPU.</div>
+            <span class="ladder-gain" style="background:#455A64; color:white;">Linear with memory added</span>
+            <span class="ladder-cost" style="background:#ECEFF1; color:#455A64; border:1px solid #455A64;">High - last resort</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr7" onclick="toggle(7)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">7</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv7">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy7">
+      <div class="key-item">
+        <div class="key-num" style="color:#AD1457;">01</div>
+        <div>
+          <div class="key-title">GPU memory has three tenants - weights are fixed, KV Cache is the variable</div>
+          <div class="key-desc">Model weights and activations are relatively predictable. KV Cache is the one that scales with load and context length. Every memory optimisation conversation is really about freeing up more space for KV Cache to enable higher concurrency.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">02</div>
+        <div>
+          <div class="key-title">HBM bandwidth limits Decode speed - more memory also means more bandwidth</div>
+          <div class="key-desc">Larger, newer GPUs are not just bigger storage - they also have proportionally higher HBM bandwidth. The H200's 4.8 TB/s vs the A100's 2.0 TB/s directly translates to faster Decode. When evaluating GPU upgrades, bandwidth per GB is as important as total capacity.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#C62828;">03</div>
+        <div>
+          <div class="key-title">There are three distinct OOM types - diagnose before prescribing</div>
+          <div class="key-desc">Model load OOM, KV Cache accumulation OOM, and single-request long-context OOM each have different causes and different fixes. Applying the wrong solution wastes time. The diagnostic shortcut: when does the OOM happen - startup, under load, or on specific requests?</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#2E7D32;">04</div>
+        <div>
+          <div class="key-title">Work up the mitigation ladder - hardware is the last step</div>
+          <div class="key-desc">Paged Attention, KV quantisation, weight quantisation, and GQA model selection can collectively deliver 5–20× more effective memory utilisation with no hardware change. The correct sequence: software optimisations first, hardware expansion last.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat Sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 2.5 - CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">HBM (High Bandwidth Memory)</div>
+        <div class="cheat-def">The GPU's on-chip memory. Fast but expensive and finite. Split between model weights, KV Cache, and activations during inference.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Memory Bandwidth</div>
+        <div class="cheat-def">How fast data can be read from HBM. Measured in TB/s. The bottleneck for Decode speed. A100: 2.0 TB/s. H100: 3.35 TB/s. H200: 4.8 TB/s.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">OOM Type 1 - Load failure</div>
+        <div class="cheat-def">Model weights exceed GPU memory. Fails at startup. Fix: quantise weights or add GPUs.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">OOM Type 2 - KV accumulation</div>
+        <div class="cheat-def">KV Cache fills under sustained load. Causes evictions and latency spikes. Fix: KV quantisation, Paged Attention, reduce concurrency.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">OOM Type 3 - Long context</div>
+        <div class="cheat-def">Single request's KV Cache exhausts memory. Intermittent, tied to input length. Fix: max context limit, GQA model, KV quantisation.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">KV Cache quantisation</div>
+        <div class="cheat-def">Storing KV Cache in INT8 or INT4 instead of FP16. Halves or quarters KV memory use. Roughly doubles concurrency capacity with minimal quality impact.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Roofline Model</div>
+        <div class="cheat-def">Framework for understanding whether a workload is compute-bound (Prefill) or memory-bandwidth-bound (Decode). Each has a different hardware bottleneck and fix.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Mitigation Ladder</div>
+        <div class="cheat-def">Paged Attention → KV quantisation → weight quantisation → GQA model → model downsize → add hardware. Always work in this order.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer is running Llama 2 70B in FP16 across 2 × A100 80GB GPUs. They report that the system works fine at low traffic but begins throwing OOM errors and slowing down significantly as concurrent users exceed 8. What type of OOM is this, and what is the most cost-effective first intervention?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Type 1 OOM - the model does not fit. They need to add 2 more GPUs immediately.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        Type 2 OOM - KV Cache accumulation under load. The model loads fine but KV Cache exhausts remaining memory beyond ~8 concurrent users. Most cost-effective first step: enable KV Cache INT8 quantisation, which roughly doubles effective KV capacity and should push the concurrency ceiling to ~16 users with zero hardware change.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        Type 3 OOM - individual long-context requests are causing the issue. They should enforce a 4,096-token maximum context limit.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        The GPU bandwidth is the bottleneck - they need to upgrade to H100s for better memory bandwidth.
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <!-- Part 2 truly complete -->
+  <div class="part-complete">
+    <div class="pc-icon">2</div>
+    <div>
+      <div class="pc-title">Part 2 Now Complete - All 5 Modules</div>
+      <div class="pc-sub">2.1 What Is Inference · 2.2 KV Cache · 2.3 Memory Bottleneck · 2.4 Batching · 2.5 Throughput vs Latency. You have the full inference serving picture. Part 3 goes deep on the techniques that fix each bottleneck.</div>
+    </div>
+  </div>
+
+  <a href="module3_1.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next - Part 3</div>
+      <div class="next-title">Inference Optimisation Techniques</div>
+      <div class="next-sub">Flash Attention, Paged Attention, quantisation, speculative decoding, disaggregation - every technique from first principles</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var colors={1:'#AD1457',2:'#1565C0',3:'#E65100',4:'#C62828',5:'#00796B',6:'#283593',7:'#283593'};
+  var bgs   ={1:'#FCE4EC',2:'#E3F2FD',3:'#FFF3E0',4:'#FFEBEE',5:'#E0F2F1',6:'#E8EAF6',7:'#E8EAF6'};
+  function toggle(n){
+    var body=document.getElementById('bdy'+n),chv=document.getElementById('chv'+n),hdr=document.getElementById('hdr'+n);
+    var isOpen=body.classList.contains('open');
+    body.classList.toggle('open'); chv.classList.toggle('open');
+    hdr.style.borderLeftColor=isOpen?'#E8E8E8':colors[n];
+    hdr.style.background=isOpen?'white':bgs[n];
+  }
+
+  /* ── GPU memory visualiser ── */
+  var gpuModels = {
+    '7b_fp16': {wGB:14,  label:'Llama 3 8B FP16'},
+    '7b_int8':  {wGB:7,   label:'Llama 3 8B INT8'},
+    '7b_int4':  {wGB:3.5, label:'Llama 3 8B INT4'},
+    '13b_fp16': {wGB:26,  label:'Llama 2 13B FP16'},
+    '13b_int8': {wGB:13,  label:'Llama 2 13B INT8'},
+    '70b_fp16': {wGB:140, label:'Llama 3 70B FP16 (2×A100)'},
+    '70b_int8': {wGB:70,  label:'Llama 3 70B INT8'},
+    '70b_int4': {wGB:35,  label:'Llama 3 70B INT4'},
+  };
+  var gpuHWs = {
+    '40':    {gb:40,   bw:'1.6 TB/s', label:'A100 40GB'},
+    '80':    {gb:80,   bw:'2.0 TB/s', label:'A100 80GB'},
+    '141':   {gb:160,  bw:'6.7 TB/s', label:'2×H100 80GB'},
+    '141h200':{gb:141, bw:'4.8 TB/s', label:'H200 141GB'},
+  };
+
+  function updateGPU(){
+    var mk=document.getElementById('gpuModel').value;
+    var hk=document.getElementById('gpuHW').value;
+    var m=gpuModels[mk], h=gpuHWs[hk];
+    var totalGB=h.gb, weightsGB=Math.min(m.wGB,totalGB), overheadGB=3;
+    var kvGB=Math.max(0, totalGB-weightsGB-overheadGB);
+    var freeGB=0;
+    if(weightsGB+overheadGB>totalGB){ kvGB=0; }
+
+    var wPct=(weightsGB/totalGB*100).toFixed(1);
+    var kvPct=(kvGB/totalGB*100).toFixed(1);
+    var ovPct=(overheadGB/totalGB*100).toFixed(1);
+    var frPct=Math.max(0,100-parseFloat(wPct)-parseFloat(kvPct)-parseFloat(ovPct)).toFixed(1);
+
+    var bar=document.getElementById('gpuBar');
+    var fits=weightsGB<=totalGB;
+    if(!fits){
+      bar.innerHTML='<div class="gpu-seg" style="background:#C62828;width:100%;color:white;">MODEL DOES NOT FIT - '+weightsGB+'GB weights exceed '+totalGB+'GB GPU</div>';
+    } else {
+      bar.innerHTML=
+        seg('#1565C0',wPct,weightsGB.toFixed(0)+'GB weights')+
+        (kvPct>0?seg('#C2185B',kvPct,kvPct>8?kvGB.toFixed(0)+'GB KV headroom':'KV'):'') +
+        seg('#E65100',ovPct,'~'+overheadGB+'GB OH')+
+        (frPct>1?seg('#2E7D32',frPct,frPct>5?frPct+'% free':''):'');
+    }
+
+    var concEst=kvGB>0?Math.floor(kvGB*1000/(8000*0.01)):0; // rough: 10MB/token at 8k ctx
+    document.getElementById('gpuStats').innerHTML=
+      gstat('GPU Memory',totalGB+'GB',h.bw)+
+      gstat('Weights',fits?weightsGB.toFixed(0)+'GB':'OVER','FP16 equiv: '+(m.wGB)+'GB')+
+      gstat('KV Headroom',fits&&kvGB>0?kvGB.toFixed(0)+'GB':'-',fits?'For concurrent requests':'Not applicable');
+  }
+  function seg(col,pct,label){
+    if(parseFloat(pct)<1)return '';
+    return '<div class="gpu-seg" style="background:'+col+';width:'+pct+'%;">'+label+'</div>';
+  }
+  function gstat(label,value,sub){
+    return '<div class="gpu-stat"><div class="gpu-stat-label">'+label+'</div><div class="gpu-stat-value">'+value+'</div><div style="font-size:11px;opacity:0.5;margin-top:2px;">'+sub+'</div></div>';
+  }
+  updateGPU();
+
+  /* ── Capacity planner ── */
+  var capModels={
+    '7_fp16': {wGB:14},  '7_int8': {wGB:7},
+    '13_fp16':{wGB:26},
+    '70_fp16':{wGB:140}, '70_int8':{wGB:70}, '70_int4':{wGB:35},
+  };
+  var capGPUs={
+    '80':{gb:80},'160':{gb:160},'320':{gb:320},
+    '80h':{gb:80},'141':{gb:141},
+  };
+  // KV Cache: tokens * kvHeads * layers * headDim * 2 (K+V) * bytesPerVal
+  // Simplified: per token per layer = kvHeads * headDim * 2 * bytes
+  // 70B GQA: 8 heads * 128 dim * 2 * bytes = 2048*bytes per layer, 80 layers = 163840*bytes per token
+  // 70B MHA: 64 heads * 128 dim * 2 * bytes = 16384*bytes per layer, 80 layers = 1310720*bytes per token
+  // 7B: 8 heads * 128 * 2 * bytes * 32 layers = 65536*bytes per token
+  // 13B: 40 heads * 128 * 2 * bytes * 40 layers = 409600*bytes per token
+  var kvBytesPerToken={ // in bytes at FP16
+    '7_fp16': 65536,  '7_int8':  65536,
+    '13_fp16':409600,
+    '70_fp16':163840, '70_int8':163840, '70_int4':163840,
+  };
+
+  function updateCap(){
+    var gpuKey=document.getElementById('capGPU').value;
+    var modKey=document.getElementById('capModel').value;
+    var ctx=parseInt(document.getElementById('capCtx').value)||4000;
+    var kvPrec=parseFloat(document.getElementById('capKVPrec').value);
+
+    var totalGB=capGPUs[gpuKey].gb;
+    var weightsGB=capModels[modKey].wGB;
+    var overheadGB=3;
+    var kvHeadroom=Math.max(0,totalGB-weightsGB-overheadGB);
+
+    if(weightsGB>totalGB){
+      document.getElementById('capResult').innerHTML=
+        '<div class="cap-result-title">Result</div>'+
+        '<div class="cap-result-main" style="color:#FF8A80;">Model does not fit</div>'+
+        '<div class="cap-result-sub">'+weightsGB+'GB weights exceed '+totalGB+'GB GPU. Quantise the model or add GPUs.</div>';
+      return;
+    }
+
+    var kvBytesPerTok=kvBytesPerToken[modKey]||163840;
+    // scale by KV precision relative to FP16
+    var kvBytesScaled=kvBytesPerTok * kvPrec / 2.0;
+    var kvPerRequest=ctx * kvBytesScaled;
+    var kvHeadroomBytes=kvHeadroom * 1e9;
+    var concurrency=Math.max(1, Math.floor(kvHeadroomBytes/kvPerRequest));
+
+    var kvPerReqGB=(kvPerRequest/1e9).toFixed(2);
+    document.getElementById('capResult').innerHTML=
+      '<div class="cap-result-title">Estimated max concurrent requests</div>'+
+      '<div class="cap-result-main">~'+concurrency+' requests</div>'+
+      '<div class="cap-result-sub">At '+ctx.toLocaleString()+' tokens avg context with '+
+        (kvPrec===2?'FP16':kvPrec===1?'INT8':'INT4')+' KV Cache</div>'+
+      '<div class="cap-breakdown">'+
+        cbd('Total GPU memory',totalGB+'GB')+
+        cbd('Model weights',weightsGB+'GB')+
+        cbd('KV headroom',kvHeadroom.toFixed(0)+'GB')+
+        cbd('KV per request',kvPerReqGB+'GB')+
+      '</div>';
+  }
+  function cbd(l,v){
+    return '<div class="cap-bd-item"><div class="cap-bd-label">'+l+'</div><div class="cap-bd-value">'+v+'</div></div>';
+  }
+  updateCap();
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    var opts=document.querySelectorAll('.quiz-option'),letters=['a','b','c','d'];
+    opts.forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      if(letters[i]==='b')o.classList.add('correct');
+      else if(letters[i]===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct.</strong> "Works fine at low traffic, fails above 8 concurrent users" is the signature of Type 2 OOM - KV Cache accumulation. The model loads (it fits across 2×A100 = 160GB) but each concurrent request consumes KV Cache memory, and beyond ~8 users the remaining headroom is exhausted. Note that Llama 2 70B uses MHA (64 KV heads) rather than GQA, making its KV Cache significantly larger than Llama 3 70B. The fastest and cheapest first step is enabling KV Cache INT8 quantisation - this halves the per-request KV footprint and roughly doubles the concurrency ceiling from ~8 to ~16 users. If that is insufficient, the next steps would be switching to Llama 3 70B (GQA, 8× smaller KV Cache) or adding KV Cache block management tuning in vLLM.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> The critical clue is "works fine at low traffic" - if the model did not fit (Type 1), it would never work. The OOM occurs as concurrent users accumulate, which is the KV Cache exhaustion pattern of Type 2. Option B correctly identifies this and recommends KV Cache INT8 quantisation as the cheapest first intervention. Bandwidth (Option D) is not the issue here - the system is not slow, it is running out of memory.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>

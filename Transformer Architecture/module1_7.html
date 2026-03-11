@@ -175,8 +175,8 @@
   <div class="header">
     <div class="header-eyebrow">PART 1 · MODULE 1.7</div>
     <h1>The Two Phases: Prefill vs Decode</h1>
-    <p>The most important concept for inference optimisation — and your direct bridge to disaggregation, KV Cache management, and everything in Part 2</p>
-    <div class="header-badge">Final module of Part 1 — Foundation Complete</div>
+    <p>The most important concept for inference optimisation - and your direct bridge to disaggregation, KV Cache management, and everything in Part 2</p>
+    <div class="header-badge">Final module of Part 1 - Foundation Complete</div>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -188,18 +188,18 @@
   <div class="nav-bar">
     <a href="module1_6.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">1.6 — The Full Transformer Block</div>
+      <div class="nav-title">1.6 - The Full Transformer Block</div>
     </a>
     <a href="module2_1.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">Part 2 — How Inference Actually Works</div>
+      <div class="nav-title">Part 2 - How Inference Actually Works</div>
     </a>
   </div>
 
   <!-- Intro -->
   <div class="intro-card">
-    <p>Every time a model generates a response, it goes through exactly two phases: <strong>Prefill</strong> and <strong>Decode</strong>. These two phases are fundamentally different in what they demand from hardware — and understanding this difference is what unlocks the ability to explain almost every major inference optimisation technique to a customer.</p>
-    <p>This is the module where the entire Part 1 foundation comes together. By the end, you will understand not just what disaggregation is — but <em>why</em> it exists, why it works, and how to explain it confidently without notes.</p>
+    <p>Every time a model generates a response, it goes through exactly two phases: <strong>Prefill</strong> and <strong>Decode</strong>. These two phases are fundamentally different in what they demand from hardware - and understanding this difference is what unlocks the ability to explain almost every major inference optimisation technique to a customer.</p>
+    <p>This is the module where the entire Part 1 foundation comes together. By the end, you will understand not just what disaggregation is - but <em>why</em> it exists, why it works, and how to explain it confidently without notes.</p>
   </div>
 
   <!-- Section 1: The two phases side by side -->
@@ -207,7 +207,7 @@
     <div class="section-header" id="hdr1" onclick="toggle(1)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">1</span>
-        The Two Phases — Side by Side
+        The Two Phases - Side by Side
       </div>
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
@@ -220,10 +220,10 @@
           <div class="phase-title" style="color:#1565C0;">Prefill</div>
           <div class="phase-subtitle">Processing your input</div>
           <div class="phase-row">Reads and processes all input tokens <strong>at once</strong> in parallel</div>
-          <div class="phase-row">Builds the KV Cache — one entry per input token</div>
+          <div class="phase-row">Builds the KV Cache - one entry per input token</div>
           <div class="phase-row">Happens <strong>once</strong> per request, before any output appears</div>
           <div class="phase-row">Duration: milliseconds to seconds (depends on prompt length)</div>
-          <div class="phase-row">Bottleneck: <strong>compute</strong> — the GPU is doing massive parallel maths</div>
+          <div class="phase-row">Bottleneck: <strong>compute</strong> - the GPU is doing massive parallel maths</div>
           <div class="phase-row">Hardware need: high <strong>FLOPS</strong> (raw computing power)</div>
         </div>
         <div class="phase-card" style="background:#FFF3E0; border:1px solid #FFCC80;">
@@ -232,15 +232,15 @@
           <div class="phase-subtitle">Generating your output</div>
           <div class="phase-row">Generates output tokens <strong>one at a time</strong>, sequentially</div>
           <div class="phase-row">Each step reads the full KV Cache to maintain context</div>
-          <div class="phase-row">Repeats for every single output token — 500 tokens = 500 iterations</div>
+          <div class="phase-row">Repeats for every single output token - 500 tokens = 500 iterations</div>
           <div class="phase-row">Duration: seconds to minutes (depends on output length)</div>
-          <div class="phase-row">Bottleneck: <strong>memory bandwidth</strong> — constantly reading the KV Cache</div>
+          <div class="phase-row">Bottleneck: <strong>memory bandwidth</strong> - constantly reading the KV Cache</div>
           <div class="phase-row">Hardware need: high <strong>memory bandwidth</strong> (GB/s throughput)</div>
         </div>
       </div>
 
       <div class="callout callout-indigo">
-        <strong>The single most important takeaway:</strong> Prefill and Decode are not just different speeds — they are bottlenecked by <em>different hardware resources</em>. Prefill needs raw compute (FLOPS). Decode needs memory bandwidth. This is why running them on the same hardware is inherently a compromise — and exactly why disaggregation exists.
+        <strong>The single most important takeaway:</strong> Prefill and Decode are not just different speeds - they are bottlenecked by <em>different hardware resources</em>. Prefill needs raw compute (FLOPS). Decode needs memory bandwidth. This is why running them on the same hardware is inherently a compromise - and exactly why disaggregation exists.
       </div>
     </div>
   </div>
@@ -258,7 +258,7 @@
       <p>Press Run to watch the Prefill phase process all input tokens in parallel, then watch Decode generate output tokens one by one. Notice how the KV Cache grows during Prefill and is read during every Decode step.</p>
 
       <div class="sim-wrap">
-        <div class="sim-title">Inference simulation — "Explain why GPU memory matters for LLM inference"</div>
+        <div class="sim-title">Inference simulation - "Explain why GPU memory matters for LLM inference"</div>
 
         <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:0.4; margin-bottom:8px; font-family:Arial,sans-serif;">Input tokens (prompt)</div>
         <div class="sim-prompt-row" id="sim-prompt"></div>
@@ -288,7 +288,7 @@
       </div>
 
       <div class="callout callout-purple">
-        <strong>What you just saw:</strong> During Prefill, all input tokens lit up nearly simultaneously — the GPU processed them in a single large parallel batch. During Decode, each output token appeared one at a time — strictly sequential, each one depending on the last. This is why even a fast GPU can feel "slow" during long generation: the decode phase is fundamentally serial.
+        <strong>What you just saw:</strong> During Prefill, all input tokens lit up nearly simultaneously - the GPU processed them in a single large parallel batch. During Decode, each output token appeared one at a time - strictly sequential, each one depending on the last. This is why even a fast GPU can feel "slow" during long generation: the decode phase is fundamentally serial.
       </div>
     </div>
   </div>
@@ -349,10 +349,10 @@
         </div>
       </div>
 
-      <p>During Decode, the GPU compute utilisation drops to around 30% — not because the GPU is slow, but because it is <strong>waiting for memory reads</strong>. The GPU has to load the entire KV Cache from HBM (High Bandwidth Memory) for every single token it generates. This is the memory bandwidth bottleneck in action.</p>
+      <p>During Decode, the GPU compute utilisation drops to around 30% - not because the GPU is slow, but because it is <strong>waiting for memory reads</strong>. The GPU has to load the entire KV Cache from HBM (High Bandwidth Memory) for every single token it generates. This is the memory bandwidth bottleneck in action.</p>
 
       <div class="callout callout-orange">
-        <strong>The restaurant analogy:</strong> Prefill is like a chef who gets all the ingredients delivered at once and does intense prep work — chopping, mixing, marinating — all in parallel. Decode is like a chef who must run back to the walk-in fridge for one ingredient before every single step of cooking. The fridge trips (memory reads) are what slow things down, not the actual cooking.
+        <strong>The restaurant analogy:</strong> Prefill is like a chef who gets all the ingredients delivered at once and does intense prep work - chopping, mixing, marinating - all in parallel. Decode is like a chef who must run back to the walk-in fridge for one ingredient before every single step of cooking. The fridge trips (memory reads) are what slow things down, not the actual cooking.
       </div>
     </div>
   </div>
@@ -370,7 +370,7 @@
       <p>You learned in Module 1.3 that the KV Cache stores Key and Value vectors so they do not need to be recomputed. Now you can see exactly when and how it grows:</p>
 
       <div class="kv-growth">
-        <div class="kv-growth-title">KV Cache growth — 6-token prompt, 4-token output</div>
+        <div class="kv-growth-title">KV Cache growth - 6-token prompt, 4-token output</div>
 
         <div class="kv-step">
           <div class="kv-step-label" style="color:#1565C0; font-weight:bold;">Prefill starts</div>
@@ -432,12 +432,12 @@
         </div>
 
         <div style="font-size:12.5px; color:#666; font-family:Arial,sans-serif; margin-top:10px; line-height:1.6; padding-top:10px; border-top:1px solid #E0E0E0;">
-          Blue = prompt tokens. Orange = generated tokens. Each decode step reads the <em>entire</em> growing cache — this is why decode gets progressively slower as the response gets longer, and why KV Cache memory management is critical.
+          Blue = prompt tokens. Orange = generated tokens. Each decode step reads the <em>entire</em> growing cache - this is why decode gets progressively slower as the response gets longer, and why KV Cache memory management is critical.
         </div>
       </div>
 
       <div class="callout callout-teal">
-        <strong>The compounding problem:</strong> A 1,000-token output on a 4,000-token prompt means the decode phase eventually reads a 5,000-entry KV Cache on every single step. The last tokens take longer to generate than the first. For applications with long outputs — code generation, long-form writing, chain-of-thought reasoning — this KV Cache growth is the dominant inference cost driver.
+        <strong>The compounding problem:</strong> A 1,000-token output on a 4,000-token prompt means the decode phase eventually reads a 5,000-entry KV Cache on every single step. The last tokens take longer to generate than the first. For applications with long outputs - code generation, long-form writing, chain-of-thought reasoning - this KV Cache growth is the dominant inference cost driver.
       </div>
     </div>
   </div>
@@ -470,7 +470,7 @@
       </div>
 
       <div class="callout callout-green">
-        <strong>Connecting to optimisation techniques:</strong> When a customer says "our model feels slow", you need to ask <em>which</em> type of slow. High TTFT? Focus on Prefill optimisation — chunked prefill, prefill-specific hardware, or Flash Attention. High TPOT? Focus on Decode optimisation — KV Cache management, Paged Attention, memory bandwidth improvements. They have different solutions.
+        <strong>Connecting to optimisation techniques:</strong> When a customer says "our model feels slow", you need to ask <em>which</em> type of slow. High TTFT? Focus on Prefill optimisation - chunked prefill, prefill-specific hardware, or Flash Attention. High TPOT? Focus on Decode optimisation - KV Cache management, Paged Attention, memory bandwidth improvements. They have different solutions.
       </div>
     </div>
   </div>
@@ -480,7 +480,7 @@
     <div class="section-header" id="hdr6" onclick="toggle(6)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">6</span>
-        Your Bridge to Disaggregation — Why It Exists
+        Your Bridge to Disaggregation - Why It Exists
       </div>
       <span class="chevron" id="chv6">&#9662;</span>
     </div>
@@ -488,12 +488,12 @@
       <p>You told me at the start that you are working on disaggregation but could not explain the foundation. You now have everything you need. Here is how it all connects:</p>
 
       <div class="disagg-bridge">
-        <div class="db-title">The logical case for disaggregation — built from first principles</div>
+        <div class="db-title">The logical case for disaggregation - built from first principles</div>
 
         <div class="db-row">
           <div class="db-box" style="background:#E3F2FD; border:1px solid #90CAF9;">
             <div class="db-box-title" style="color:#1565C0;">Prefill requirements</div>
-            <div class="db-item">Processes all tokens at once — massive parallelism</div>
+            <div class="db-item">Processes all tokens at once - massive parallelism</div>
             <div class="db-item">Bottlenecked by GPU compute (FLOPS)</div>
             <div class="db-item">Ideal GPU: high core count, high FLOPS</div>
             <div class="db-item">Runs once per request, then done</div>
@@ -502,7 +502,7 @@
           <div class="db-arrow">&#8800;</div>
           <div class="db-box" style="background:#FFF3E0; border:1px solid #FFCC80;">
             <div class="db-box-title" style="color:#E65100;">Decode requirements</div>
-            <div class="db-item">Generates one token at a time — serial</div>
+            <div class="db-item">Generates one token at a time - serial</div>
             <div class="db-item">Bottlenecked by memory bandwidth</div>
             <div class="db-item">Ideal GPU: high HBM bandwidth, large cache</div>
             <div class="db-item">Runs hundreds of times per request</div>
@@ -511,12 +511,12 @@
         </div>
 
         <div class="db-solution">
-          <strong style="color:#7B1FA2;">The disaggregation insight:</strong> If Prefill and Decode need different hardware and run at different times, why force them to share the same GPU? <strong>Disaggregation separates Prefill and Decode onto dedicated GPU pools.</strong> Prefill GPUs are optimised for compute throughput. Decode GPUs are optimised for memory bandwidth. Once a request finishes Prefill, its KV Cache is transferred to a Decode GPU to complete generation. Each pool can be scaled independently based on workload — more Prefill capacity for bursty chatbot loads, more Decode capacity for long-form generation workloads.
+          <strong style="color:#7B1FA2;">The disaggregation insight:</strong> If Prefill and Decode need different hardware and run at different times, why force them to share the same GPU? <strong>Disaggregation separates Prefill and Decode onto dedicated GPU pools.</strong> Prefill GPUs are optimised for compute throughput. Decode GPUs are optimised for memory bandwidth. Once a request finishes Prefill, its KV Cache is transferred to a Decode GPU to complete generation. Each pool can be scaled independently based on workload - more Prefill capacity for bursty chatbot loads, more Decode capacity for long-form generation workloads.
         </div>
       </div>
 
       <div class="callout callout-purple">
-        <strong>Why this matters in your customer conversations:</strong> When a customer asks "what is disaggregation and why should I care?", you can now answer from first principles — Prefill is compute-bound, Decode is memory-bound, they need different hardware, disaggregation lets you optimise each independently. You can also explain the trade-off: disaggregation adds complexity (KV Cache transfer overhead, more infra to manage) but unlocks significant throughput and cost improvements at scale.
+        <strong>Why this matters in your customer conversations:</strong> When a customer asks "what is disaggregation and why should I care?", you can now answer from first principles - Prefill is compute-bound, Decode is memory-bound, they need different hardware, disaggregation lets you optimise each independently. You can also explain the trade-off: disaggregation adds complexity (KV Cache transfer overhead, more infra to manage) but unlocks significant throughput and cost improvements at scale.
       </div>
     </div>
   </div>
@@ -526,7 +526,7 @@
     <div class="section-header" id="hdr7" onclick="toggle(7)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#283593;">7</span>
-        Part 1 Complete — What You Now Know
+        Part 1 Complete - What You Now Know
       </div>
       <span class="chevron" id="chv7">&#9662;</span>
     </div>
@@ -565,21 +565,21 @@
           <div class="sg-hook">LayerNorm + MHA + Residual + LayerNorm + FFN + Residual, repeated N times. Residuals enable depth. Depth drives cost.</div>
         </div>
         <div class="sg-card" style="border-left-color:#1A237E; grid-column:1 / span 2;">
-          <div class="sg-module">Module 1.7 — This module</div>
+          <div class="sg-module">Module 1.7 - This module</div>
           <div class="sg-title">Prefill vs Decode</div>
           <div class="sg-hook">Prefill = compute-bound, runs once, builds KV Cache. Decode = memory-bound, runs per output token, reads KV Cache. TTFT measures Prefill speed. TPOT measures Decode speed. Disaggregation separates them onto specialised hardware.</div>
         </div>
       </div>
 
       <div class="callout callout-indigo" style="margin-top:16px;">
-        <strong>You are now ready for Part 2.</strong> Everything in Part 2 (KV Cache, batching, throughput vs latency) and Part 3 (Flash Attention, Paged Attention, quantisation, disaggregation) builds directly on what you have learned here. The concepts will feel familiar — you will be deepening understanding, not starting from scratch.
+        <strong>You are now ready for Part 2.</strong> Everything in Part 2 (KV Cache, batching, throughput vs latency) and Part 3 (Flash Attention, Paged Attention, quantisation, disaggregation) builds directly on what you have learned here. The concepts will feel familiar - you will be deepening understanding, not starting from scratch.
       </div>
     </div>
   </div>
 
   <!-- Cheat Sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 1.7 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 1.7 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Prefill Phase</div>
@@ -599,7 +599,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Compute-bound</div>
-        <div class="cheat-def">The bottleneck is GPU FLOPS — raw calculation speed. Prefill is compute-bound. More FLOPS = faster Prefill.</div>
+        <div class="cheat-def">The bottleneck is GPU FLOPS - raw calculation speed. Prefill is compute-bound. More FLOPS = faster Prefill.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Memory-bandwidth-bound</div>
@@ -618,24 +618,24 @@
 
   <!-- Quiz -->
   <div class="quiz-section">
-    <div class="quiz-label">FINAL CHECK — PART 1</div>
+    <div class="quiz-label">FINAL CHECK - PART 1</div>
     <div class="quiz-q">A customer runs a coding assistant. Users submit short prompts (~200 tokens) but expect long, detailed code outputs (~2,000 tokens). They report that responses start appearing quickly but the full response takes very long to complete. Which phase is the bottleneck, what is the metric to measure it, and what category of solution should you explore?</div>
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        Prefill is the bottleneck — high TTFT — the prompt needs to be compressed to reduce tokenisation time
+        Prefill is the bottleneck - high TTFT - the prompt needs to be compressed to reduce tokenisation time
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        Decode is the bottleneck — high TPOT — the KV Cache grows large during a 2,000-token generation and memory bandwidth is being saturated. Solutions include KV Cache quantisation, Paged Attention, and potentially disaggregation to put Decode on memory-bandwidth-optimised GPUs
+        Decode is the bottleneck - high TPOT - the KV Cache grows large during a 2,000-token generation and memory bandwidth is being saturated. Solutions include KV Cache quantisation, Paged Attention, and potentially disaggregation to put Decode on memory-bandwidth-optimised GPUs
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Both phases are equally slow — the model needs to be replaced with a smaller one
+        Both phases are equally slow - the model needs to be replaced with a smaller one
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        The network connection between the user and server is the bottleneck — streaming needs to be enabled
+        The network connection between the user and server is the bottleneck - streaming needs to be enabled
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
@@ -645,9 +645,9 @@
   <!-- Next Part banner -->
   <a href="module2_1.html" class="next-part">
     <div>
-      <div class="np-label">Up Next — Part 2</div>
+      <div class="np-label">Up Next - Part 2</div>
       <div class="np-title">How Inference Actually Works</div>
-      <div class="np-sub">KV Cache deep dive, batching strategies, throughput vs latency — the serving layer explained</div>
+      <div class="np-sub">KV Cache deep dive, batching strategies, throughput vs latency - the serving layer explained</div>
     </div>
     <div class="np-arrow">&#8594;</div>
   </a>
@@ -778,10 +778,10 @@
     result.style.display = 'block';
     if (selected === 'b') {
       result.style.background = '#E8F5E9';
-      result.innerHTML = '<strong>Correct — and well reasoned.</strong> "Starts quickly" tells you TTFT is fine — Prefill is working well. "Takes long to complete" tells you TPOT is the problem — Decode is slow. With 2,000 output tokens, the KV Cache grows to ~2,200 entries by the end, and the Decode GPU is reading all of it on every step. The right investigation path: (1) measure TPOT to quantify the problem, (2) check GPU memory bandwidth utilisation, (3) explore KV Cache quantisation to reduce the data being read per step, (4) consider Paged Attention to manage KV Cache allocation efficiently, (5) at scale, disaggregation would let you put Decode on memory-bandwidth-optimised GPUs while Prefill stays on compute-optimised ones.';
+      result.innerHTML = '<strong>Correct - and well reasoned.</strong> "Starts quickly" tells you TTFT is fine - Prefill is working well. "Takes long to complete" tells you TPOT is the problem - Decode is slow. With 2,000 output tokens, the KV Cache grows to ~2,200 entries by the end, and the Decode GPU is reading all of it on every step. The right investigation path: (1) measure TPOT to quantify the problem, (2) check GPU memory bandwidth utilisation, (3) explore KV Cache quantisation to reduce the data being read per step, (4) consider Paged Attention to manage KV Cache allocation efficiently, (5) at scale, disaggregation would let you put Decode on memory-bandwidth-optimised GPUs while Prefill stays on compute-optimised ones.';
     } else {
       result.style.background = '#FFF3E0';
-      result.innerHTML = '<strong>Not quite.</strong> The clue is "starts quickly but takes long to complete" — this pattern tells you TTFT is fine (Prefill is fast) and TPOT is high (Decode is slow). Option B is correct. With a 2,000-token output, the KV Cache grows large and memory bandwidth becomes the bottleneck during Decode. TTFT-focused solutions like Flash Attention would not help here.';
+      result.innerHTML = '<strong>Not quite.</strong> The clue is "starts quickly but takes long to complete" - this pattern tells you TTFT is fine (Prefill is fast) and TPOT is high (Decode is slow). Option B is correct. With a 2,000-token output, the KV Cache grows large and memory bandwidth becomes the bottleneck during Decode. TTFT-focused solutions like Flash Attention would not help here.';
     }
     document.getElementById('check-btn').style.display = 'none';
   }

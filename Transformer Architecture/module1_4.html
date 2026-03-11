@@ -150,7 +150,7 @@
   <div class="header">
     <div class="header-eyebrow">PART 1 · MODULE 1.4</div>
     <h1>Multi-Head Attention</h1>
-    <p>Why one attention pass is not enough — and what happens when you run many in parallel</p>
+    <p>Why one attention pass is not enough - and what happens when you run many in parallel</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -162,18 +162,18 @@
   <div class="nav-bar">
     <a href="module1_3.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">1.3 — Attention Mechanism</div>
+      <div class="nav-title">1.3 - Attention Mechanism</div>
     </a>
     <a href="module1_5.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">1.5 — Feed Forward Network</div>
+      <div class="nav-title">1.5 - Feed Forward Network</div>
     </a>
   </div>
 
   <!-- Intro -->
   <div class="intro-card">
-    <p>In Module 1.3 you learned that Attention lets every token look at every other token to decide what is relevant. But a single attention pass can only look for one <em>type</em> of relationship at a time — like only being able to ask one question at a time about a document.</p>
-    <p>Multi-Head Attention (MHA) solves this by running many attention passes <em>simultaneously</em>, each looking for a different kind of relationship. This module explains what that means, why it matters for model quality, and — critically for your customer conversations — how it directly drives KV Cache size and memory usage during inference.</p>
+    <p>In Module 1.3 you learned that Attention lets every token look at every other token to decide what is relevant. But a single attention pass can only look for one <em>type</em> of relationship at a time - like only being able to ask one question at a time about a document.</p>
+    <p>Multi-Head Attention (MHA) solves this by running many attention passes <em>simultaneously</em>, each looking for a different kind of relationship. This module explains what that means, why it matters for model quality, and - critically for your customer conversations - how it directly drives KV Cache size and memory usage during inference.</p>
   </div>
 
   <!-- Section 1: The problem with single attention -->
@@ -206,10 +206,10 @@
         </div>
       </div>
 
-      <p>A single attention pass can only focus on one of these questions at a time. If it asks "who is the subject?", it may miss information about tone or structure. <strong>Multi-Head Attention lets the model ask all of these questions in parallel</strong> — each attention head specialises in a different type of relationship.</p>
+      <p>A single attention pass can only focus on one of these questions at a time. If it asks "who is the subject?", it may miss information about tone or structure. <strong>Multi-Head Attention lets the model ask all of these questions in parallel</strong> - each attention head specialises in a different type of relationship.</p>
 
       <div class="callout callout-blue">
-        <strong>The analogy:</strong> Think of a panel of expert reviewers reading the same document simultaneously. One reviewer focuses on logical structure. Another focuses on technical accuracy. Another focuses on tone. Each produces independent notes, which are then combined into one comprehensive assessment. Multi-Head Attention works the same way — parallel specialised passes, combined at the end.
+        <strong>The analogy:</strong> Think of a panel of expert reviewers reading the same document simultaneously. One reviewer focuses on logical structure. Another focuses on technical accuracy. Another focuses on tone. Each produces independent notes, which are then combined into one comprehensive assessment. Multi-Head Attention works the same way - parallel specialised passes, combined at the end.
       </div>
     </div>
   </div>
@@ -219,12 +219,12 @@
     <div class="section-header" id="hdr2" onclick="toggle(2)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#5C35A0;">2</span>
-        What Each Head Specialises In — Interactive Explorer
+        What Each Head Specialises In - Interactive Explorer
       </div>
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
     <div class="section-body" id="bdy2">
-      <p>Each attention head learns to specialise in a different type of relationship during training. The specialisations emerge naturally — they are not manually programmed. Click each head below to see what type of relationship it typically focuses on:</p>
+      <p>Each attention head learns to specialise in a different type of relationship during training. The specialisations emerge naturally - they are not manually programmed. Click each head below to see what type of relationship it typically focuses on:</p>
 
       <div class="head-grid" id="head-grid">
         <div class="head-card" style="background:#EEF2FF;" onclick="showHead(0)">
@@ -272,7 +272,7 @@
       <div class="head-detail" id="head-detail">Click a head above to see details.</div>
 
       <div class="callout callout-purple">
-        <strong>Important note:</strong> Real models have many more heads than 8. A 7B parameter model typically has 32 heads per layer. A 70B model typically has 64 heads. Each head runs its own complete Q, K, V computation — which is why the number of heads has a direct impact on KV Cache size and inference memory requirements.
+        <strong>Important note:</strong> Real models have many more heads than 8. A 7B parameter model typically has 32 heads per layer. A 70B model typically has 64 heads. Each head runs its own complete Q, K, V computation - which is why the number of heads has a direct impact on KV Cache size and inference memory requirements.
       </div>
     </div>
   </div>
@@ -282,26 +282,26 @@
     <div class="section-header" id="hdr3" onclick="toggle(3)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#00796B;">3</span>
-        How It Works — Split, Attend, Combine
+        How It Works - Split, Attend, Combine
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>Multi-Head Attention follows a simple three-step process. No formulas — just the logic:</p>
+      <p>Multi-Head Attention follows a simple three-step process. No formulas - just the logic:</p>
 
       <div style="display:flex; flex-direction:column; gap:14px; margin:18px 0;">
         <div style="display:flex; gap:16px; align-items:flex-start;">
           <div style="width:36px; height:36px; border-radius:50%; background:#1565C0; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:15px; flex-shrink:0; font-family:Arial,sans-serif;">1</div>
           <div style="flex:1; background:#E3F2FD; border-left:3px solid #1565C0; border-radius:0 10px 10px 0; padding:14px 16px;">
             <div style="font-weight:bold; font-size:14px; margin-bottom:6px; font-family:Arial,sans-serif;">Split</div>
-            <div style="font-size:14px; line-height:1.7; color:#333;">Each token's embedding is split into <em>h</em> smaller pieces — one for each attention head. If the embedding has 4,096 numbers and there are 32 heads, each head gets a 128-number slice to work with.</div>
+            <div style="font-size:14px; line-height:1.7; color:#333;">Each token's embedding is split into <em>h</em> smaller pieces - one for each attention head. If the embedding has 4,096 numbers and there are 32 heads, each head gets a 128-number slice to work with.</div>
           </div>
         </div>
         <div style="display:flex; gap:16px; align-items:flex-start;">
           <div style="width:36px; height:36px; border-radius:50%; background:#7B1FA2; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:15px; flex-shrink:0; font-family:Arial,sans-serif;">2</div>
           <div style="flex:1; background:#F3E8FD; border-left:3px solid #7B1FA2; border-radius:0 10px 10px 0; padding:14px 16px;">
             <div style="font-weight:bold; font-size:14px; margin-bottom:6px; font-family:Arial,sans-serif;">Attend in Parallel</div>
-            <div style="font-size:14px; line-height:1.7; color:#333;">Each head runs a full, independent attention computation on its slice. All heads run simultaneously on the GPU — this is one of the biggest sources of parallelism in the Transformer. Each head produces its own output, capturing a different aspect of the relationships in the input.</div>
+            <div style="font-size:14px; line-height:1.7; color:#333;">Each head runs a full, independent attention computation on its slice. All heads run simultaneously on the GPU - this is one of the biggest sources of parallelism in the Transformer. Each head produces its own output, capturing a different aspect of the relationships in the input.</div>
           </div>
         </div>
         <div style="display:flex; gap:16px; align-items:flex-start;">
@@ -314,7 +314,7 @@
       </div>
 
       <div class="concat-diagram">
-        <div class="concat-title">Simplified — how 4 heads combine into one output</div>
+        <div class="concat-title">Simplified - how 4 heads combine into one output</div>
         <div class="concat-row">
           <div class="concat-label">Head outputs</div>
           <div class="concat-blocks">
@@ -336,12 +336,12 @@
     <div class="section-header" id="hdr4" onclick="toggle(4)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#E65100;">4</span>
-        MHA vs MQA vs GQA — The Inference Optimisation Variants
+        MHA vs MQA vs GQA - The Inference Optimisation Variants
       </div>
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
     <div class="section-body" id="bdy4">
-      <p>This is where Multi-Head Attention connects directly to inference optimisation. You will hear these three terms in customer conversations — here is what they mean and why they matter:</p>
+      <p>This is where Multi-Head Attention connects directly to inference optimisation. You will hear these three terms in customer conversations - here is what they mean and why they matter:</p>
 
       <table class="variant-table">
         <thead>
@@ -368,14 +368,14 @@
           <tr>
             <td class="vt-name">GQA <span class="vt-badge badge-fast">Balanced</span></td>
             <td>Grouped Query Attention</td>
-            <td>Heads are grouped — each group shares one K and V. Middle ground between MHA and MQA.</td>
+            <td>Heads are grouped - each group shares one K and V. Middle ground between MHA and MQA.</td>
             <td>Significantly reduced KV Cache with minimal quality loss. Used in most modern models (Llama 3, Mistral, Gemma).</td>
           </tr>
         </tbody>
       </table>
 
       <div class="callout callout-orange">
-        <strong>Why this matters for your customer conversations:</strong> When a customer asks why Llama 3 is more memory-efficient than an older model of similar size, a big part of the answer is GQA. Llama 3 70B uses GQA with 8 key-value heads instead of 64 — meaning the KV Cache is 8x smaller than it would be with full MHA. This is a real, practical inference cost reduction you can point to.
+        <strong>Why this matters for your customer conversations:</strong> When a customer asks why Llama 3 is more memory-efficient than an older model of similar size, a big part of the answer is GQA. Llama 3 70B uses GQA with 8 key-value heads instead of 64 - meaning the KV Cache is 8x smaller than it would be with full MHA. This is a real, practical inference cost reduction you can point to.
       </div>
     </div>
   </div>
@@ -393,7 +393,7 @@
       <p>Now you can understand exactly what the KV Cache is made of and why it grows so large. For every token processed, the model stores K and V vectors for every head, at every layer.</p>
 
       <div style="background:#FFF8E1; border:1px solid #FFE082; border-radius:12px; padding:20px 22px; margin:16px 0;">
-        <div style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; margin-bottom:14px;">KV Cache size — what it depends on</div>
+        <div style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; margin-bottom:14px;">KV Cache size - what it depends on</div>
         <div style="display:flex; flex-direction:column; gap:10px; font-family:Arial,sans-serif;">
           <div style="display:flex; align-items:center; gap:12px;">
             <div style="background:#1565C0; color:white; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:bold; min-width:120px; text-align:center;">Number of tokens</div>
@@ -415,7 +415,7 @@
       </div>
 
       <div class="callout callout-teal">
-        <strong>Practical example:</strong> A 70B parameter model serving a 32k-token request with full MHA (64 heads, 80 layers, FP16) can generate a KV Cache of over 80GB — more than the GPU memory on most single A100s. This is exactly why Paged Attention, KV Cache quantisation, and disaggregation exist. Every optimisation technique you will learn in Part 3 is ultimately fighting this memory pressure.
+        <strong>Practical example:</strong> A 70B parameter model serving a 32k-token request with full MHA (64 heads, 80 layers, FP16) can generate a KV Cache of over 80GB - more than the GPU memory on most single A100s. This is exactly why Paged Attention, KV Cache quantisation, and disaggregation exist. Every optimisation technique you will learn in Part 3 is ultimately fighting this memory pressure.
       </div>
     </div>
   </div>
@@ -434,20 +434,20 @@
         <div class="key-num" style="color:#1565C0;">01</div>
         <div>
           <div class="key-title">Multi-Head Attention runs many attention passes in parallel, each capturing a different relationship</div>
-          <div class="key-desc">Syntax, coreference, semantics, long-range dependencies — each head specialises independently. This is why LLMs understand language so richly compared to earlier models.</div>
+          <div class="key-desc">Syntax, coreference, semantics, long-range dependencies - each head specialises independently. This is why LLMs understand language so richly compared to earlier models.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#7B1FA2;">02</div>
         <div>
-          <div class="key-title">Each head has its own K and V in standard MHA — multiplying KV Cache size</div>
+          <div class="key-title">Each head has its own K and V in standard MHA - multiplying KV Cache size</div>
           <div class="key-desc">More heads = richer understanding but larger KV Cache. A 64-head model stores 64 sets of K and V vectors per token per layer. This is the root cause of GPU memory pressure at inference time.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">03</div>
         <div>
-          <div class="key-title">GQA is the modern solution — shared K and V across head groups</div>
+          <div class="key-title">GQA is the modern solution - shared K and V across head groups</div>
           <div class="key-desc">Most modern models (Llama 3, Mistral, Gemma) use Grouped Query Attention to cut KV Cache size dramatically with minimal quality impact. When customers ask about memory efficiency improvements, GQA is a key part of the answer.</div>
         </div>
       </div>
@@ -463,7 +463,7 @@
 
   <!-- Cheat Sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 1.4 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 1.4 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Multi-Head Attention (MHA)</div>
@@ -495,7 +495,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Head Specialisation</div>
-        <div class="cheat-def">Heads learn different roles during training automatically — not manually programmed. Different heads focus on syntax, semantics, coreference, etc.</div>
+        <div class="cheat-def">Heads learn different roles during training automatically - not manually programmed. Different heads focus on syntax, semantics, coreference, etc.</div>
       </div>
     </div>
   </div>
@@ -508,7 +508,7 @@
       <div class="quiz-option" onclick="selectOption(this,'a')"><span class="opt-letter" id="lbl-a">A.</span> The GQA model will be significantly slower because sharing K and V reduces parallelism</div>
       <div class="quiz-option" onclick="selectOption(this,'b')"><span class="opt-letter" id="lbl-b">B.</span> The GQA model will have a KV Cache roughly 8x smaller, allowing more requests to be served concurrently or longer contexts to fit in the same GPU memory</div>
       <div class="quiz-option" onclick="selectOption(this,'c')"><span class="opt-letter" id="lbl-c">C.</span> The MHA model is always better quality so customers should never use GQA</div>
-      <div class="quiz-option" onclick="selectOption(this,'d')"><span class="opt-letter" id="lbl-d">D.</span> There is no meaningful difference — head count does not affect memory usage</div>
+      <div class="quiz-option" onclick="selectOption(this,'d')"><span class="opt-letter" id="lbl-d">D.</span> There is no meaningful difference - head count does not affect memory usage</div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
     <div class="quiz-result" id="quiz-result" style="display:none;"></div>
@@ -518,8 +518,8 @@
   <a href="module1_5.html" class="next-module">
     <div>
       <div class="next-label">UP NEXT</div>
-      <div class="next-title">Module 1.5 — Feed Forward Network (FFN)</div>
-      <div class="next-sub">The other half of a transformer block — what it does and why it matters for inference</div>
+      <div class="next-title">Module 1.5 - Feed Forward Network (FFN)</div>
+      <div class="next-sub">The other half of a transformer block - what it does and why it matters for inference</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -545,44 +545,44 @@
   /* ── head explorer ── */
   var headData = [
     {
-      name: 'Head 1 — Syntactic Relationships',
+      name: 'Head 1 - Syntactic Relationships',
       color: '#1565C0',
       content: 'This head focuses on grammatical structure. It learns which words are subjects, objects, and modifiers. For example, in "The large server crashed", it connects "server" to "crashed" (subject-verb) and "large" to "server" (modifier). This kind of structural understanding is fundamental for the model to form coherent sentences.'
     },
     {
-      name: 'Head 2 — Coreference Resolution',
+      name: 'Head 2 - Coreference Resolution',
       color: '#7B1FA2',
-      content: 'This head specialises in linking pronouns back to the nouns they refer to. In "The engineer deployed the server. It crashed immediately.", this head connects "It" back to "server" — not "engineer". Without this, the model could not track entities consistently across long documents.'
+      content: 'This head specialises in linking pronouns back to the nouns they refer to. In "The engineer deployed the server. It crashed immediately.", this head connects "It" back to "server" - not "engineer". Without this, the model could not track entities consistently across long documents.'
     },
     {
-      name: 'Head 3 — Positional / Local Relationships',
+      name: 'Head 3 - Positional / Local Relationships',
       color: '#E65100',
-      content: 'This head pays strong attention to nearby tokens — words that are immediately adjacent or within a short window. It captures local phrase structure and compound terms. For example, "out of memory" is understood as a phrase because this head keeps "out", "of", and "memory" tightly linked.'
+      content: 'This head pays strong attention to nearby tokens - words that are immediately adjacent or within a short window. It captures local phrase structure and compound terms. For example, "out of memory" is understood as a phrase because this head keeps "out", "of", and "memory" tightly linked.'
     },
     {
-      name: 'Head 4 — Semantic / Topic Relationships',
+      name: 'Head 4 - Semantic / Topic Relationships',
       color: '#2E7D32',
-      content: 'This head focuses on meaning and topic consistency. It connects words that belong to the same semantic field — for example, "server", "deploy", "memory", "GPU" all belong to the infrastructure domain. This helps the model stay on-topic and produce contextually coherent responses.'
+      content: 'This head focuses on meaning and topic consistency. It connects words that belong to the same semantic field - for example, "server", "deploy", "memory", "GPU" all belong to the infrastructure domain. This helps the model stay on-topic and produce contextually coherent responses.'
     },
     {
-      name: 'Head 5 — Long-Range Dependencies',
+      name: 'Head 5 - Long-Range Dependencies',
       color: '#00796B',
-      content: 'This head specialises in connecting tokens that are far apart in the sequence — potentially hundreds or thousands of tokens away. It is what allows the model to answer a question at token 4,000 using context introduced at token 200. This is one of the most distinctive capabilities of the Transformer compared to older architectures.'
+      content: 'This head specialises in connecting tokens that are far apart in the sequence - potentially hundreds or thousands of tokens away. It is what allows the model to answer a question at token 4,000 using context introduced at token 200. This is one of the most distinctive capabilities of the Transformer compared to older architectures.'
     },
     {
-      name: 'Head 6 — Entity Tracking',
+      name: 'Head 6 - Entity Tracking',
       color: '#C62828',
-      content: 'This head tracks named entities — people, companies, products, locations — and their properties throughout the text. It connects every mention of "NVIDIA" across a long document, associating it with its properties and actions. This is critical for question-answering and summarisation tasks.'
+      content: 'This head tracks named entities - people, companies, products, locations - and their properties throughout the text. It connects every mention of "NVIDIA" across a long document, associating it with its properties and actions. This is critical for question-answering and summarisation tasks.'
     },
     {
-      name: 'Head 7 — Causal Relationships',
+      name: 'Head 7 - Causal Relationships',
       color: '#F57F17',
       content: 'This head focuses on cause-and-effect links. In "The server crashed because it ran out of memory", it connects "crashed" to "ran out of memory" as cause-and-effect. This type of reasoning is critical for tasks that require logical inference, such as root-cause analysis or step-by-step reasoning.'
     },
     {
-      name: 'Head 8 — Document Structure',
+      name: 'Head 8 - Document Structure',
       color: '#283593',
-      content: 'This head tracks higher-level document organisation — how paragraphs relate to each other, where section boundaries are, and how topics transition. It is what allows the model to produce structured outputs like summaries, reports, or multi-section documents with coherent organisation.'
+      content: 'This head tracks higher-level document organisation - how paragraphs relate to each other, where section boundaries are, and how topics transition. It is what allows the model to produce structured outputs like summaries, reports, or multi-section documents with coherent organisation.'
     }
   ];
 
@@ -626,10 +626,10 @@
     result.style.display = 'block';
     if (selected === 'b') {
       result.style.background = '#E8F5E9';
-      result.innerHTML = '<strong>Correct!</strong> With GQA using 8 KV heads versus MHA using 64, the KV Cache is 8x smaller. In practice this means: serving 8x more concurrent users on the same GPU, fitting 8x longer context windows in the same memory, or using a smaller and cheaper GPU for the same workload. The quality difference is generally minimal for most production use cases — which is why GQA has become the standard in modern models.';
+      result.innerHTML = '<strong>Correct!</strong> With GQA using 8 KV heads versus MHA using 64, the KV Cache is 8x smaller. In practice this means: serving 8x more concurrent users on the same GPU, fitting 8x longer context windows in the same memory, or using a smaller and cheaper GPU for the same workload. The quality difference is generally minimal for most production use cases - which is why GQA has become the standard in modern models.';
     } else {
       result.style.background = '#FFF3E0';
-      result.innerHTML = '<strong>Not quite.</strong> The correct answer is B. Fewer KV heads means a proportionally smaller KV Cache — GQA with 8 KV heads stores 8x less K and V data than MHA with 64 heads, for the same number of tokens and layers. This is one of the most impactful architectural changes for inference efficiency in recent model generations.';
+      result.innerHTML = '<strong>Not quite.</strong> The correct answer is B. Fewer KV heads means a proportionally smaller KV Cache - GQA with 8 KV heads stores 8x less K and V data than MHA with 64 heads, for the same number of tokens and layers. This is one of the most impactful architectural changes for inference efficiency in recent model generations.';
     }
     document.getElementById('check-btn').style.display = 'none';
   }

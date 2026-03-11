@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 2.1 - What is Inference?</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #37474F 0%, #455A64 50%, #546E7A 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .header-badge { display:inline-block; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:8px; padding:5px 14px; font-size:12px; font-family:Arial,sans-serif; margin-bottom:14px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #CFD8DC; background:white; font-family:Arial,sans-serif; font-size:13px; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #1A237E; }
+  .nav-btn.next { text-align:right; border-right:4px solid #37474F; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout        { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-slate  { background:#ECEFF1; border-left:4px solid #546E7A; }
+  .callout-blue   { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange { background:#FFF3E0; border-left:4px solid #FF9800; }
+  .callout-green  { background:#E8F5E9; border-left:4px solid #4CAF50; }
+  .callout-purple { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-teal   { background:#E0F2F1; border-left:4px solid #00796B; }
+  .callout-red    { background:#FFEBEE; border-left:4px solid #C62828; }
+
+  /* Training vs Inference comparison */
+  .tv-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:18px 0; }
+  .tv-card { border-radius:12px; padding:20px 18px; }
+  .tv-badge { display:inline-block; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:bold; font-family:Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+  .tv-title { font-size:16px; font-weight:bold; margin-bottom:10px; }
+  .tv-row   { font-size:13.5px; line-height:1.7; margin-bottom:7px; padding-left:14px; position:relative; }
+  .tv-row::before { content:'–'; position:absolute; left:0; color:#999; }
+
+  /* Serving stack diagram */
+  .stack-diagram { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; color:white; font-family:Arial,sans-serif; }
+  .stack-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.45; margin-bottom:16px; }
+  .stack-layer { border-radius:8px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .stack-layer-left { display:flex; align-items:center; gap:12px; }
+  .stack-icon { width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; flex-shrink:0; }
+  .stack-name { font-weight:bold; font-size:14px; }
+  .stack-desc { font-size:12.5px; opacity:0.65; margin-top:2px; line-height:1.4; }
+  .stack-badge { font-size:11px; border-radius:10px; padding:3px 10px; flex-shrink:0; font-weight:bold; }
+  .stack-arrow { text-align:center; opacity:0.3; font-size:16px; margin:-4px 0; }
+
+  /* Request lifecycle */
+  .lifecycle { display:flex; flex-direction:column; gap:0; margin:18px 0; }
+  .lc-row    { display:flex; gap:14px; align-items:stretch; }
+  .lc-left   { display:flex; flex-direction:column; align-items:center; width:36px; flex-shrink:0; }
+  .lc-circle { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:13px; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .lc-line   { flex:1; width:2px; background:#E0E0E0; margin:3px auto; }
+  .lc-body   { flex:1; border-radius:0 10px 10px 0; padding:12px 16px; margin-bottom:8px; }
+  .lc-title  { font-weight:bold; font-size:14px; font-family:Arial,sans-serif; margin-bottom:4px; }
+  .lc-desc   { font-size:13.5px; line-height:1.7; color:#444; }
+  .lc-meta   { display:inline-block; font-size:11px; font-family:Arial,sans-serif; border-radius:4px; padding:2px 8px; margin-top:6px; font-weight:bold; }
+
+  /* Metrics dashboard */
+  .metrics-dash { background:#F8F9FF; border:1px solid #C5CAE9; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .metrics-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#555; font-family:Arial,sans-serif; margin-bottom:14px; }
+  .metrics-grid  { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .metric-card   { background:white; border-radius:10px; padding:14px 16px; border-left:4px solid; }
+  .metric-name   { font-size:12px; font-family:Arial,sans-serif; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+  .metric-value  { font-size:22px; font-weight:bold; font-family:monospace; margin-bottom:4px; }
+  .metric-unit   { font-size:12px; font-family:Arial,sans-serif; color:#888; }
+  .metric-desc   { font-size:12.5px; color:#555; line-height:1.5; margin-top:8px; }
+
+  /* Use case cards */
+  .usecase-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }
+  .uc-card { border-radius:10px; padding:14px 16px; border:1px solid #E0E0E0; }
+  .uc-title { font-weight:bold; font-size:14px; font-family:Arial,sans-serif; margin-bottom:6px; }
+  .uc-row   { font-size:13px; line-height:1.6; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .uc-label { font-weight:bold; color:#555; }
+
+  /* Online vs Batch */
+  .ob-row { display:grid; grid-template-columns:auto 1fr 1fr; gap:10px; margin-bottom:8px; align-items:center; }
+  .ob-header { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; }
+  .ob-label  { font-size:13.5px; font-family:Arial,sans-serif; font-weight:bold; }
+  .ob-cell   { font-size:13.5px; line-height:1.6; padding:10px 14px; border-radius:8px; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#37474F; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#B0BEC5; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.85; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover   { border-color:#546E7A; background:#ECEFF1; }
+  .quiz-option.selected{ border-color:#546E7A; background:#ECEFF1; }
+  .quiz-option.correct { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong   { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#546E7A; }
+  .quiz-btn  { margin-top:14px; background:#37474F; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#455A64; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  /* Next */
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#ECEFF1,#E8EAF6); border:1px solid #CFD8DC; display:flex; justify-content:space-between; align-items:center; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .tv-grid,.metrics-grid,.usecase-grid,.cheat-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+    .ob-row { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-eyebrow">PART 2 · MODULE 2.1</div>
+    <div class="header-badge">Part 2 - How Inference Actually Works</div>
+    <h1>What Is Inference?</h1>
+    <p>Training built the model. Inference is everything that happens after - serving it to users at speed, scale, and cost that actually works in production.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+      <span class="tag">No math</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav-bar">
+    <a href="module1_7.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">1.7 - Prefill vs Decode</div>
+    </a>
+    <a href="module2_2.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">2.2 - KV Cache</div>
+    </a>
+  </div>
+
+  <!-- Intro -->
+  <div class="intro-card">
+    <p>You have spent Part 1 learning how a Transformer works internally - tokens, embeddings, attention, FFN, layers, Prefill, Decode. All of that is the <em>model</em>. Now we zoom out to the <em>system</em> that runs the model.</p>
+    <p><strong>Inference</strong> is the process of taking a trained model and using it to generate responses to real user requests. It is where the rubber meets the road - and where the vast majority of real-world AI cost, latency, and engineering challenge lives. Understanding inference as a system is what separates an SA who can explain architecture from one who can advise on production deployments.</p>
+  </div>
+
+  <!-- Section 1: Training vs Inference -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#455A64;">1</span>
+        Training vs Inference - Two Completely Different Problems
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>Most AI coverage focuses on training - the phase where the model learns from data. But training happens once. Inference happens millions of times a day. They are fundamentally different problems:</p>
+
+      <div class="tv-grid">
+        <div class="tv-card" style="background:#E8F5E9; border:1px solid #A5D6A7;">
+          <div class="tv-badge" style="background:#2E7D32; color:white;">Training</div>
+          <div class="tv-title" style="color:#2E7D32;">Building the model</div>
+          <div class="tv-row">Runs once (or a few times during development)</div>
+          <div class="tv-row">Optimises model weights from billions of examples</div>
+          <div class="tv-row">Takes days to months on large GPU clusters</div>
+          <div class="tv-row">Cost measured in millions of dollars for large models</div>
+          <div class="tv-row">Throughput matters most - process as much data as possible</div>
+          <div class="tv-row">Result: a frozen set of model weights saved to disk</div>
+        </div>
+        <div class="tv-card" style="background:#E3F2FD; border:1px solid #90CAF9;">
+          <div class="tv-badge" style="background:#1565C0; color:white;">Inference</div>
+          <div class="tv-title" style="color:#1565C0;">Using the model</div>
+          <div class="tv-row">Runs continuously - every user request is an inference call</div>
+          <div class="tv-row">Applies fixed weights to generate a response</div>
+          <div class="tv-row">Must respond in milliseconds to seconds</div>
+          <div class="tv-row">Cost measured in dollars per million tokens served</div>
+          <div class="tv-row">Latency and cost per request matter most</div>
+          <div class="tv-row">Result: a response streamed back to the user</div>
+        </div>
+      </div>
+
+      <div class="callout callout-slate">
+        <strong>Why this distinction matters for customer conversations:</strong> When a customer says "our AI is expensive", they almost always mean inference cost - not training cost. When they say "our AI is slow", they mean inference latency. Training is a one-time capital expense. Inference is the ongoing operational cost that scales with usage. Every optimisation technique in Part 3 reduces inference cost or latency - not training cost.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: The inference serving stack -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">2</span>
+        The Inference Serving Stack
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>Inference is not just "run the model." A production inference system has multiple layers, each doing a specific job. Understanding this stack is essential for talking to customers about where bottlenecks occur and which tools solve which problems.</p>
+
+      <div class="stack-diagram">
+        <div class="stack-title">Production inference serving stack - top to bottom</div>
+
+        <div class="stack-layer" style="background:rgba(99,102,241,0.15);">
+          <div class="stack-left">
+            <div class="stack-icon" style="background:#6366F1; color:white;">API</div>
+            <div>
+              <div class="stack-name">API Gateway / Load Balancer</div>
+              <div class="stack-desc">Receives user requests, routes them, manages authentication and rate limiting</div>
+            </div>
+          </div>
+          <div class="stack-badge" style="background:rgba(99,102,241,0.2); color:#A5B4FC;">User-facing</div>
+        </div>
+        <div class="stack-arrow">&#8595;</div>
+
+        <div class="stack-layer" style="background:rgba(14,165,233,0.15);">
+          <div class="stack-left">
+            <div class="stack-icon" style="background:#0EA5E9; color:white;">SRV</div>
+            <div>
+              <div class="stack-name">Inference Server (e.g. Triton, vLLM)</div>
+              <div class="stack-desc">Manages request queuing, batching multiple requests together, schedules GPU work</div>
+            </div>
+          </div>
+          <div class="stack-badge" style="background:rgba(14,165,233,0.2); color:#7DD3FC;">Orchestration</div>
+        </div>
+        <div class="stack-arrow">&#8595;</div>
+
+        <div class="stack-layer" style="background:rgba(168,85,247,0.15);">
+          <div class="stack-left">
+            <div class="stack-icon" style="background:#A855F7; color:white;">KV</div>
+            <div>
+              <div class="stack-name">KV Cache Manager</div>
+              <div class="stack-desc">Allocates, reuses, and evicts KV Cache blocks across concurrent requests - the memory manager of inference</div>
+            </div>
+          </div>
+          <div class="stack-badge" style="background:rgba(168,85,247,0.2); color:#D8B4FE;">Memory</div>
+        </div>
+        <div class="stack-arrow">&#8595;</div>
+
+        <div class="stack-layer" style="background:rgba(234,179,8,0.15);">
+          <div class="stack-left">
+            <div class="stack-icon" style="background:#EAB308; color:white;">ENG</div>
+            <div>
+              <div class="stack-name">Inference Engine (e.g. TensorRT-LLM, vLLM engine)</div>
+              <div class="stack-desc">Executes the actual model forward pass on GPU - runs attention, FFN, all transformer operations</div>
+            </div>
+          </div>
+          <div class="stack-badge" style="background:rgba(234,179,8,0.2); color:#FDE68A;">Execution</div>
+        </div>
+        <div class="stack-arrow">&#8595;</div>
+
+        <div class="stack-layer" style="background:rgba(34,197,94,0.15);">
+          <div class="stack-left">
+            <div class="stack-icon" style="background:#22C55E; color:white;">GPU</div>
+            <div>
+              <div class="stack-name">GPU Hardware (A100, H100, H200...)</div>
+              <div class="stack-desc">The physical hardware - CUDA cores for compute, HBM for memory, NVLink for multi-GPU communication</div>
+            </div>
+          </div>
+          <div class="stack-badge" style="background:rgba(34,197,94,0.2); color:#86EFAC;">Hardware</div>
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>Where vLLM and Triton fit:</strong> vLLM is primarily an inference server and engine - it handles both the KV Cache management layer and the execution layer. Triton Inference Server sits above vLLM and TensorRT-LLM as the orchestration layer - it handles request routing, batching coordination, and multi-model serving. TensorRT-LLM is a pure execution engine - optimised CUDA kernels that run the model as fast as possible on NVIDIA hardware. Knowing which layer each tool operates in helps you answer "which tool do I need?" questions clearly.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: A request's journey -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">3</span>
+        A Request's Journey Through the System
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>From the moment a user hits send to the moment the response completes, here is every step that happens inside a production inference system:</p>
+
+      <div class="lifecycle">
+
+        <div class="lc-row">
+          <div class="lc-left">
+            <div class="lc-circle" style="background:#546E7A;">1</div>
+            <div class="lc-line"></div>
+          </div>
+          <div class="lc-body" style="background:#ECEFF1; border-left:3px solid #546E7A;">
+            <div class="lc-title">Request arrives at API Gateway</div>
+            <div class="lc-desc">The user's prompt hits the load balancer. Authentication is checked, rate limits applied, and the request is forwarded to an available inference server instance.</div>
+            <div class="lc-meta" style="background:#546E7A; color:white;">Wall time: &lt;5ms</div>
+          </div>
+        </div>
+
+        <div class="lc-row">
+          <div class="lc-left">
+            <div class="lc-circle" style="background:#1565C0;">2</div>
+            <div class="lc-line"></div>
+          </div>
+          <div class="lc-body" style="background:#E3F2FD; border-left:3px solid #1565C0;">
+            <div class="lc-title">Tokenisation</div>
+            <div class="lc-desc">The raw text prompt is converted into token IDs using the model's tokeniser. A 500-word prompt becomes approximately 650 tokens. The token count determines how much GPU memory the KV Cache will need.</div>
+            <div class="lc-meta" style="background:#1565C0; color:white;">Wall time: &lt;2ms</div>
+          </div>
+        </div>
+
+        <div class="lc-row">
+          <div class="lc-left">
+            <div class="lc-circle" style="background:#7B1FA2;">3</div>
+            <div class="lc-line"></div>
+          </div>
+          <div class="lc-body" style="background:#F3E8FD; border-left:3px solid #7B1FA2;">
+            <div class="lc-title">Queue and KV Cache allocation</div>
+            <div class="lc-desc">The request enters the inference server's scheduling queue. The KV Cache manager checks available GPU memory and reserves blocks for this request's KV Cache. If memory is full, the request waits or an existing request's cache is evicted.</div>
+            <div class="lc-meta" style="background:#7B1FA2; color:white;">Wall time: 0–500ms (depends on queue depth)</div>
+          </div>
+        </div>
+
+        <div class="lc-row">
+          <div class="lc-left">
+            <div class="lc-circle" style="background:#1565C0;">4</div>
+            <div class="lc-line"></div>
+          </div>
+          <div class="lc-body" style="background:#E3F2FD; border-left:3px solid #1565C0;">
+            <div class="lc-title">Prefill phase</div>
+            <div class="lc-desc">All input tokens are processed in one forward pass through all model layers. KV Cache is populated. Compute-intensive. TTFT clock starts ticking from the user's send - everything up to this point contributes to TTFT.</div>
+            <div class="lc-meta" style="background:#1565C0; color:white;">Wall time: 50–500ms for typical prompts</div>
+          </div>
+        </div>
+
+        <div class="lc-row">
+          <div class="lc-left">
+            <div class="lc-circle" style="background:#E65100;">5</div>
+            <div class="lc-line"></div>
+          </div>
+          <div class="lc-body" style="background:#FFF3E0; border-left:3px solid #E65100;">
+            <div class="lc-title">Decode phase (token by token)</div>
+            <div class="lc-desc">The first output token is returned to the user (TTFT achieved). Each subsequent token is generated by one forward pass reading the full KV Cache. Tokens are streamed as they are produced - the user sees the response build up in real time.</div>
+            <div class="lc-meta" style="background:#E65100; color:white;">Wall time: 20–100ms per token (TPOT)</div>
+          </div>
+        </div>
+
+        <div class="lc-row">
+          <div class="lc-left">
+            <div class="lc-circle" style="background:#2E7D32;">6</div>
+          </div>
+          <div class="lc-body" style="background:#E8F5E9; border-left:3px solid #2E7D32;">
+            <div class="lc-title">Stop token and cleanup</div>
+            <div class="lc-desc">The model generates a special end-of-sequence token when it is done. The KV Cache blocks for this request are freed, the GPU memory is returned to the pool, and the slot is available for the next request.</div>
+            <div class="lc-meta" style="background:#2E7D32; color:white;">Wall time: &lt;5ms</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>What determines total response time:</strong> Queue wait + Prefill + (TPOT x output tokens). For a 200-token prompt, 500-token output on a moderately loaded system, a realistic breakdown might be: 50ms queue + 120ms Prefill + (25ms x 500 tokens) = 12.67 seconds total. The Decode phase dominates for anything beyond short responses - which is why TPOT optimisation matters so much.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Key inference metrics -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">4</span>
+        The 5 Metrics That Define Inference Performance
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>Every customer conversation about inference performance eventually comes down to one or more of these five metrics. Knowing what each measures and what drives it makes you a much more credible technical advisor:</p>
+
+      <div class="metrics-dash">
+        <div class="metrics-title">Inference performance metrics - know all five</div>
+        <div class="metrics-grid">
+          <div class="metric-card" style="border-left-color:#1565C0;">
+            <div class="metric-name" style="color:#1565C0;">TTFT</div>
+            <div class="metric-value" style="color:#1565C0;">&lt; 500ms</div>
+            <div class="metric-unit">Time to First Token - target for chat apps</div>
+            <div class="metric-desc">Time from sending prompt to first token appearing. Driven by queue wait + Prefill. Long prompts and overloaded servers increase TTFT.</div>
+          </div>
+          <div class="metric-card" style="border-left-color:#E65100;">
+            <div class="metric-name" style="color:#E65100;">TPOT</div>
+            <div class="metric-value" style="color:#E65100;">&lt; 30ms</div>
+            <div class="metric-unit">Time per Output Token - target for real-time feel</div>
+            <div class="metric-desc">Time between successive output tokens. Driven by Decode memory bandwidth. KV Cache size and GPU memory speed are the main factors.</div>
+          </div>
+          <div class="metric-card" style="border-left-color:#7B1FA2;">
+            <div class="metric-name" style="color:#7B1FA2;">Throughput</div>
+            <div class="metric-value" style="color:#7B1FA2;">tok/s</div>
+            <div class="metric-unit">Tokens per second across all concurrent users</div>
+            <div class="metric-desc">How many tokens the system generates per second in total across all requests. Drives cost efficiency. Higher throughput = lower cost per token.</div>
+          </div>
+          <div class="metric-card" style="border-left-color:#2E7D32;">
+            <div class="metric-name" style="color:#2E7D32;">Concurrency</div>
+            <div class="metric-value" style="color:#2E7D32;">req/GPU</div>
+            <div class="metric-unit">Simultaneous requests per GPU</div>
+            <div class="metric-desc">How many requests a single GPU can handle at the same time. Driven by available KV Cache memory. More concurrent requests = better GPU utilisation.</div>
+          </div>
+          <div class="metric-card" style="border-left-color:#C62828; grid-column: 1 / span 2;">
+            <div class="metric-name" style="color:#C62828;">Cost per Token</div>
+            <div class="metric-value" style="color:#C62828;">$/1M tok</div>
+            <div class="metric-unit">The business metric everything else feeds into</div>
+            <div class="metric-desc">GPU cost divided by tokens served. Improving throughput, concurrency, and GPU utilisation all reduce cost per token. This is the metric CEOs and CFOs care about - the others are the levers that move it.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-green">
+        <strong>The fundamental tension:</strong> Optimising for low latency (TTFT, TPOT) often conflicts with optimising for high throughput and low cost. Serving each request as fast as possible means not waiting to batch it with others - which wastes GPU capacity. Batching many requests together maximises throughput but adds queue wait time. This tension is the central challenge of inference serving - and the subject of Module 2.4.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Online vs Batch -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#00796B;">5</span>
+        Online Inference vs Batch Inference
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>Not all inference workloads are the same. The two major categories have completely different requirements and are optimised differently:</p>
+
+      <div style="margin:16px 0; border:1px solid #E0E0E0; border-radius:12px; overflow:hidden; font-family:Arial,sans-serif;">
+        <div style="display:grid; grid-template-columns:130px 1fr 1fr; background:#37474F; color:white;">
+          <div style="padding:10px 14px; font-size:11px; letter-spacing:1px; text-transform:uppercase;"></div>
+          <div style="padding:10px 14px; font-size:11px; letter-spacing:1px; text-transform:uppercase; border-left:1px solid rgba(255,255,255,0.1);">Online Inference</div>
+          <div style="padding:10px 14px; font-size:11px; letter-spacing:1px; text-transform:uppercase; border-left:1px solid rgba(255,255,255,0.1);">Batch Inference</div>
+        </div>
+        <div style="display:grid; grid-template-columns:130px 1fr 1fr;">
+          <div style="padding:10px 14px; font-weight:bold; font-size:13px; background:#F5F5F5; border-bottom:1px solid #EEE;">Priority</div>
+          <div style="padding:10px 14px; font-size:13.5px; border-left:1px solid #EEE; border-bottom:1px solid #EEE; background:#E3F2FD;">Low latency - user is waiting</div>
+          <div style="padding:10px 14px; font-size:13.5px; border-left:1px solid #EEE; border-bottom:1px solid #EEE; background:#E8F5E9;">High throughput - cost efficiency</div>
+        </div>
+        <div style="display:grid; grid-template-columns:130px 1fr 1fr;">
+          <div style="padding:10px 14px; font-weight:bold; font-size:13px; background:#F5F5F5; border-bottom:1px solid #EEE;">Use cases</div>
+          <div style="padding:10px 14px; font-size:13.5px; border-left:1px solid #EEE; border-bottom:1px solid #EEE;">Chat, copilots, voice assistants, search</div>
+          <div style="padding:10px 14px; font-size:13.5px; border-left:1px solid #EEE; border-bottom:1px solid #EEE;">Document processing, data extraction, evaluation pipelines</div>
+        </div>
+        <div style="display:grid; grid-template-columns:130px 1fr 1fr;">
+          <div style="padding:10px 14px; font-weight:bold; font-size:13px; background:#F5F5F5; border-bottom:1px solid #EEE;">Timing</div>
+          <div style="padding:10px 14px; font-size:13.5px; border-left:1px solid #EEE; border-bottom:1px solid #EEE;">Real-time, requests arrive unpredictably</div>
+          <div style="padding:10px 14px; font-size:13.5px; border-left:1px solid #EEE; border-bottom:1px solid #EEE;">Scheduled, large volumes processed overnight or off-peak</div>
+        </div>
+        <div style="display:grid; grid-template-columns:130px 1fr 1fr;">
+          <div style="padding:10px 14px; font-weight:bold; font-size:13px; background:#F5F5F5; border-bottom:1px solid #EEE;">Key metric</div>
+          <div style="padding:10px 14px; font-size:13.5px; border-left:1px solid #EEE; border-bottom:1px solid #EEE; color:#1565C0; font-weight:bold;">TTFT and TPOT</div>
+          <div style="padding:10px 14px; font-size:13.5px; border-left:1px solid #EEE; border-bottom:1px solid #EEE; color:#2E7D32; font-weight:bold;">Throughput and cost per token</div>
+        </div>
+        <div style="display:grid; grid-template-columns:130px 1fr 1fr;">
+          <div style="padding:10px 14px; font-weight:bold; font-size:13px; background:#F5F5F5;">GPU strategy</div>
+          <div style="padding:10px 14px; font-size:13.5px; border-left:1px solid #EEE;">Reserve capacity, optimise for latency, avoid over-batching</div>
+          <div style="padding:10px 14px; font-size:13.5px; border-left:1px solid #EEE;">Maximise GPU utilisation, large batch sizes, spot/preemptible GPUs acceptable</div>
+        </div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>Customer example:</strong> A fintech company processing 500,000 loan documents overnight is a batch workload - they care about cost per document and total job time, not individual response latency. A legal tech company with lawyers using a document chat assistant is an online workload - each lawyer is waiting, so TTFT and TPOT matter. Both customers need inference optimisation, but the right solutions are very different.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">6</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <div class="key-item">
+        <div class="key-num" style="color:#455A64;">01</div>
+        <div>
+          <div class="key-title">Inference is the operational cost - training is the capital cost</div>
+          <div class="key-desc">A model trained once costs millions. Serving it to users costs money every single request - at scale, inference cost dwarfs training cost. This is why inference optimisation has become one of the most important engineering disciplines in AI.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">02</div>
+        <div>
+          <div class="key-title">The serving stack has multiple layers - bottlenecks can be at any layer</div>
+          <div class="key-desc">A slow inference system might be bottlenecked at the API layer (too many requests), the scheduler (poor batching), the KV Cache manager (memory full), or the execution engine (model too large for GPU). Knowing the stack helps you diagnose which layer is the problem.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">03</div>
+        <div>
+          <div class="key-title">There are 5 key metrics - and the business cares about cost per token</div>
+          <div class="key-desc">TTFT, TPOT, throughput, concurrency, and cost per token. The first four are technical levers. Cost per token is the business outcome. Being able to explain how a technical optimisation moves cost per token makes you credible in both technical and business conversations.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#00796B;">04</div>
+        <div>
+          <div class="key-title">Online and batch inference need fundamentally different strategies</div>
+          <div class="key-desc">Before recommending any optimisation, ask: is this a latency-sensitive online workload or a throughput-focused batch workload? The answer changes everything - from GPU selection to batching strategy to which software stack to use.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat Sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 2.1 - CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Inference</div>
+        <div class="cheat-def">Using a trained model to generate responses. Happens continuously in production. The main source of ongoing AI operational cost.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Training</div>
+        <div class="cheat-def">Building the model from data. Happens once. Results in a fixed set of weights. Not the same problem as inference.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Inference Server</div>
+        <div class="cheat-def">Software that manages request queuing, batching, and scheduling for GPU execution. Examples: vLLM, Triton Inference Server.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Inference Engine</div>
+        <div class="cheat-def">Software that executes the model forward pass on GPU. Examples: TensorRT-LLM, vLLM engine. Runs the actual transformer operations.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">TTFT</div>
+        <div class="cheat-def">Time to First Token. Latency from prompt submission to first output token. Driven by queue wait + Prefill time.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">TPOT</div>
+        <div class="cheat-def">Time per Output Token. Interval between successive output tokens during Decode. Driven by memory bandwidth and KV Cache size.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Online Inference</div>
+        <div class="cheat-def">Real-time serving where users are waiting. Optimise for TTFT and TPOT. Examples: chat, copilots, voice assistants.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Batch Inference</div>
+        <div class="cheat-def">Scheduled, high-volume processing with no live users. Optimise for throughput and cost per token. Examples: document processing, data extraction.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer's engineering team reports that their chatbot has acceptable TTFT (under 1 second) but users are complaining that responses "feel slow" even after the first word appears. The CTO asks if they need a bigger model or better hardware. What is your assessment?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        A bigger model would improve response quality and speed simultaneously - they should upgrade to a 70B model
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        The TTFT is fine so Prefill is not the issue. The complaint about feeling slow after the first word points to high TPOT - the Decode phase is the bottleneck. The fix is not a bigger model (that makes it worse) but Decode optimisation: KV Cache management, memory bandwidth improvements, or GQA if the model supports it.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        The problem is likely network latency between the server and users - they need a CDN
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        This is a training issue - the model was not trained on enough conversational data
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <!-- Next -->
+  <a href="module2_2.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next - Module 2.2</div>
+      <div class="next-title">KV Cache - What It Is and Why It Matters</div>
+      <div class="next-sub">The most important concept in inference serving - a deep dive into what it stores, why it fills up, and how it is managed</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+
+<script>
+  var colors = {1:'#455A64',2:'#1565C0',3:'#7B1FA2',4:'#E65100',5:'#00796B',6:'#283593'};
+  var bgs    = {1:'#ECEFF1',2:'#E3F2FD',3:'#F3E8FD',4:'#FFF3E0',5:'#E0F2F1',6:'#E8EAF6'};
+
+  function toggle(n) {
+    var body = document.getElementById('bdy'+n);
+    var chv  = document.getElementById('chv'+n);
+    var hdr  = document.getElementById('hdr'+n);
+    var isOpen = body.classList.contains('open');
+    body.classList.toggle('open');
+    chv.classList.toggle('open');
+    hdr.style.borderLeftColor = isOpen ? '#E8E8E8' : colors[n];
+    hdr.style.background      = isOpen ? 'white'   : bgs[n];
+  }
+
+  var selected = null;
+  var answered = false;
+
+  function selectOption(el, id) {
+    if (answered) return;
+    document.querySelectorAll('.quiz-option').forEach(function(o) {
+      o.classList.remove('selected');
+      o.querySelector('.opt-letter').classList.remove('active');
+    });
+    el.classList.add('selected');
+    el.querySelector('.opt-letter').classList.add('active');
+    selected = id;
+    document.getElementById('check-btn').style.display = 'inline-block';
+  }
+
+  function checkAnswer() {
+    if (!selected || answered) return;
+    answered = true;
+    var opts    = document.querySelectorAll('.quiz-option');
+    var letters = ['a','b','c','d'];
+    opts.forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      if(letters[i]==='b') o.classList.add('correct');
+      else if(letters[i]===selected) o.classList.add('wrong');
+    });
+    var result = document.getElementById('quiz-result');
+    result.style.display = 'block';
+    if (selected === 'b') {
+      result.style.background = '#E8F5E9';
+      result.innerHTML = '<strong>Correct - and this is exactly the kind of diagnostic reasoning that makes an SA credible.</strong> "Acceptable TTFT but slow-feeling responses" is the classic TPOT problem. The Decode phase is memory-bandwidth-bound, and the fix is Decode-side optimisation - not a bigger model. A bigger model would make TPOT worse because it has more parameters to load from memory on every decode step, and a larger KV Cache to read. The right conversation to have: measure actual TPOT, check GPU memory bandwidth utilisation, explore KV Cache quantisation or a model with GQA (like Llama 3) to reduce KV Cache read volume.';
+    } else {
+      result.style.background = '#FFF3E0';
+      result.innerHTML = '<strong>Not quite.</strong> The symptom - fine TTFT, slow after first token - maps directly to high TPOT (Option B). This is a Decode bottleneck, not a Prefill, network, or training problem. Importantly, a bigger model would make it worse, not better. The right direction is Decode-side optimisation: KV Cache efficiency, memory bandwidth, and batching strategy.';
+    }
+    document.getElementById('check-btn').style.display = 'none';
+  }
+</script>
+</body>
+</html>

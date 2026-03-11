@@ -144,7 +144,7 @@
   <div class="header">
     <div class="header-eyebrow">PART 1 · MODULE 1.5</div>
     <h1>Feed Forward Network (FFN)</h1>
-    <p>The other half of every transformer block — what it does and why it is the biggest consumer of GPU memory</p>
+    <p>The other half of every transformer block - what it does and why it is the biggest consumer of GPU memory</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -156,19 +156,19 @@
   <div class="nav-bar">
     <a href="module1_4.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">1.4 — Multi-Head Attention</div>
+      <div class="nav-title">1.4 - Multi-Head Attention</div>
     </a>
     <a href="module1_6.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">1.6 — How layers stack</div>
+      <div class="nav-title">1.6 - How layers stack</div>
     </a>
   </div>
 
   <!-- Intro -->
   <div class="intro-card">
-    <p>Every Transformer block has two major components. You have learned about the first — Attention. Now meet the second: the <strong>Feed Forward Network (FFN)</strong>.</p>
-    <p>While Attention handles <em>relationships between tokens</em>, the FFN handles something different — it processes each token <em>individually</em>, applying deep reasoning to refine what the token means after attention has told it what to focus on. Together, they are the engine of every transformer layer.</p>
-    <p>This module also introduces <strong>Mixture of Experts (MoE)</strong> — a modern FFN variant that is reshaping how large models are built and served, and that you will encounter in customer conversations about models like Mixtral and GPT-4.</p>
+    <p>Every Transformer block has two major components. You have learned about the first - Attention. Now meet the second: the <strong>Feed Forward Network (FFN)</strong>.</p>
+    <p>While Attention handles <em>relationships between tokens</em>, the FFN handles something different - it processes each token <em>individually</em>, applying deep reasoning to refine what the token means after attention has told it what to focus on. Together, they are the engine of every transformer layer.</p>
+    <p>This module also introduces <strong>Mixture of Experts (MoE)</strong> - a modern FFN variant that is reshaping how large models are built and served, and that you will encounter in customer conversations about models like Mixtral and GPT-4.</p>
   </div>
 
   <!-- Section 1: What FFN does -->
@@ -188,21 +188,21 @@
         <div class="analogy-row">
           <div class="analogy-step" style="background:#1565C0;">1</div>
           <div class="analogy-content" style="border-left-color:#1565C0;">
-            <div class="analogy-title">Expand — look at it from many angles</div>
-            <div class="analogy-desc">The token's embedding is projected into a much higher-dimensional space — typically 4x larger. This is like taking a concept and breaking it down into thousands of sub-questions: "Is this technical? Is it a question? Is it positive? Does it relate to infrastructure? Does it require a list response?" The model considers all of these simultaneously.</div>
+            <div class="analogy-title">Expand - look at it from many angles</div>
+            <div class="analogy-desc">The token's embedding is projected into a much higher-dimensional space - typically 4x larger. This is like taking a concept and breaking it down into thousands of sub-questions: "Is this technical? Is it a question? Is it positive? Does it relate to infrastructure? Does it require a list response?" The model considers all of these simultaneously.</div>
           </div>
         </div>
         <div class="analogy-row">
           <div class="analogy-step" style="background:#C62828;">2</div>
           <div class="analogy-content" style="border-left-color:#C62828;">
-            <div class="analogy-title">Contract — synthesise into a refined answer</div>
+            <div class="analogy-title">Contract - synthesise into a refined answer</div>
             <div class="analogy-desc">The expanded representation is projected back down to the original embedding size. The model has now "thought through" the token from many angles and produced a refined, richer understanding of it. This output flows to the next transformer layer.</div>
           </div>
         </div>
       </div>
 
       <div class="callout callout-blue">
-        <strong>The key difference from Attention:</strong> Attention is about <em>relationships between tokens</em> — token A looks at tokens B, C, D. The FFN is about <em>reasoning within a single token</em> — token A thinks deeply about itself after gathering that context. Both are essential. Attention gathers. FFN processes.
+        <strong>The key difference from Attention:</strong> Attention is about <em>relationships between tokens</em> - token A looks at tokens B, C, D. The FFN is about <em>reasoning within a single token</em> - token A thinks deeply about itself after gathering that context. Both are essential. Attention gathers. FFN processes.
       </div>
     </div>
   </div>
@@ -221,19 +221,19 @@
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
         <div style="background:#E3F2FD; border-radius:10px; padding:16px 18px; border-left:4px solid #1565C0;">
-          <div style="font-weight:bold; font-size:14px; margin-bottom:8px; font-family:Arial,sans-serif; color:#1565C0;">Phase 1 — Attention (Gathering)</div>
+          <div style="font-weight:bold; font-size:14px; margin-bottom:8px; font-family:Arial,sans-serif; color:#1565C0;">Phase 1 - Attention (Gathering)</div>
           <div style="font-size:13.5px; line-height:1.7; color:#333;">The analyst reaches out to colleagues, reads related reports, and gathers information. They ask: "What do others know about this topic that I need?" This is cross-token, relational work.</div>
         </div>
         <div style="background:#FFEBEE; border-radius:10px; padding:16px 18px; border-left:4px solid #C62828;">
-          <div style="font-weight:bold; font-size:14px; margin-bottom:8px; font-family:Arial,sans-serif; color:#C62828;">Phase 2 — FFN (Processing)</div>
-          <div style="font-size:13.5px; line-height:1.7; color:#333;">The analyst sits at their desk alone, thinks deeply, synthesises what they gathered, and writes their analysis. This is individual, token-level reasoning — no looking outward, just thinking through what has been collected.</div>
+          <div style="font-weight:bold; font-size:14px; margin-bottom:8px; font-family:Arial,sans-serif; color:#C62828;">Phase 2 - FFN (Processing)</div>
+          <div style="font-size:13.5px; line-height:1.7; color:#333;">The analyst sits at their desk alone, thinks deeply, synthesises what they gathered, and writes their analysis. This is individual, token-level reasoning - no looking outward, just thinking through what has been collected.</div>
         </div>
       </div>
 
       <p>A transformer layer always does these in sequence: Attention first (gather context), then FFN (process it). This pair repeats at every layer, each time producing a richer understanding of the tokens.</p>
 
       <div class="callout callout-red">
-        <strong>Why this matters for inference:</strong> The FFN is not just a minor component. In a standard Transformer, the FFN accounts for roughly <strong>two-thirds of the total model parameters</strong>. Attention is powerful but compact. The FFN is where most of the model's "knowledge" and reasoning capacity is stored — which is also why it is the biggest contributor to model weight size on disk and in GPU memory.
+        <strong>Why this matters for inference:</strong> The FFN is not just a minor component. In a standard Transformer, the FFN accounts for roughly <strong>two-thirds of the total model parameters</strong>. Attention is powerful but compact. The FFN is where most of the model's "knowledge" and reasoning capacity is stored - which is also why it is the biggest contributor to model weight size on disk and in GPU memory.
       </div>
     </div>
   </div>
@@ -243,7 +243,7 @@
     <div class="section-header" id="hdr3" onclick="toggle(3)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#E65100;">3</span>
-        FFN vs Attention — Different Bottlenecks
+        FFN vs Attention - Different Bottlenecks
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
@@ -338,16 +338,16 @@
     <div class="section-header" id="hdr5" onclick="toggle(5)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">5</span>
-        Mixture of Experts (MoE) — The Modern FFN Evolution
+        Mixture of Experts (MoE) - The Modern FFN Evolution
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
-      <p>Standard FFNs run the same set of weights for every single token. This is effective but wasteful — a token about "GPU architecture" and a token about "cooking recipes" both go through the exact same weights, even though they need completely different reasoning.</p>
+      <p>Standard FFNs run the same set of weights for every single token. This is effective but wasteful - a token about "GPU architecture" and a token about "cooking recipes" both go through the exact same weights, even though they need completely different reasoning.</p>
       <p><strong>Mixture of Experts (MoE)</strong> solves this. Instead of one FFN, it has many smaller FFNs called <em>experts</em>. A lightweight router decides which 1–2 experts are most relevant for each token, and only those experts are activated.</p>
 
       <div style="background:#F8F0FF; border-radius:12px; padding:20px 22px; margin:16px 0;">
-        <div style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; margin-bottom:12px;">MoE — only 2 of 8 experts activate per token</div>
+        <div style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; margin-bottom:12px;">MoE - only 2 of 8 experts activate per token</div>
         <div class="moe-grid">
           <div class="moe-expert active-expert" style="background:#F3E8FD;">
             <div class="moe-label">Expert 1</div>
@@ -390,11 +390,11 @@
             <div class="moe-badge" style="background:#E0E0E0; color:#888;">idle</div>
           </div>
         </div>
-        <div style="font-size:12.5px; color:#777; font-family:Arial,sans-serif; margin-top:12px; line-height:1.6;">For a technical reasoning token, only Expert 1 (Technical) and Expert 4 (Reasoning) activate. The other 6 experts sit idle — saving compute while keeping quality high.</div>
+        <div style="font-size:12.5px; color:#777; font-family:Arial,sans-serif; margin-top:12px; line-height:1.6;">For a technical reasoning token, only Expert 1 (Technical) and Expert 4 (Reasoning) activate. The other 6 experts sit idle - saving compute while keeping quality high.</div>
       </div>
 
       <div class="callout callout-purple">
-        <strong>Why MoE matters for inference:</strong> A Mixtral 8x7B model has 8 experts per layer, but only activates 2 per token. It has 47B total parameters but only uses ~13B active parameters per token — giving near-70B quality at 13B compute cost. The catch: all 47B weights still need to fit in GPU memory. This is the key MoE trade-off — high quality at lower compute, but higher memory than a dense model of equivalent active size.
+        <strong>Why MoE matters for inference:</strong> A Mixtral 8x7B model has 8 experts per layer, but only activates 2 per token. It has 47B total parameters but only uses ~13B active parameters per token - giving near-70B quality at 13B compute cost. The catch: all 47B weights still need to fit in GPU memory. This is the key MoE trade-off - high quality at lower compute, but higher memory than a dense model of equivalent active size.
       </div>
     </div>
   </div>
@@ -420,14 +420,14 @@
         <div class="key-num" style="color:#1565C0;">02</div>
         <div>
           <div class="key-title">The FFN holds ~65–70% of a model's parameters</div>
-          <div class="key-desc">This is why quantisation — compressing weight precision — is so effective. Reducing FFN weight size from FP16 to INT4 cuts model memory requirements by 75%. It is the single biggest lever for fitting large models onto fewer GPUs.</div>
+          <div class="key-desc">This is why quantisation - compressing weight precision - is so effective. Reducing FFN weight size from FP16 to INT4 cuts model memory requirements by 75%. It is the single biggest lever for fitting large models onto fewer GPUs.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">03</div>
         <div>
           <div class="key-title">FFN bottleneck is about model size, not context length</div>
-          <div class="key-desc">Unlike Attention (which gets worse with longer sequences), the FFN cost is the same regardless of how long the input is. If a model is slow on short prompts too, the bottleneck is the FFN — likely a GPU memory or compute capacity issue, not a context issue.</div>
+          <div class="key-desc">Unlike Attention (which gets worse with longer sequences), the FFN cost is the same regardless of how long the input is. If a model is slow on short prompts too, the bottleneck is the FFN - likely a GPU memory or compute capacity issue, not a context issue.</div>
         </div>
       </div>
       <div class="key-item">
@@ -442,7 +442,7 @@
 
   <!-- Cheat Sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 1.5 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 1.5 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Feed Forward Network (FFN)</div>
@@ -454,7 +454,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Dense FFN</div>
-        <div class="cheat-def">Standard FFN — all parameters activate for every token. Simple but computationally uniform regardless of input type.</div>
+        <div class="cheat-def">Standard FFN - all parameters activate for every token. Simple but computationally uniform regardless of input type.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Mixture of Experts (MoE)</div>
@@ -486,19 +486,19 @@
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        The KV Cache is overflowing — they need to reduce their context window length
+        The KV Cache is overflowing - they need to reduce their context window length
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        Even though only 13B parameters are active per token, all 47B parameters must be loaded into GPU memory — if the GPU is near capacity from model weights alone, it will be slow regardless of prompt length. The fix is quantisation or adding more GPU memory.
+        Even though only 13B parameters are active per token, all 47B parameters must be loaded into GPU memory - if the GPU is near capacity from model weights alone, it will be slow regardless of prompt length. The fix is quantisation or adding more GPU memory.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Mixtral does not support short prompts efficiently — they should switch to a dense model
+        Mixtral does not support short prompts efficiently - they should switch to a dense model
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        The attention mechanism is the bottleneck — Flash Attention should fix it
+        The attention mechanism is the bottleneck - Flash Attention should fix it
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
@@ -509,8 +509,8 @@
   <a href="module1_6.html" class="next-module">
     <div>
       <div class="next-label">UP NEXT</div>
-      <div class="next-title">Module 1.6 — The Full Transformer Block</div>
-      <div class="next-sub">How Attention and FFN stack together into layers — and what that means for inference depth</div>
+      <div class="next-title">Module 1.6 - The Full Transformer Block</div>
+      <div class="next-sub">How Attention and FFN stack together into layers - and what that means for inference depth</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -560,10 +560,10 @@
     result.style.display = 'block';
     if (selected === 'b') {
       result.style.background = '#E8F5E9';
-      result.innerHTML = '<strong>Correct!</strong> This is a classic MoE trade-off. Mixtral 8x7B in FP16 requires ~94GB just for the model weights — which already exceeds a single 80GB A100. The model is memory-bound before any inference even begins. The recommended solutions: (1) quantise to INT8 or INT4 to cut weight size in half or more, (2) use tensor parallelism across two GPUs, or (3) use a TensorRT-LLM optimised build. The short prompt tells you immediately it is not a KV Cache or context-length problem.';
+      result.innerHTML = '<strong>Correct!</strong> This is a classic MoE trade-off. Mixtral 8x7B in FP16 requires ~94GB just for the model weights - which already exceeds a single 80GB A100. The model is memory-bound before any inference even begins. The recommended solutions: (1) quantise to INT8 or INT4 to cut weight size in half or more, (2) use tensor parallelism across two GPUs, or (3) use a TensorRT-LLM optimised build. The short prompt tells you immediately it is not a KV Cache or context-length problem.';
     } else {
       result.style.background = '#FFF3E0';
-      result.innerHTML = '<strong>Not quite.</strong> The clue is that it is slow on <em>short</em> prompts — which rules out context length and KV Cache issues. The problem is the FFN weight bottleneck (Option B). Mixtral 8x7B at FP16 requires ~94GB for weights alone, exceeding an 80GB A100. Quantisation or multi-GPU deployment is needed.';
+      result.innerHTML = '<strong>Not quite.</strong> The clue is that it is slow on <em>short</em> prompts - which rules out context length and KV Cache issues. The problem is the FFN weight bottleneck (Option B). Mixtral 8x7B at FP16 requires ~94GB for weights alone, exceeding an 80GB A100. Quantisation or multi-GPU deployment is needed.';
     }
     document.getElementById('check-btn').style.display = 'none';
   }

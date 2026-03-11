@@ -103,7 +103,7 @@
   <div class="header">
     <div class="header-eyebrow">PART 1 · MODULE 1.1</div>
     <h1>What Is a Transformer?</h1>
-    <p>The big picture — before any optimization talk can make sense</p>
+    <p>The big picture - before any optimization talk can make sense</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -114,13 +114,13 @@
   <div class="nav-bar">
     <a href="module1_2.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">1.2 — Tokens &amp; Embeddings</div>
+      <div class="nav-title">1.2 - Tokens &amp; Embeddings</div>
     </a>
   </div>
 
   <div class="intro-card">
-    <p>You've been working with LLM infrastructure — vLLM, TensorRT, inference servers — but the <strong>foundational "why"</strong> behind each concept was never formally taught. That's exactly what this module fixes.</p>
-    <p>By the end of this module, you'll be able to explain what a Transformer is to any customer in 60 seconds — no jargon, no confusion.</p>
+    <p>You've been working with LLM infrastructure - vLLM, TensorRT, inference servers - but the <strong>foundational "why"</strong> behind each concept was never formally taught. That's exactly what this module fixes.</p>
+    <p>By the end of this module, you'll be able to explain what a Transformer is to any customer in 60 seconds - no jargon, no confusion.</p>
   </div>
 
   <!-- Section 1 -->
@@ -133,7 +133,7 @@
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>When customers ask you about <em>inference optimization</em> — flash attention, disaggregation, KV cache, quantization — every single one of these concepts exists to solve a problem that <strong>only exists because of how Transformers work</strong>.</p>
+      <p>When customers ask you about <em>inference optimization</em> - flash attention, disaggregation, KV cache, quantization - every single one of these concepts exists to solve a problem that <strong>only exists because of how Transformers work</strong>.</p>
       <p>You can't properly explain <em>why</em> KV Cache matters if you don't know what a Transformer is doing internally. You can't explain prefill vs decode disaggregation without understanding the two phases of generation.</p>
       <div class="callout callout-blue"><strong>Think of it this way:</strong> If a customer asks "why does disaggregation help with latency?", you need to trace the answer back to the transformer. This module is that foundation.</div>
     </div>
@@ -149,12 +149,12 @@
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
     <div class="section-body" id="bdy2">
-      <p>A <strong>Transformer</strong> is a type of neural network architecture introduced by Google in 2017. Today, it powers almost every major AI model — GPT-4, Claude, Gemini, LLaMA, Mistral. They're all Transformers.</p>
+      <p>A <strong>Transformer</strong> is a type of neural network architecture introduced by Google in 2017. Today, it powers almost every major AI model - GPT-4, Claude, Gemini, LLaMA, Mistral. They're all Transformers.</p>
       <div class="compare-grid">
         <div class="compare-box" style="background:#FFEBEE; border:1px solid #EF9A9A;">
           <div class="compare-box-title">Before Transformers</div>
           <div class="compare-item">Models read text word-by-word, left to right</div>
-          <div class="compare-item">Slow — couldn't parallelize</div>
+          <div class="compare-item">Slow - couldn't parallelize</div>
           <div class="compare-item">Forgot context from earlier in the sentence</div>
           <div class="compare-item">Couldn't handle long documents well</div>
         </div>
@@ -166,7 +166,7 @@
           <div class="compare-item">Foundation of all modern LLMs</div>
         </div>
       </div>
-      <div class="callout callout-purple"><strong>Key insight:</strong> The "read everything at once" capability is called <strong>Attention</strong> — and it's the heart of why Transformers are powerful. You'll learn exactly what it does in Module 1.3.</div>
+      <div class="callout callout-purple"><strong>Key insight:</strong> The "read everything at once" capability is called <strong>Attention</strong> - and it's the heart of why Transformers are powerful. You'll learn exactly what it does in Module 1.3.</div>
     </div>
   </div>
 
@@ -180,14 +180,14 @@
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>Imagine you receive a very long email from a customer — 4 pages long. You need to write a reply.</p>
+      <p>Imagine you receive a very long email from a customer - 4 pages long. You need to write a reply.</p>
       <div class="analogy-box" style="background:#FFF3E0; border-left: 4px solid #FF9800;">
         <div class="analogy-label">Old AI approach (pre-Transformer)</div>
         <div class="analogy-desc">You read the email word by word, and by the time you get to page 4, you've mostly forgotten what was on page 1. Your reply is based mostly on the last few lines.</div>
       </div>
       <div class="analogy-box" style="background:#E8F5E9; border-left: 4px solid #4CAF50;">
         <div class="analogy-label">Transformer approach</div>
-        <div class="analogy-desc">You read the entire email at once. You highlight relationships — "this question on page 4 connects to the constraint mentioned on page 1." You write a reply that considers ALL the context simultaneously.</div>
+        <div class="analogy-desc">You read the entire email at once. You highlight relationships - "this question on page 4 connects to the constraint mentioned on page 1." You write a reply that considers ALL the context simultaneously.</div>
       </div>
       <div class="callout callout-orange"><strong>Why this matters for inference:</strong> Since the Transformer reads everything at once, it generates massive amounts of intermediate data (called the <strong>KV Cache</strong>) that has to be stored in GPU memory. This is exactly why memory management is the #1 problem in inference optimization.</div>
     </div>
@@ -208,14 +208,14 @@
         <div class="step-left"><div class="step-num" style="background:#1976D2;">1</div><div class="step-line"></div></div>
         <div class="step-content" style="background:#E3F2FD; border-left:3px solid #1976D2;">
           <div class="step-title">Tokenization</div>
-          <div class="step-desc">Your text is broken into tokens — small chunks of text (roughly 3/4 of a word each). A 10-page contract might be ~6,000 tokens.</div>
+          <div class="step-desc">Your text is broken into tokens - small chunks of text (roughly 3/4 of a word each). A 10-page contract might be ~6,000 tokens.</div>
         </div>
       </div>
       <div class="flow-step">
         <div class="step-left"><div class="step-num" style="background:#7B1FA2;">2</div><div class="step-line"></div></div>
         <div class="step-content" style="background:#F3E8FD; border-left:3px solid #7B1FA2;">
           <div class="step-title">Prefill Phase</div>
-          <div class="step-desc">The model processes ALL your input tokens at once. This is computationally intensive — like reading the whole contract in one sitting. This phase is <strong>compute-bound</strong>.</div>
+          <div class="step-desc">The model processes ALL your input tokens at once. This is computationally intensive - like reading the whole contract in one sitting. This phase is <strong>compute-bound</strong>.</div>
         </div>
       </div>
       <div class="flow-step">
@@ -256,7 +256,7 @@
       <p>If you remember nothing else from this module, remember these three things:</p>
       <div class="key-item">
         <div class="key-num" style="color:#FF5252;">01</div>
-        <div><div class="key-title">Transformers read everything at once</div><div class="key-desc">Unlike older AI, Transformers process all input tokens simultaneously. This gives them incredible context understanding — but creates big memory pressure.</div></div>
+        <div><div class="key-title">Transformers read everything at once</div><div class="key-desc">Unlike older AI, Transformers process all input tokens simultaneously. This gives them incredible context understanding - but creates big memory pressure.</div></div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#651FFF;">02</div>
@@ -264,19 +264,19 @@
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#00897B;">03</div>
-        <div><div class="key-title">The KV Cache is the key bottleneck</div><div class="key-desc">The intermediate memory state saved during processing. It's what enables fast generation — but it's huge and fills up GPU memory fast. Flash Attention, Paged Attention, disaggregation — they all relate to this.</div></div>
+        <div><div class="key-title">The KV Cache is the key bottleneck</div><div class="key-desc">The intermediate memory state saved during processing. It's what enables fast generation - but it's huge and fills up GPU memory fast. Flash Attention, Paged Attention, disaggregation - they all relate to this.</div></div>
       </div>
     </div>
   </div>
 
   <!-- Cheat Sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 1.1 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 1.1 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item"><div class="cheat-term">Transformer</div><div class="cheat-def">Neural network architecture that reads all tokens at once using Attention</div></div>
       <div class="cheat-item"><div class="cheat-term">Token</div><div class="cheat-def">A chunk of text (~3/4 word). Your prompt = many tokens.</div></div>
-      <div class="cheat-item"><div class="cheat-term">Prefill</div><div class="cheat-def">Phase 1 — model reads all input at once. Compute-bound.</div></div>
-      <div class="cheat-item"><div class="cheat-term">Decode</div><div class="cheat-def">Phase 2 — model generates output one token at a time. Memory-bound.</div></div>
+      <div class="cheat-item"><div class="cheat-term">Prefill</div><div class="cheat-def">Phase 1 - model reads all input at once. Compute-bound.</div></div>
+      <div class="cheat-item"><div class="cheat-term">Decode</div><div class="cheat-def">Phase 2 - model generates output one token at a time. Memory-bound.</div></div>
       <div class="cheat-item"><div class="cheat-term">KV Cache</div><div class="cheat-def">Memory structure storing intermediate state. Enables fast generation but consumes GPU memory.</div></div>
       <div class="cheat-item"><div class="cheat-term">Attention</div><div class="cheat-def">The mechanism that lets the model relate any token to any other token. Core of the Transformer.</div></div>
     </div>
@@ -300,7 +300,7 @@
   <a href="module1_2.html" class="next-module">
     <div>
       <div class="next-label">UP NEXT</div>
-      <div class="next-title">Module 1.2 — Tokens &amp; Embeddings</div>
+      <div class="next-title">Module 1.2 - Tokens &amp; Embeddings</div>
       <div class="next-sub">How text becomes numbers a model can process</div>
     </div>
     <div class="next-arrow">&#8594;</div>
@@ -356,7 +356,7 @@
     result.style.display = 'block';
     if (selected === 'a') {
       result.style.background = '#E8F5E9';
-      result.innerHTML = '<strong>Correct!</strong> Transformers process all tokens simultaneously using Attention — this is what makes them so powerful and also why they\'re memory-intensive at inference time.';
+      result.innerHTML = '<strong>Correct!</strong> Transformers process all tokens simultaneously using Attention - this is what makes them so powerful and also why they\'re memory-intensive at inference time.';
     } else {
       result.style.background = '#FFF3E0';
       result.innerHTML = '<strong>Not quite.</strong> The key innovation is that Transformers read <em>all tokens at once</em> (Option A), not sequentially. This parallel processing is powered by the Attention mechanism.';

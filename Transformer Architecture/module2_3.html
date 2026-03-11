@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 2.3 - Batching Strategies</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #388E3C 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #C8E6C9; background:white; font-family:Arial,sans-serif; font-size:13px; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #4A148C; }
+  .nav-btn.next { text-align:right; border-right:4px solid #1B5E20; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout         { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-green   { background:#E8F5E9; border-left:4px solid #2E7D32; }
+  .callout-blue    { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange  { background:#FFF3E0; border-left:4px solid #FF9800; }
+  .callout-purple  { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-red     { background:#FFEBEE; border-left:4px solid #C62828; }
+  .callout-teal    { background:#E0F2F1; border-left:4px solid #00796B; }
+
+  /* ── GPU utilisation analogy ── */
+  .util-wrap { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .util-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:16px; }
+  .util-row   { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .util-label { font-size:12.5px; min-width:120px; opacity:0.8; }
+  .util-bar-bg { flex:1; background:rgba(255,255,255,0.08); border-radius:4px; height:24px; overflow:hidden; }
+  .util-bar-fill { height:24px; border-radius:4px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:bold; transition:width 0.6s ease; }
+  .util-pct { font-size:13px; font-weight:bold; min-width:44px; text-align:right; }
+
+  /* ── Batch type cards ── */
+  .btype-card { border-radius:12px; padding:20px 22px; margin-bottom:14px; border:1px solid #E0E0E0; }
+  .btype-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .btype-badge  { border-radius:8px; padding:4px 12px; font-size:11px; font-weight:bold; font-family:Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; }
+  .btype-title  { font-weight:bold; font-size:16px; }
+  .btype-desc   { font-size:14px; line-height:1.8; margin-bottom:14px; color:#333; }
+  .btype-vis    { border-radius:10px; padding:14px 16px; margin-bottom:12px; font-family:monospace; font-size:12.5px; line-height:1.8; }
+  .btype-pros-cons { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btype-pro, .btype-con { border-radius:8px; padding:10px 12px; font-size:13px; line-height:1.6; }
+  .btype-pro { background:#E8F5E9; }
+  .btype-pro::before { content:'+ '; font-weight:bold; color:#2E7D32; }
+  .btype-con { background:#FFEBEE; }
+  .btype-con::before { content:'- '; font-weight:bold; color:#C62828; }
+
+  /* ── Continuous batching interactive ── */
+  .cb-wrap { background:#F1F8E9; border:1px solid #AED581; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .cb-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#33691E; font-family:Arial,sans-serif; margin-bottom:14px; font-weight:bold; }
+  .cb-timeline { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .cb-time-header { display:flex; gap:4px; font-size:11px; font-family:Arial,sans-serif; color:#888; margin-bottom:4px; padding-left:90px; }
+  .cb-time-tick   { flex:1; text-align:center; }
+  .cb-req-row     { display:flex; gap:4px; align-items:center; }
+  .cb-req-label   { width:86px; font-size:12px; font-family:Arial,sans-serif; font-weight:bold; flex-shrink:0; }
+  .cb-slot        { flex:1; height:24px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; font-family:Arial,sans-serif; font-weight:bold; }
+  .cb-empty   { background:#F0F0F0; color:#CCC; }
+  .cb-prefill { background:#1565C0; color:white; }
+  .cb-decode  { background:#43A047; color:white; }
+  .cb-new     { background:#FF8F00; color:white; }
+  .cb-done    { background:#E0E0E0; color:#999; font-style:italic; }
+  .cb-legend  { display:flex; gap:14px; flex-wrap:wrap; }
+  .cb-legend-item { display:flex; align-items:center; gap:6px; font-size:12px; font-family:Arial,sans-serif; }
+  .cb-legend-box  { width:14px; height:14px; border-radius:3px; }
+
+  /* ── Strategy comparison table ── */
+  .strat-table { width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:13px; margin:16px 0; }
+  .strat-table th { background:#2E7D32; color:white; padding:10px 12px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .strat-table td { padding:11px 12px; border-bottom:1px solid #F0F0F0; vertical-align:top; line-height:1.6; }
+  .strat-table tr:nth-child(even) td { background:#F8F8F8; }
+  .strat-table tr:last-child td { border-bottom:none; }
+  .st-name { font-weight:bold; color:#1B5E20; }
+  .st-good { color:#2E7D32; }
+  .st-bad  { color:#C62828; }
+
+  /* ── Throughput vs latency dial ── */
+  .dial-wrap { background:#F9FBE7; border:1px solid #C5E1A5; border-radius:12px; padding:18px 20px; margin:16px 0; }
+  .dial-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#558B2F; font-family:Arial,sans-serif; margin-bottom:14px; }
+  .dial-slider-row { display:flex; align-items:center; gap:14px; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .dial-slider { flex:1; accent-color:#2E7D32; }
+  .dial-ends { display:flex; justify-content:space-between; font-size:12px; color:#888; font-family:Arial,sans-serif; margin-bottom:10px; }
+  .dial-result-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .dial-card { background:white; border-radius:8px; padding:10px 12px; text-align:center; border-left:3px solid #ccc; }
+  .dial-card-label { font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#888; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .dial-card-value { font-size:16px; font-weight:bold; font-family:monospace; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#1B5E20; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#A5D6A7; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.85; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#2E7D32; background:#E8F5E9; }
+  .quiz-option.selected { border-color:#2E7D32; background:#E8F5E9; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#2E7D32; }
+  .quiz-btn  { margin-top:14px; background:#1B5E20; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#2E7D32; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#E8F5E9,#E0F2F1); border:1px solid #C8E6C9; display:flex; justify-content:space-between; align-items:center; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .cheat-grid,.btype-pros-cons,.dial-result-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+    .cb-time-header { display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-eyebrow">PART 2 · MODULE 2.3</div>
+    <h1>Batching Strategies</h1>
+    <p>How grouping requests together transforms GPU utilisation - and why continuous batching is the single biggest throughput improvement in modern inference serving.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+      <span class="tag">No math</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module2_2.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">2.2 - KV Cache</div>
+    </a>
+    <a href="module2_4.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">2.4 - Throughput vs Latency</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>A GPU running a single request at a time is like a 747 flying with one passenger - an extraordinary waste of capacity. Batching is the practice of processing multiple requests simultaneously on the same GPU forward pass. Done well, it is the primary mechanism for achieving high throughput and low cost per token.</p>
+    <p>This module covers three batching strategies in order of sophistication: static batching, dynamic batching, and continuous batching. Each solves a problem the previous one created. By the end, you will understand why continuous batching - the approach used in vLLM and modern inference servers - represents such a significant advance over earlier methods.</p>
+  </div>
+
+  <!-- Section 1: Why batching exists -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">1</span>
+        Why a GPU Needs Batching to Be Efficient
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>Modern GPUs contain thousands of parallel compute cores - an H100 has over 16,000 CUDA cores. A single inference request uses a fraction of them. Running requests one at a time wastes the GPU's core parallelism and leaves most of the hardware idle.</p>
+
+      <div class="util-wrap">
+        <div class="util-title">GPU utilisation - requests per batch</div>
+        <div class="util-row">
+          <span class="util-label">Batch size: 1</span>
+          <div class="util-bar-bg">
+            <div class="util-bar-fill" style="background:#C62828; width:8%;">8%</div>
+          </div>
+          <span class="util-pct" style="color:#C62828;">8%</span>
+        </div>
+        <div class="util-row">
+          <span class="util-label">Batch size: 4</span>
+          <div class="util-bar-bg">
+            <div class="util-bar-fill" style="background:#E65100; width:28%;">28%</div>
+          </div>
+          <span class="util-pct" style="color:#E65100;">28%</span>
+        </div>
+        <div class="util-row">
+          <span class="util-label">Batch size: 16</span>
+          <div class="util-bar-bg">
+            <div class="util-bar-fill" style="background:#F9A825; width:62%;">62%</div>
+          </div>
+          <span class="util-pct" style="color:#F9A825;">62%</span>
+        </div>
+        <div class="util-row">
+          <span class="util-label">Batch size: 64</span>
+          <div class="util-bar-bg">
+            <div class="util-bar-fill" style="background:#2E7D32; width:88%;">88%</div>
+          </div>
+          <span class="util-pct" style="color:#86EFAC;">88%</span>
+        </div>
+        <div class="util-row">
+          <span class="util-label">Batch size: 256</span>
+          <div class="util-bar-bg">
+            <div class="util-bar-fill" style="background:#1565C0; width:96%;">96%</div>
+          </div>
+          <span class="util-pct" style="color:#86EFAC;">96%</span>
+        </div>
+        <div style="font-size:12px; opacity:0.55; margin-top:12px; line-height:1.6;">GPU utilisation rises sharply with batch size during the Decode phase - this is where batching has its greatest impact. Running many decode steps in parallel costs almost the same as one, since the bottleneck is memory bandwidth (reading the model weights and KV Cache), not compute.</div>
+      </div>
+
+      <div class="callout callout-green">
+        <strong>The key insight:</strong> During Decode, the GPU is memory-bandwidth-bound - it reads model weights and KV Cache from HBM regardless of how many tokens it generates. Processing 64 decode tokens simultaneously costs nearly the same memory reads as processing 1. This is why batching dramatically improves throughput at minimal latency cost per token - you are amortising the same memory reads across many requests.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Static batching -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#C62828;">2</span>
+        Static Batching - The Naive Approach
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+
+      <div class="btype-card" style="background:#FFF8F8;">
+        <div class="btype-header">
+          <div class="btype-badge" style="background:#C62828; color:white;">Static</div>
+          <div class="btype-title">Collect N requests, process together, return all, repeat</div>
+        </div>
+        <div class="btype-desc">The simplest batching strategy: wait until you have a fixed number of requests (e.g. 8), run them all through the model together, wait for all to finish, then start the next batch. Used in early ML inference and still common in batch processing pipelines.</div>
+
+        <div class="btype-vis" style="background:#1e1e2e; color:#cdd6f4;">
+<span style="color:#6C7086;">// Static batch of 4 - all must FINISH before next batch starts</span>
+Req A [prompt=50tok,  output=<span style="color:#A6E3A1;">12tok </span>] ████░░░░░░░░░░░░ DONE at step 12
+Req B [prompt=200tok, output=<span style="color:#A6E3A1;">180tok</span>] ████████████████████████████ DONE at step 180
+Req C [prompt=30tok,  output=<span style="color:#A6E3A1;">8tok  </span>] ████░░░░░░░░░░░░░░░░░░░░░░░░ DONE at step 8
+Req D [prompt=100tok, output=<span style="color:#A6E3A1;">95tok </span>] ████████████████████████░░░░ DONE at step 95
+<span style="color:#F38BA8;">                                             ^ Req A, C, D sit IDLE waiting for Req B</span>
+        </div>
+
+        <div class="btype-pros-cons">
+          <div class="btype-pro">Simple to implement and reason about</div>
+          <div class="btype-con">Requests that finish early sit idle, wasting GPU slots</div>
+          <div class="btype-pro">Predictable memory usage - all requests known upfront</div>
+          <div class="btype-con">The slowest request in the batch determines total time</div>
+          <div class="btype-pro">Good for batch jobs with uniform output lengths</div>
+          <div class="btype-con">GPU utilisation collapses as output lengths diverge</div>
+        </div>
+      </div>
+
+      <div class="callout callout-red">
+        <strong>The padding problem:</strong> LLMs cannot natively process sequences of different lengths in the same batch - all sequences must be padded to match the longest one. A batch where one request outputs 200 tokens and three output 10 tokens wastes 95% of compute on the shorter requests. This is the core inefficiency static batching cannot solve.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Dynamic batching -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">3</span>
+        Dynamic Batching - Smarter Grouping
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+
+      <div class="btype-card" style="background:#FFF8F0;">
+        <div class="btype-header">
+          <div class="btype-badge" style="background:#E65100; color:white;">Dynamic</div>
+          <div class="btype-title">Group requests by similarity; adjust batch size by load</div>
+        </div>
+        <div class="btype-desc">Dynamic batching improves on static batching by forming batches intelligently rather than rigidly. Requests with similar sequence lengths are grouped together to minimise padding waste. Batch size adjusts based on current GPU load and available memory. A timeout ensures requests are not held waiting too long.</div>
+
+        <div class="btype-vis" style="background:#1e1e2e; color:#cdd6f4;">
+<span style="color:#6C7086;">// Dynamic batch - similar lengths grouped, smaller padding waste</span>
+Batch 1: Req A [50tok],  Req C [30tok]  → padded to 50  - minimal waste
+Batch 2: Req B [200tok], Req D [100tok] → padded to 200 - some waste
+<span style="color:#A6E3A1;">Result: shorter requests no longer wait for long ones</span>
+        </div>
+
+        <div class="btype-pros-cons">
+          <div class="btype-pro">Reduces padding waste vs static batching</div>
+          <div class="btype-con">Still waits for a batch to form (adds latency)</div>
+          <div class="btype-pro">Adapts batch size to server load</div>
+          <div class="btype-con">Length prediction is imperfect - output lengths unknown upfront</div>
+          <div class="btype-pro">Used in Triton Inference Server for non-LLM models</div>
+          <div class="btype-con">Does not solve the "one slow request blocks the batch" problem</div>
+        </div>
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>The fundamental limitation remaining:</strong> Both static and dynamic batching treat a batch as an atomic unit - all requests enter together and exit together. The root problem is that LLM output lengths are highly variable and unpredictable. Even with smart grouping, a batch is held hostage by its longest request. What is needed is a way to add and remove requests from the batch mid-flight - which is exactly what continuous batching provides.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Continuous batching -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">4</span>
+        Continuous Batching - The Modern Standard
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+
+      <div class="btype-card" style="background:#F1F8E9; border-color:#A5D6A7;">
+        <div class="btype-header">
+          <div class="btype-badge" style="background:#2E7D32; color:white;">Continuous</div>
+          <div class="btype-title">Insert new requests the moment a slot frees - no batch boundaries</div>
+        </div>
+        <div class="btype-desc">Continuous batching (also called iteration-level scheduling or in-flight batching) eliminates the concept of a batch boundary entirely. The GPU runs one decode step at a time. After each step, any request that generated a stop token is removed from the active set and a waiting request is immediately inserted in its place - without waiting for other active requests to finish.</div>
+
+        <div class="btype-vis" style="background:#1e1e2e; color:#cdd6f4;">
+<span style="color:#6C7086;">// Continuous batch - slots fill immediately when freed</span>
+Step 1-8:   [Req A] [Req B] [Req C] [Req D]
+Step 9:     [<span style="color:#A6E3A1;">DONE:C</span>] → [<span style="color:#FAB387;">NEW:E </span>] inserted immediately
+Step 10-12: [Req A] [Req B] [<span style="color:#FAB387;">Req E</span>] [Req D]
+Step 13:    [<span style="color:#A6E3A1;">DONE:A</span>] → [<span style="color:#FAB387;">NEW:F </span>] inserted immediately
+<span style="color:#A6E3A1;">No idle slots. GPU stays fully utilised.</span>
+        </div>
+
+        <div class="btype-pros-cons">
+          <div class="btype-pro">Near-100% GPU slot utilisation at all times</div>
+          <div class="btype-con">More complex KV Cache memory management required</div>
+          <div class="btype-pro">Short requests do not wait for long ones</div>
+          <div class="btype-con">Requires per-step scheduling overhead</div>
+          <div class="btype-pro">Throughput 5–10x higher than static batching</div>
+          <div class="btype-con">Latency for individual requests can vary under high load</div>
+          <div class="btype-pro">Foundation of vLLM and TensorRT-LLM serving</div>
+          <div class="btype-con">Not useful for batch offline jobs with uniform lengths</div>
+        </div>
+      </div>
+
+      <p>The visual below shows how continuous batching keeps GPU slots filled across a sequence of decode steps, compared to a static batch where completed requests leave empty slots:</p>
+
+      <div class="cb-wrap">
+        <div class="cb-title">Continuous batching - slot utilisation over time</div>
+        <div class="cb-timeline">
+          <div class="cb-time-header">
+            <div class="cb-time-tick">T1</div><div class="cb-time-tick">T2</div><div class="cb-time-tick">T3</div>
+            <div class="cb-time-tick">T4</div><div class="cb-time-tick">T5</div><div class="cb-time-tick">T6</div>
+            <div class="cb-time-tick">T7</div><div class="cb-time-tick">T8</div><div class="cb-time-tick">T9</div>
+            <div class="cb-time-tick">T10</div><div class="cb-time-tick">T11</div><div class="cb-time-tick">T12</div>
+          </div>
+
+          <!-- Req A: steps 1-12 decode -->
+          <div class="cb-req-row">
+            <div class="cb-req-label" style="color:#1565C0;">Slot 1</div>
+            <div class="cb-slot cb-prefill">PRE</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div>
+          </div>
+
+          <!-- Req B: steps 1-5 then done, Req E inserted at T6 -->
+          <div class="cb-req-row">
+            <div class="cb-req-label" style="color:#2E7D32;">Slot 2</div>
+            <div class="cb-slot cb-prefill">PRE</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-done">done</div>
+            <div class="cb-slot cb-new">NEW</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-done">done</div><div class="cb-slot cb-new">NEW</div>
+          </div>
+
+          <!-- Req C: steps 1-3 then done, Req F at T4 -->
+          <div class="cb-req-row">
+            <div class="cb-req-label" style="color:#7B1FA2;">Slot 3</div>
+            <div class="cb-slot cb-prefill">PRE</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-done">done</div>
+            <div class="cb-slot cb-new">NEW</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+          </div>
+
+          <!-- Req D: steps 1-8 then done, new at T9 -->
+          <div class="cb-req-row">
+            <div class="cb-req-label" style="color:#E65100;">Slot 4</div>
+            <div class="cb-slot cb-prefill">PRE</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-done">done</div><div class="cb-slot cb-new">NEW</div>
+            <div class="cb-slot cb-decode">dec</div><div class="cb-slot cb-decode">dec</div>
+            <div class="cb-slot cb-decode">dec</div>
+          </div>
+        </div>
+
+        <div class="cb-legend">
+          <div class="cb-legend-item"><div class="cb-legend-box" style="background:#1565C0;"></div>Prefill</div>
+          <div class="cb-legend-item"><div class="cb-legend-box" style="background:#43A047;"></div>Decode step</div>
+          <div class="cb-legend-item"><div class="cb-legend-box" style="background:#FF8F00;"></div>New request inserted</div>
+          <div class="cb-legend-item"><div class="cb-legend-box" style="background:#E0E0E0;"></div>Request completed</div>
+        </div>
+
+        <div style="font-size:12.5px; color:#33691E; font-family:Arial,sans-serif; margin-top:12px; line-height:1.6; background:white; padding:10px 12px; border-radius:6px;">
+          Every slot is occupied at every step. When a request finishes, a new one enters immediately - no idle time, no waiting for the batch to synchronise.
+        </div>
+      </div>
+
+      <div class="callout callout-green">
+        <strong>Why this was a step change:</strong> The 2022 paper "Orca: A Distributed Serving System for Transformer-Based Generative Models" introduced iteration-level scheduling (what we now call continuous batching). Benchmarks showed 36x higher throughput compared to static batching for the same latency budget. vLLM implemented this alongside Paged Attention and became the dominant open-source inference server almost immediately. Continuous batching is now table stakes for any production LLM serving system.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Strategy comparison + dial -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">5</span>
+        Choosing the Right Strategy - and the Latency-Throughput Dial
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+
+      <table class="strat-table">
+        <thead>
+          <tr>
+            <th>Strategy</th>
+            <th>Best for</th>
+            <th>Throughput</th>
+            <th>Latency</th>
+            <th>Used in</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="st-name">Static batching</td>
+            <td>Offline batch jobs, uniform outputs</td>
+            <td class="st-bad">Low</td>
+            <td class="st-good">Predictable</td>
+            <td>Early systems, custom pipelines</td>
+          </tr>
+          <tr>
+            <td class="st-name">Dynamic batching</td>
+            <td>Mixed workloads, non-LLM models</td>
+            <td>Moderate</td>
+            <td>Moderate</td>
+            <td>Triton, ONNX Runtime</td>
+          </tr>
+          <tr>
+            <td class="st-name">Continuous batching</td>
+            <td>Online LLM serving, variable outputs</td>
+            <td class="st-good">Very high</td>
+            <td class="st-good">Low per-request</td>
+            <td>vLLM, TensorRT-LLM, SGLang</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Even with continuous batching, there is a dial between latency and throughput. The maximum batch size you allow - and how aggressively you fill it - determines where you sit on the trade-off curve:</p>
+
+      <div class="dial-wrap">
+        <div class="dial-title">Batching aggressiveness dial</div>
+        <div class="dial-ends">
+          <span>Latency-optimised (small batches)</span>
+          <span>Throughput-optimised (large batches)</span>
+        </div>
+        <div class="dial-slider-row">
+          <input type="range" class="dial-slider" id="dialSlider" min="1" max="10" value="5" oninput="updateDial(this.value)">
+        </div>
+        <div class="dial-result-grid" id="dialGrid">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>The practical guidance:</strong> For interactive chat applications, lean toward smaller batch sizes (4–16) with low max-wait time to keep TTFT under 500ms. For throughput-focused APIs where users accept slight latency increases for lower cost, larger batch sizes (32–128) can dramatically cut cost per token. Most production systems expose a <code>max_batch_size</code> and <code>batch_timeout</code> parameter for exactly this dial.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">6</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <div class="key-item">
+        <div class="key-num" style="color:#2E7D32;">01</div>
+        <div>
+          <div class="key-title">A GPU running one request at a time is severely underutilised</div>
+          <div class="key-desc">During Decode, the GPU's bottleneck is reading model weights from memory - a cost paid once regardless of batch size. Processing 64 requests in parallel costs nearly the same memory reads as processing 1, making batching the primary lever for cost efficiency.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#C62828;">02</div>
+        <div>
+          <div class="key-title">Static batching wastes slots when output lengths vary</div>
+          <div class="key-desc">When one request in a static batch takes 10x longer than the others, those other slots sit idle for the duration. With highly variable LLM outputs, this can waste 80–90% of GPU capacity in the worst cases.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#388E3C;">03</div>
+        <div>
+          <div class="key-title">Continuous batching eliminates batch boundaries - slots never sit idle</div>
+          <div class="key-desc">By scheduling at the iteration (decode step) level rather than the batch level, completed requests are immediately replaced by waiting ones. This is the primary reason vLLM and TensorRT-LLM achieve such dramatically higher throughput than earlier systems.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">04</div>
+        <div>
+          <div class="key-title">Batch size is a latency-throughput dial - not a set-and-forget parameter</div>
+          <div class="key-desc">Larger batches increase throughput and reduce cost per token but increase individual request latency. The right setting depends on the workload: latency-sensitive chat applications want small batches with tight timeouts; cost-sensitive batch APIs want large batches with relaxed timeouts.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat Sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 2.3 - CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Static Batching</div>
+        <div class="cheat-def">Fixed batch size, all requests enter and exit together. Simple but wastes GPU slots when output lengths differ. Good for uniform offline jobs.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Dynamic Batching</div>
+        <div class="cheat-def">Groups requests by similarity, adjusts batch size by load, uses a timeout. Better padding efficiency than static. Still treats the batch as atomic.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Continuous Batching</div>
+        <div class="cheat-def">Iteration-level scheduling - completed requests are replaced immediately by new ones. No idle slots. 5–10x throughput vs static batching. Used in vLLM and TensorRT-LLM.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Iteration-level Scheduling</div>
+        <div class="cheat-def">Making scheduling decisions after every decode step (every token generated) rather than per batch. The mechanism that makes continuous batching work.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Padding</div>
+        <div class="cheat-def">Extending shorter sequences with dummy tokens to match the longest in a batch. Required for matrix operations. Padding waste is the main inefficiency in static batching.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">max_batch_size</div>
+        <div class="cheat-def">Maximum number of concurrent requests the server will process together. A key tuning parameter - controls the latency-throughput trade-off.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">batch_timeout</div>
+        <div class="cheat-def">Maximum time the server waits for a batch to fill before processing a smaller one. Prevents latency spikes when traffic is low.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">GPU Slot</div>
+        <div class="cheat-def">One position in the active batch - one concurrent request the GPU is processing. Continuous batching keeps all slots occupied at all times.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer's inference server uses static batching with a batch size of 8. They are seeing GPU utilisation of 15–25% even during peak traffic, and the team is frustrated that adding more requests to the queue does not speed up throughput. What is the most likely cause, and what should they do?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Their GPU is undersized - they need to upgrade to an H100 to handle the workload
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        Static batching is the bottleneck - requests with variable output lengths are finishing at different times, leaving idle GPU slots while the batch waits for the slowest request. Switching to continuous batching would fill those slots immediately with waiting requests and likely increase GPU utilisation to 70–90%+ without any hardware change
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        The batch size of 8 is too large - reducing it to 2 will improve GPU utilisation
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        The KV Cache is filling up - they need more GPU memory to serve more requests
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <a href="module2_4.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next - Module 2.4</div>
+      <div class="next-title">Throughput vs Latency</div>
+      <div class="next-sub">The central trade-off in inference serving - how to reason about it, measure it, and advise customers on the right balance</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var colors={1:'#2E7D32',2:'#C62828',3:'#E65100',4:'#2E7D32',5:'#1565C0',6:'#283593'};
+  var bgs   ={1:'#E8F5E9',2:'#FFEBEE',3:'#FFF3E0',4:'#E8F5E9',5:'#E3F2FD',6:'#E8EAF6'};
+  function toggle(n){
+    var body=document.getElementById('bdy'+n),chv=document.getElementById('chv'+n),hdr=document.getElementById('hdr'+n);
+    var isOpen=body.classList.contains('open');
+    body.classList.toggle('open'); chv.classList.toggle('open');
+    hdr.style.borderLeftColor=isOpen?'#E8E8E8':colors[n];
+    hdr.style.background=isOpen?'white':bgs[n];
+  }
+
+  /* ── Dial ── */
+  var dialData=[
+    {label:'Conservative',bs:2, ttft:'~80ms',tpot:'~18ms',thr:'~12 tok/s',cost:'High'},
+    {label:'Conservative',bs:4, ttft:'~120ms',tpot:'~20ms',thr:'~22 tok/s',cost:'High'},
+    {label:'Balanced-low',bs:8, ttft:'~180ms',tpot:'~22ms',thr:'~40 tok/s',cost:'Medium'},
+    {label:'Balanced',bs:16,ttft:'~280ms',tpot:'~24ms',thr:'~70 tok/s',cost:'Medium'},
+    {label:'Balanced',bs:32,ttft:'~400ms',tpot:'~26ms',thr:'~110 tok/s',cost:'Medium-low'},
+    {label:'Balanced-high',bs:48,ttft:'~600ms',tpot:'~28ms',thr:'~150 tok/s',cost:'Low'},
+    {label:'Throughput',bs:64,ttft:'~900ms',tpot:'~30ms',thr:'~190 tok/s',cost:'Low'},
+    {label:'Throughput',bs:96,ttft:'~1.4s',tpot:'~34ms',thr:'~240 tok/s',cost:'Very low'},
+    {label:'Max throughput',bs:128,ttft:'~2.1s',tpot:'~40ms',thr:'~280 tok/s',cost:'Very low'},
+    {label:'Max throughput',bs:256,ttft:'~4s',tpot:'~55ms',thr:'~320 tok/s',cost:'Lowest'},
+  ];
+  function updateDial(v){
+    var d=dialData[parseInt(v)-1];
+    var c1=v<=3?'#1565C0':v<=6?'#2E7D32':'#C62828';
+    document.getElementById('dialGrid').innerHTML=
+      dc('Batch Size',d.bs,'#455A64')+
+      dc('TTFT (est.)',d.ttft,v<=4?'#2E7D32':v<=6?'#E65100':'#C62828')+
+      dc('TPOT (est.)',d.tpot,v<=4?'#2E7D32':v<=7?'#E65100':'#C62828')+
+      dc('Throughput',d.thr,'#2E7D32')+
+      dc('Cost/Token',d.cost,v<=3?'#C62828':v<=6?'#E65100':'#2E7D32')+
+      dc('Best for',v<=3?'Interactive chat':v<=6?'Balanced API':'Batch / cost-opt','#7B1FA2');
+  }
+  function dc(label,value,color){
+    return '<div class="dial-card" style="border-left-color:'+color+'">'+
+      '<div class="dial-card-label">'+label+'</div>'+
+      '<div class="dial-card-value" style="color:'+color+'; font-size:14px;">'+value+'</div></div>';
+  }
+  updateDial(5);
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    var opts=document.querySelectorAll('.quiz-option'),letters=['a','b','c','d'];
+    opts.forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      if(letters[i]==='b')o.classList.add('correct');
+      else if(letters[i]===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct.</strong> Low GPU utilisation (15–25%) with a full request queue is the classic static batching symptom. The GPU is idle because completed requests are leaving empty slots in the batch while the server waits for the remaining requests to finish before starting the next batch. Continuous batching resolves this by filling freed slots immediately - no batch boundaries, no idle time. The migration from static to continuous batching is a straightforward configuration change in vLLM and TensorRT-LLM. In most cases it delivers a 3–8x throughput improvement with the same hardware and the same model - purely from eliminating wasted GPU time.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> The key clue is: queue is full, GPU is at 15–25% utilisation. That means there is no shortage of requests - the GPU is simply not processing them efficiently. This is the static batching idle-slot problem (Option B). A larger GPU would not help because the GPU is already not being used. Reducing batch size (Option C) would make it worse. KV Cache (Option D) is about memory, not utilisation. The fix is continuous batching.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>

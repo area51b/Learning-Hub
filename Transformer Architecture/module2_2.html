@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 2.2 - KV Cache Deep Dive</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #4A148C 0%, #6A1B9A 50%, #7B1FA2 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #E1BEE7; background:white; font-family:Arial,sans-serif; font-size:13px; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #37474F; }
+  .nav-btn.next { text-align:right; border-right:4px solid #4A148C; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout         { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-purple  { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-blue    { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange  { background:#FFF3E0; border-left:4px solid #FF9800; }
+  .callout-green   { background:#E8F5E9; border-left:4px solid #4CAF50; }
+  .callout-red     { background:#FFEBEE; border-left:4px solid #C62828; }
+  .callout-teal    { background:#E0F2F1; border-left:4px solid #00796B; }
+
+  /* ── Without/With cache compare ── */
+  .nocache-wrap { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .nocache-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:16px; }
+  .nc-cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .nc-col-head { font-size:12px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; padding:6px 10px; border-radius:6px; text-align:center; }
+  .nc-step { display:flex; gap:10px; align-items:flex-start; margin-bottom:10px; font-size:13px; line-height:1.6; }
+  .nc-step-num { background:rgba(255,255,255,0.1); border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; flex-shrink:0; margin-top:1px; }
+  .nc-compute { color:#F87171; }
+  .nc-reuse   { color:#86EFAC; }
+
+  /* ── Memory size calculator (interactive) ── */
+  .calc-wrap { background:#F8F0FF; border:1px solid #D1A3F5; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .calc-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#555; font-family:Arial,sans-serif; margin-bottom:14px; }
+  .calc-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; font-family:Arial,sans-serif; flex-wrap:wrap; }
+  .calc-label { font-size:13px; min-width:140px; color:#444; }
+  .calc-select { border:1px solid #C084FC; border-radius:6px; padding:6px 10px; font-size:13px; font-family:Arial,sans-serif; background:white; color:#333; cursor:pointer; }
+  .calc-input  { border:1px solid #C084FC; border-radius:6px; padding:6px 10px; font-size:13px; font-family:Arial,sans-serif; width:90px; }
+  .calc-result { background:#4A148C; color:white; border-radius:10px; padding:16px 20px; margin-top:8px; }
+  .calc-result-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.65; font-family:Arial,sans-serif; margin-bottom:8px; }
+  .calc-result-value { font-size:26px; font-weight:bold; font-family:monospace; margin-bottom:4px; }
+  .calc-result-sub   { font-size:13px; opacity:0.75; font-family:Arial,sans-serif; line-height:1.5; }
+  .calc-breakdown { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+  .calc-bd-item { background:rgba(255,255,255,0.1); border-radius:6px; padding:8px 10px; font-size:12px; font-family:Arial,sans-serif; }
+  .calc-bd-label { opacity:0.65; margin-bottom:2px; }
+  .calc-bd-value { font-weight:bold; font-size:14px; }
+
+  /* ── Fill level bar ── */
+  .fill-wrap { background:#F5F5F5; border-radius:12px; padding:18px 20px; margin:16px 0; border:1px solid #E0E0E0; }
+  .fill-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#555; font-family:Arial,sans-serif; margin-bottom:12px; }
+  .fill-bar-bg { background:#E0E0E0; border-radius:8px; height:32px; overflow:hidden; position:relative; }
+  .fill-bar-fill { height:32px; border-radius:8px; display:flex; align-items:center; padding-left:12px; font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:white; transition:width 0.5s ease; }
+  .fill-label-row { display:flex; justify-content:space-between; font-size:12px; font-family:Arial,sans-serif; color:#888; margin-top:4px; }
+  .fill-legend { display:flex; gap:16px; margin-bottom:10px; flex-wrap:wrap; }
+  .fill-legend-item { display:flex; align-items:center; gap:6px; font-size:12.5px; font-family:Arial,sans-serif; }
+  .fill-legend-box { width:14px; height:14px; border-radius:3px; }
+
+  /* ── Eviction strategies ── */
+  .evict-row { display:flex; gap:14px; margin-bottom:12px; align-items:flex-start; }
+  .evict-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:13px; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .evict-body { flex:1; border-radius:0 10px 10px 0; padding:12px 16px; }
+  .evict-title { font-weight:bold; font-size:14px; font-family:Arial,sans-serif; margin-bottom:4px; }
+  .evict-desc  { font-size:13.5px; line-height:1.7; color:#444; }
+  .evict-trade { font-size:12.5px; font-family:Arial,sans-serif; margin-top:6px; }
+
+  /* ── Prefix caching visual ── */
+  .prefix-wrap { background:#E8EAF6; border-radius:12px; padding:18px 20px; margin:16px 0; border:1px solid #9FA8DA; }
+  .prefix-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#555; font-family:Arial,sans-serif; margin-bottom:12px; }
+  .prefix-row   { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; align-items:center; }
+  .prefix-token { border-radius:5px; padding:4px 9px; font-size:12.5px; font-family:monospace; }
+  .prefix-label { font-size:11px; font-family:Arial,sans-serif; color:#777; min-width:90px; }
+  .prefix-saved { background:#4CAF50; color:white; font-size:11px; font-family:Arial,sans-serif; border-radius:4px; padding:2px 8px; font-weight:bold; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#4A148C; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#CE93D8; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.85; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover   { border-color:#7B1FA2; background:#F3E8FD; }
+  .quiz-option.selected{ border-color:#7B1FA2; background:#F3E8FD; }
+  .quiz-option.correct { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong   { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#7B1FA2; }
+  .quiz-btn  { margin-top:14px; background:#4A148C; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#6A1B9A; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#F3E8FD,#E8EAF6); border:1px solid #E1BEE7; display:flex; justify-content:space-between; align-items:center; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .nc-cols,.cheat-grid,.calc-breakdown { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-eyebrow">PART 2 · MODULE 2.2</div>
+    <h1>KV Cache - What It Is and Why It Matters</h1>
+    <p>The single most important concept in inference serving. It determines how many users you can serve, at what speed, and at what cost.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+      <span class="tag">No math</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav-bar">
+    <a href="module2_1.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">2.1 - What Is Inference?</div>
+    </a>
+    <a href="module2_3.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">2.3 - Batching Strategies</div>
+    </a>
+  </div>
+
+  <!-- Intro -->
+  <div class="intro-card">
+    <p>You have encountered the KV Cache in every module so far - it was introduced in Module 1.3, grew in Module 1.4, became the Decode bottleneck in Module 1.7, and appeared as the memory manager's job in Module 2.1. Now it gets its own module, because it deserves one.</p>
+    <p>The KV Cache is the reason inference is hard to scale. It is also the reason most of the major inference optimisations - Paged Attention, Flash Attention, prefix caching, KV quantisation, disaggregation - exist. Understanding it deeply means you can explain why each of those techniques matters, and when to recommend them.</p>
+  </div>
+
+  <!-- Section 1: What it stores and why -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#6A1B9A;">1</span>
+        What the KV Cache Stores - and Why We Need It
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>Recall from Module 1.3: during Attention, every token computes three vectors - a Query (Q), a Key (K), and a Value (V). The Query asks "what am I looking for?" The Key says "what do I contain?" The Value says "what do I send if selected?"</p>
+      <p>During Decode, the model generates one new token at a time. Each new token needs to run Attention against <em>every previous token</em> - including all the original prompt tokens. Without a cache, those K and V vectors would be recomputed from scratch every single step, for every single layer, for every token already in the sequence. This is spectacularly wasteful.</p>
+
+      <div class="nocache-wrap">
+        <div class="nocache-title">Without KV Cache vs with KV Cache - decode step 10</div>
+        <div class="nc-cols">
+          <div>
+            <div class="nc-col-head" style="background:rgba(239,68,68,0.2); color:#F87171;">Without Cache</div>
+            <div class="nc-step nc-compute">
+              <div class="nc-step-num">1</div>
+              <div>Recompute K,V for token 1 across all 80 layers</div>
+            </div>
+            <div class="nc-step nc-compute">
+              <div class="nc-step-num">2</div>
+              <div>Recompute K,V for token 2 across all 80 layers</div>
+            </div>
+            <div class="nc-step nc-compute">
+              <div class="nc-step-num">3</div>
+              <div>Recompute K,V for tokens 3–9 across all 80 layers</div>
+            </div>
+            <div class="nc-step nc-compute">
+              <div class="nc-step-num">4</div>
+              <div>Finally compute new token 10</div>
+            </div>
+            <div style="margin-top:12px; font-size:12px; color:#F87171; background:rgba(239,68,68,0.1); border-radius:6px; padding:8px 10px;">10x the compute of what's actually new. Gets linearly worse with every step.</div>
+          </div>
+          <div>
+            <div class="nc-col-head" style="background:rgba(134,239,172,0.2); color:#86EFAC;">With KV Cache</div>
+            <div class="nc-step nc-reuse">
+              <div class="nc-step-num">1</div>
+              <div>Read K,V for tokens 1–9 from cache in GPU memory</div>
+            </div>
+            <div class="nc-step nc-reuse">
+              <div class="nc-step-num">2</div>
+              <div>Compute K,V only for new token 10</div>
+            </div>
+            <div class="nc-step nc-reuse">
+              <div class="nc-step-num">3</div>
+              <div>Write token 10's K,V to cache</div>
+            </div>
+            <div class="nc-step nc-reuse">
+              <div class="nc-step-num">4</div>
+              <div>Run Attention, generate next token</div>
+            </div>
+            <div style="margin-top:12px; font-size:12px; color:#86EFAC; background:rgba(134,239,172,0.1); border-radius:6px; padding:8px 10px;">Only compute what is new. Memory read instead of recomputation. Scales cleanly.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-purple">
+        <strong>What exactly is stored:</strong> For each token, at each layer, for each attention head - one Key vector and one Value vector. That is it. The Query vectors are not stored - they are computed fresh for the current token only. The cache grows by exactly one K,V pair per layer per head every decode step.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: How big it gets -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">2</span>
+        Interactive: How Big Does the KV Cache Get?
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>The KV Cache size depends on four factors you already know: token count, number of KV heads, number of layers, and numerical precision. Use the calculator to see how they multiply together in practice.</p>
+
+      <div class="calc-wrap">
+        <div class="calc-title">KV Cache size estimator</div>
+
+        <div class="calc-row">
+          <div class="calc-label">Model</div>
+          <select class="calc-select" id="modelSel" onchange="updateCalc()">
+            <option value="7b">Llama 3 8B (32 layers, 8 KV heads)</option>
+            <option value="13b">Llama 2 13B (40 layers, 40 KV heads)</option>
+            <option value="70b" selected>Llama 3 70B (80 layers, 8 KV heads)</option>
+            <option value="405b">Llama 3 405B (126 layers, 16 KV heads)</option>
+          </select>
+        </div>
+        <div class="calc-row">
+          <div class="calc-label">Total tokens in context</div>
+          <input class="calc-input" type="number" id="tokenCount" value="8000" min="100" max="128000" onchange="updateCalc()">
+          <span style="font-size:13px; color:#777; font-family:Arial,sans-serif;">(prompt + output)</span>
+        </div>
+        <div class="calc-row">
+          <div class="calc-label">Precision</div>
+          <select class="calc-select" id="precSel" onchange="updateCalc()">
+            <option value="2">FP16 / BF16 (2 bytes per value)</option>
+            <option value="1">INT8 / FP8 (1 byte per value)</option>
+            <option value="0.5">INT4 (0.5 bytes per value)</option>
+          </select>
+        </div>
+
+        <div class="calc-result" id="calcResult">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="callout callout-red">
+        <strong>Why this matters in practice:</strong> A single 70B model request with a 32k context in FP16 consumes roughly 80GB of KV Cache - nearly an entire A100 by itself, before the model weights (140GB) are even counted. This is why multi-GPU deployments, KV Cache quantisation, and GQA (which reduces KV head count) exist. The numbers are not theoretical - they are the daily reality of running large models at scale.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: How it fills GPU memory -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">3</span>
+        How KV Cache Competes for GPU Memory
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>GPU memory (HBM) is shared between three competing consumers. Understanding this three-way split is essential for any conversation about inference capacity planning:</p>
+
+      <div class="fill-wrap">
+        <div class="fill-title">GPU memory split - A100 80GB running Llama 3 70B FP16</div>
+        <div class="fill-legend">
+          <div class="fill-legend-item"><div class="fill-legend-box" style="background:#1565C0;"></div>Model weights (~140GB - needs 2 GPUs)</div>
+          <div class="fill-legend-item"><div class="fill-legend-box" style="background:#7B1FA2;"></div>KV Cache (dynamic - grows with requests)</div>
+          <div class="fill-legend-item"><div class="fill-legend-box" style="background:#E65100;"></div>Activations + overhead (relatively small)</div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <div style="font-size:12.5px; font-family:Arial,sans-serif; color:#555; margin-bottom:6px;">Single A100 80GB - after model weights loaded (using 2-GPU tensor parallel, each GPU holds ~70GB weights):</div>
+          <div class="fill-bar-bg">
+            <div class="fill-bar-fill" style="background:linear-gradient(90deg, #1565C0 0%, #1565C0 87.5%, #7B1FA2 87.5%, #7B1FA2 97%, #E65100 97%, #E65100 100%); width:100%;">70GB weights | 8GB KV | 2GB overhead</div>
+          </div>
+          <div class="fill-label-row"><span>0 GB</span><span>80 GB</span></div>
+        </div>
+
+        <div style="font-size:13px; font-family:Arial,sans-serif; color:#555; line-height:1.7; padding:12px; background:#F5F5F5; border-radius:8px;">
+          With only ~8GB left for KV Cache per GPU, a 70B model can only serve a handful of concurrent requests before memory is exhausted. This is why techniques like <strong>Paged Attention</strong> (which manages KV Cache memory efficiently) and <strong>KV quantisation</strong> (which reduces KV Cache size) are critical for production workloads - and why model selection (70B vs 13B) has such a large impact on concurrency.
+        </div>
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>The concurrency math:</strong> If 8GB of KV Cache space is available and each concurrent request at 4k tokens on a 70B GQA model uses roughly 2GB of KV Cache, you can serve 4 concurrent requests per GPU pair. Add KV INT8 quantisation and that doubles to 8. Switch to a 13B model and the KV Cache shrinks dramatically - suddenly you can serve 30–40 concurrent users. Model and precision choice drive concurrency more than almost anything else.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Eviction and management -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">4</span>
+        What Happens When the Cache Fills Up
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>When GPU memory runs out of space for new KV Cache blocks, the inference server has to make a choice. Different systems handle this differently - and the choice has real consequences for latency and throughput:</p>
+
+      <div style="margin:16px 0;">
+        <div class="evict-row">
+          <div class="evict-icon" style="background:#C62828;">Q</div>
+          <div class="evict-body" style="background:#FFEBEE; border-left:3px solid #C62828;">
+            <div class="evict-title">Queue the new request</div>
+            <div class="evict-desc">The incoming request waits until existing requests finish and free their KV Cache blocks. Simple and safe - no quality impact. The cost is increased TTFT for the waiting request.</div>
+            <div class="evict-trade" style="color:#C62828;"><strong>Trade-off:</strong> Higher TTFT under load. Can queue up significantly during traffic spikes.</div>
+          </div>
+        </div>
+        <div class="evict-row">
+          <div class="evict-icon" style="background:#E65100;">E</div>
+          <div class="evict-body" style="background:#FFF3E0; border-left:3px solid #E65100;">
+            <div class="evict-title">Evict and recompute (swap to CPU)</div>
+            <div class="evict-desc">The KV Cache for a low-priority or paused request is swapped out to CPU RAM or disk. When that request resumes, its KV Cache is swapped back in and Prefill re-runs for the evicted tokens.</div>
+            <div class="evict-trade" style="color:#E65100;"><strong>Trade-off:</strong> High latency penalty for evicted requests. CPU-GPU memory transfer is slow.</div>
+          </div>
+        </div>
+        <div class="evict-row">
+          <div class="evict-icon" style="background:#1565C0;">P</div>
+          <div class="evict-body" style="background:#E3F2FD; border-left:3px solid #1565C0;">
+            <div class="evict-title">Paged Attention - fine-grained block allocation</div>
+            <div class="evict-desc">Instead of allocating one large contiguous block per request, KV Cache is divided into small fixed-size pages. Pages from different requests are interleaved in GPU memory. This eliminates memory fragmentation - the main cause of wasted KV Cache space in naive implementations.</div>
+            <div class="evict-trade" style="color:#1565C0;"><strong>Result:</strong> Near-zero fragmentation, higher concurrency, the same GPU serves significantly more requests. This is the core innovation in vLLM. You will learn it in detail in Module 3.2.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>Why fragmentation matters:</strong> In a naive system, each request's KV Cache is pre-allocated as one large contiguous block - sized for the <em>maximum possible</em> output length. A request that generates 50 tokens wastes the space reserved for 500. With many concurrent requests, this internal fragmentation can waste 60–80% of available KV Cache memory. Paged Attention treats GPU memory like an OS treats RAM - allocating pages on demand, sharing pages across requests where possible.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Prefix caching -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#00796B;">5</span>
+        Prefix Caching - Reusing KV Cache Across Requests
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>Many real-world applications send the same prefix to the model on every request. A customer service chatbot always prepends a 2,000-token system prompt. A RAG application always includes the same retrieved context. A multi-turn conversation always includes previous turns.</p>
+      <p><strong>Prefix caching</strong> (also called prompt caching or KV Cache reuse) stores the KV Cache for shared prefixes and reuses it across multiple requests - avoiding the Prefill compute cost entirely for those tokens.</p>
+
+      <div class="prefix-wrap">
+        <div class="prefix-title">Prefix caching - three requests sharing a system prompt</div>
+
+        <div class="prefix-row">
+          <div class="prefix-label" style="color:#2E7D32; font-weight:bold;">Cached prefix:</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#1B5E20;">You</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#1B5E20;">are</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#1B5E20;">a</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#1B5E20;">helpful</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#1B5E20;">customer</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#1B5E20;">service</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#1B5E20;">agent</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#1B5E20;">for</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#1B5E20;">Acme...</div>
+          <div class="prefix-saved">KV saved</div>
+        </div>
+
+        <div style="border-top:1px solid #9FA8DA; margin:10px 0;"></div>
+
+        <div class="prefix-row">
+          <div class="prefix-label" style="color:#888;">Request 1:</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#888; opacity:0.5;">...prefix...</div>
+          <div class="prefix-token" style="background:#7B1FA2; color:white;">How</div>
+          <div class="prefix-token" style="background:#7B1FA2; color:white;">do</div>
+          <div class="prefix-token" style="background:#7B1FA2; color:white;">I</div>
+          <div class="prefix-token" style="background:#7B1FA2; color:white;">cancel?</div>
+          <span style="font-size:12px; color:#2E7D32; font-family:Arial,sans-serif;">Only 4 tokens prefilled</span>
+        </div>
+
+        <div class="prefix-row">
+          <div class="prefix-label" style="color:#888;">Request 2:</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#888; opacity:0.5;">...prefix...</div>
+          <div class="prefix-token" style="background:#1565C0; color:white;">Track</div>
+          <div class="prefix-token" style="background:#1565C0; color:white;">my</div>
+          <div class="prefix-token" style="background:#1565C0; color:white;">order</div>
+          <span style="font-size:12px; color:#2E7D32; font-family:Arial,sans-serif;">Only 3 tokens prefilled</span>
+        </div>
+
+        <div class="prefix-row">
+          <div class="prefix-label" style="color:#888;">Request 3:</div>
+          <div class="prefix-token" style="background:#C8E6C9; color:#888; opacity:0.5;">...prefix...</div>
+          <div class="prefix-token" style="background:#E65100; color:white;">Refund</div>
+          <div class="prefix-token" style="background:#E65100; color:white;">policy?</div>
+          <span style="font-size:12px; color:#2E7D32; font-family:Arial,sans-serif;">Only 2 tokens prefilled</span>
+        </div>
+
+        <div style="font-size:12.5px; color:#555; font-family:Arial,sans-serif; margin-top:12px; line-height:1.6; background:white; padding:10px 12px; border-radius:6px;">
+          Without prefix caching: each request pays full Prefill cost for the entire prompt. With prefix caching: only the unique portion of each request goes through Prefill. TTFT drops dramatically for prefix-heavy workloads.
+        </div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>Real-world impact:</strong> For a RAG application with a 4,000-token system prompt + retrieved context sent on every request, prefix caching can reduce Prefill compute by 80–95% and cut TTFT from 800ms to under 100ms. Anthropic's API offers prompt caching as a first-class feature. vLLM implements it automatically. It is one of the highest-impact, lowest-effort optimisations for prefix-heavy workloads.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">6</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <div class="key-item">
+        <div class="key-num" style="color:#6A1B9A;">01</div>
+        <div>
+          <div class="key-title">The KV Cache stores K and V vectors - not Q - to avoid redundant compute during Decode</div>
+          <div class="key-desc">Every decode step only computes Q for the new token. K and V for all previous tokens are read from cache. Without it, compute cost per token grows linearly with sequence length. With it, only memory bandwidth grows.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">02</div>
+        <div>
+          <div class="key-title">KV Cache size = tokens × KV heads × layers × head_dim × bytes - and it compounds fast</div>
+          <div class="key-desc">All four factors multiply together. A 70B model with 8 KV heads, 80 layers, at 128-dim heads, FP16 uses ~10MB per 1,000 tokens. A 32k context costs ~320MB per request - which is why high concurrency requires careful memory management.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">03</div>
+        <div>
+          <div class="key-title">KV Cache competes with model weights for GPU memory - and concurrency is the casualty</div>
+          <div class="key-desc">After model weights are loaded, whatever GPU memory remains is split between active request KV Caches. Fewer remaining bytes means fewer concurrent requests. Quantisation, GQA, and Paged Attention all exist to maximise the concurrent requests that fit in that remaining space.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#00796B;">04</div>
+        <div>
+          <div class="key-title">Prefix caching reuses KV Cache across requests - eliminating Prefill for shared content</div>
+          <div class="key-desc">When multiple requests share a common prefix (system prompt, RAG context, few-shot examples), the KV Cache for that prefix can be computed once and reused. This is one of the highest-ROI optimisations for applications with consistent prompt structure.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat Sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 2.2 - CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">KV Cache</div>
+        <div class="cheat-def">Stores Key and Value vectors for all tokens seen so far. Avoids recomputing them on every decode step. Lives in GPU HBM.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">KV Cache Size Formula</div>
+        <div class="cheat-def">Tokens × KV heads × layers × head_dim × bytes_per_value × 2 (K and V). Grows with every token generated.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Memory Fragmentation</div>
+        <div class="cheat-def">Wasted GPU memory from pre-allocating maximum-length blocks per request. Can waste 60–80% of KV Cache space in naive systems.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Paged Attention</div>
+        <div class="cheat-def">Manages KV Cache in small fixed pages rather than large contiguous blocks. Eliminates fragmentation. Core innovation in vLLM. Covered in Module 3.2.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Prefix Caching</div>
+        <div class="cheat-def">Stores and reuses KV Cache for shared prompt prefixes across requests. Eliminates Prefill cost for repeated content. High-ROI for RAG and system-prompt-heavy apps.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">KV Quantisation</div>
+        <div class="cheat-def">Reducing KV Cache precision from FP16 to INT8 or INT4. Halves or quarters memory use per request. Enables higher concurrency at cost of slight accuracy trade-off.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Concurrency Limit</div>
+        <div class="cheat-def">Maximum simultaneous requests a GPU can serve. Determined by: (GPU memory − model weights) ÷ KV Cache per request.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">KV Cache Eviction</div>
+        <div class="cheat-def">When memory is full: queue new requests, swap cache to CPU RAM, or drop and recompute. All options have latency costs - Paged Attention minimises the need for eviction.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer runs a legal research assistant. Every request includes the same 6,000-token legal knowledge base as a system prompt, followed by a short user question (~50 tokens). They are seeing high TTFT (over 2 seconds) even when the server is lightly loaded. What is the most impactful single optimisation, and why?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Switch to a smaller model - the 6,000-token prompt is too long for most models to handle efficiently
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        Enable prefix caching - the 6,000-token system prompt is identical across all requests, so its KV Cache can be computed once and reused. Each request then only needs to prefill ~50 tokens instead of 6,050, reducing TTFT from ~2 seconds to under 100ms
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        Add more GPUs - the TTFT issue is caused by insufficient compute capacity
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        Apply KV Cache quantisation - reducing KV Cache precision will speed up Prefill
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <!-- Next -->
+  <a href="module2_3.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next - Module 2.3</div>
+      <div class="next-title">Batching Strategies</div>
+      <div class="next-sub">How grouping requests together transforms GPU utilisation - and the trade-offs between latency and throughput</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var colors = {1:'#6A1B9A',2:'#1565C0',3:'#E65100',4:'#2E7D32',5:'#00796B',6:'#283593'};
+  var bgs    = {1:'#F3E8FD',2:'#E3F2FD',3:'#FFF3E0',4:'#E8F5E9',5:'#E0F2F1',6:'#E8EAF6'};
+  function toggle(n){
+    var body=document.getElementById('bdy'+n),chv=document.getElementById('chv'+n),hdr=document.getElementById('hdr'+n);
+    var isOpen=body.classList.contains('open');
+    body.classList.toggle('open'); chv.classList.toggle('open');
+    hdr.style.borderLeftColor=isOpen?'#E8E8E8':colors[n];
+    hdr.style.background=isOpen?'white':bgs[n];
+  }
+
+  /* ── KV Cache calculator ── */
+  var models = {
+    '7b':  {layers:32, kvHeads:8,  headDim:128, label:'Llama 3 8B'},
+    '13b': {layers:40, kvHeads:40, headDim:128, label:'Llama 2 13B'},
+    '70b': {layers:80, kvHeads:8,  headDim:128, label:'Llama 3 70B'},
+    '405b':{layers:126,kvHeads:16, headDim:128, label:'Llama 3 405B'}
+  };
+  function updateCalc(){
+    var m     = models[document.getElementById('modelSel').value];
+    var tok   = parseInt(document.getElementById('tokenCount').value)||8000;
+    var bytes = parseFloat(document.getElementById('precSel').value);
+    // size = tokens * kvHeads * layers * headDim * bytes * 2 (K and V)
+    var sizeBytes = tok * m.kvHeads * m.layers * m.headDim * bytes * 2;
+    var sizeGB    = sizeBytes / 1e9;
+    var sizeMB    = sizeBytes / 1e6;
+    var display   = sizeGB >= 1 ? sizeGB.toFixed(2)+' GB' : sizeMB.toFixed(0)+' MB';
+    var perTok    = (sizeBytes/tok/1e3).toFixed(1);
+    var concurA100= Math.floor(10000 / (sizeGB*1000)); // rough 10GB available
+    document.getElementById('calcResult').innerHTML =
+      '<div class="calc-result-title">Estimated KV Cache size - '+m.label+'</div>'+
+      '<div class="calc-result-value">'+display+'</div>'+
+      '<div class="calc-result-sub">For '+tok.toLocaleString()+' tokens across all layers</div>'+
+      '<div class="calc-breakdown">'+
+        '<div class="calc-bd-item"><div class="calc-bd-label">Per token</div><div class="calc-bd-value">'+perTok+' KB</div></div>'+
+        '<div class="calc-bd-item"><div class="calc-bd-label">KV heads</div><div class="calc-bd-value">'+m.kvHeads+'</div></div>'+
+        '<div class="calc-bd-item"><div class="calc-bd-label">Layers</div><div class="calc-bd-value">'+m.layers+'</div></div>'+
+        '<div class="calc-bd-item"><div class="calc-bd-label">Approx concurrent (10GB pool)</div><div class="calc-bd-value">'+(concurA100 < 1 ? '< 1' : concurA100)+' req</div></div>'+
+      '</div>';
+  }
+  updateCalc();
+
+  /* ── Quiz ── */
+  var selected=null, answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    var opts=document.querySelectorAll('.quiz-option'),letters=['a','b','c','d'];
+    opts.forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      if(letters[i]==='b')o.classList.add('correct');
+      else if(letters[i]===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct.</strong> This is a textbook prefix caching scenario. The 6,000-token system prompt is identical on every request - without caching, every request pays full Prefill cost for 6,050 tokens. With prefix caching enabled (available in vLLM and Anthropic\'s API), the system prompt KV Cache is computed once on the first request and reused on all subsequent ones. Each request then only prefills the ~50-token user question. TTFT drops from ~2 seconds to under 100ms with zero model changes. Note: KV quantisation (Option D) reduces memory usage but does not skip Prefill computation - it would not meaningfully reduce TTFT in this scenario.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> The clue is that TTFT is high even on a lightly loaded server - ruling out concurrency and capacity issues. The 6,000-token system prompt is constant across all requests, making this a perfect prefix caching opportunity (Option B). Prefix caching computes the KV Cache for the system prompt once and reuses it, reducing per-request Prefill from 6,050 tokens to ~50 tokens. This is the highest-impact, lowest-effort fix for this specific pattern.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>

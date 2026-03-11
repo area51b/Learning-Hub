@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 2.4 - Throughput vs Latency</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #BF360C 0%, #D84315 50%, #E64A19 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #FFCCBC; background:white; font-family:Arial,sans-serif; font-size:13px; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #1B5E20; }
+  .nav-btn.next { text-align:right; border-right:4px solid #BF360C; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout        { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-deep   { background:#FBE9E7; border-left:4px solid #D84315; }
+  .callout-blue   { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange { background:#FFF3E0; border-left:4px solid #FF9800; }
+  .callout-green  { background:#E8F5E9; border-left:4px solid #4CAF50; }
+  .callout-purple { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-teal   { background:#E0F2F1; border-left:4px solid #00796B; }
+  .callout-slate  { background:#ECEFF1; border-left:4px solid #546E7A; }
+
+  /* ── Core tension cards ── */
+  .tension-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:18px 0; }
+  .tension-card { border-radius:12px; padding:20px 18px; }
+  .tc-badge { display:inline-block; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:bold; font-family:Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+  .tc-title { font-size:16px; font-weight:bold; margin-bottom:10px; }
+  .tc-def   { font-size:14px; line-height:1.7; color:#333; margin-bottom:12px; }
+  .tc-row   { font-size:13.5px; line-height:1.65; margin-bottom:7px; padding-left:14px; position:relative; }
+  .tc-row::before { content:'–'; position:absolute; left:0; color:#999; }
+
+  /* ── Interactive scatter plot (SVG) ── */
+  .plot-wrap { background:#F8F9FF; border:1px solid #C5CAE9; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .plot-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#555; font-family:Arial,sans-serif; margin-bottom:14px; }
+  .plot-controls { display:flex; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+  .plot-btn { border:none; border-radius:6px; padding:6px 14px; font-size:13px; font-family:Arial,sans-serif; cursor:pointer; font-weight:bold; transition:all 0.15s; }
+  .plot-btn:hover { opacity:0.85; }
+  svg.scatter { width:100%; height:260px; display:block; }
+
+  /* ── Workload profiles ── */
+  .profile-row { display:flex; gap:14px; margin-bottom:12px; align-items:flex-start; }
+  .profile-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .profile-body { flex:1; border-radius:0 10px 10px 0; padding:12px 16px; }
+  .profile-title { font-weight:bold; font-size:14px; font-family:Arial,sans-serif; margin-bottom:6px; }
+  .profile-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .profile-cell { font-size:12.5px; line-height:1.5; }
+  .profile-label { font-weight:bold; color:#555; font-family:Arial,sans-serif; }
+
+  /* ── SLA table ── */
+  .sla-table { width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:13px; margin:16px 0; }
+  .sla-table th { background:#BF360C; color:white; padding:10px 12px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .sla-table td { padding:11px 12px; border-bottom:1px solid #F0F0F0; vertical-align:top; line-height:1.6; }
+  .sla-table tr:nth-child(even) td { background:#F8F8F8; }
+  .sla-table tr:last-child td { border-bottom:none; }
+  .sla-name  { font-weight:bold; color:#BF360C; }
+  .sla-good  { color:#2E7D32; font-weight:bold; }
+  .sla-trade { color:#E65100; font-size:12px; }
+
+  /* ── Scaling curves ── */
+  .curve-wrap { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .curve-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:16px; }
+  .curve-row { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
+  .curve-label { font-size:12.5px; min-width:130px; opacity:0.8; }
+  .curve-bar-bg { flex:1; background:rgba(255,255,255,0.08); border-radius:4px; height:22px; overflow:hidden; position:relative; }
+  .curve-fill { height:22px; border-radius:4px; display:flex; align-items:center; padding-left:8px; font-size:11px; font-weight:bold; }
+  .curve-annotation { font-size:11px; opacity:0.6; min-width:80px; text-align:right; }
+
+  /* ── Decision framework ── */
+  .decision-step { display:flex; gap:14px; margin-bottom:14px; align-items:flex-start; }
+  .ds-num  { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:13px; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .ds-body { flex:1; }
+  .ds-q    { font-weight:bold; font-size:14.5px; margin-bottom:6px; }
+  .ds-opts { display:flex; gap:8px; flex-wrap:wrap; }
+  .ds-opt  { border-radius:6px; padding:5px 12px; font-size:12.5px; font-family:Arial,sans-serif; border:1px solid; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#BF360C; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#FFCCBC; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.85; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#D84315; background:#FBE9E7; }
+  .quiz-option.selected { border-color:#D84315; background:#FBE9E7; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#D84315; }
+  .quiz-btn  { margin-top:14px; background:#BF360C; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#D84315; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  /* Part 2 complete banner */
+  .part-complete { background:linear-gradient(135deg,#BF360C,#E64A19); border-radius:12px; padding:20px 24px; margin-top:16px; margin-bottom:16px; color:white; display:flex; align-items:center; gap:16px; }
+  .pc-icon  { font-size:26px; flex-shrink:0; }
+  .pc-title { font-weight:bold; font-size:15px; margin-bottom:3px; }
+  .pc-sub   { font-size:13px; opacity:0.85; font-family:Arial,sans-serif; line-height:1.5; }
+
+  .next-module { margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#FBE9E7,#FFF3E0); border:1px solid #FFCCBC; display:flex; justify-content:space-between; align-items:center; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .tension-grid,.cheat-grid,.profile-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-eyebrow">PART 2 · MODULE 2.4</div>
+    <h1>Throughput vs Latency</h1>
+    <p>The central trade-off in inference serving - what each means, why they conflict, and how to advise customers on the right balance for their workload.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+      <span class="tag">No math</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module2_3.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">2.3 - Batching Strategies</div>
+    </a>
+    <a href="module2_5.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">2.5 - The Memory Bottleneck</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>Every inference system lives somewhere on a spectrum between two extremes: respond to each request as fast as possible, or process as many requests as cheaply as possible. These two goals are in direct tension - and every configuration decision in inference serving is, at its core, a choice about where to sit on that spectrum.</p>
+    <p>This module gives you the mental model, the vocabulary, and the decision framework to have this conversation confidently with customers - from engineers asking about <code>max_batch_size</code> to CFOs asking why their AI bill is high.</p>
+  </div>
+
+  <!-- Section 1: Defining the two dimensions -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#D84315;">1</span>
+        Latency and Throughput - Precise Definitions
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>These terms are used loosely in many conversations. Using them precisely signals technical credibility.</p>
+
+      <div class="tension-grid">
+        <div class="tension-card" style="background:#E3F2FD; border:1px solid #90CAF9;">
+          <div class="tc-badge" style="background:#1565C0; color:white;">Latency</div>
+          <div class="tc-title" style="color:#1565C0;">Time for one request</div>
+          <div class="tc-def">How long it takes to get a response for a single request. Usually decomposed into TTFT (time to first token) and TPOT (time per output token).</div>
+          <div class="tc-row">Measured: milliseconds per request, or ms per token</div>
+          <div class="tc-row">Felt by: the individual user waiting for a response</div>
+          <div class="tc-row">Driven by: model size, KV Cache reads, GPU speed</div>
+          <div class="tc-row">Degraded by: large batch sizes, full queues, long contexts</div>
+        </div>
+        <div class="tension-card" style="background:#FBE9E7; border:1px solid #FFAB91;">
+          <div class="tc-badge" style="background:#D84315; color:white;">Throughput</div>
+          <div class="tc-title" style="color:#D84315;">Requests processed per unit time</div>
+          <div class="tc-def">How many tokens or requests the system processes per second across all concurrent users. Determines cost efficiency - more throughput per GPU means lower cost per token.</div>
+          <div class="tc-row">Measured: tokens per second, requests per second</div>
+          <div class="tc-row">Felt by: the business paying the infrastructure bill</div>
+          <div class="tc-row">Driven by: batch size, GPU utilisation, model efficiency</div>
+          <div class="tc-row">Degraded by: small batches, idle GPU slots, fragmented KV Cache</div>
+        </div>
+      </div>
+
+      <div class="callout callout-deep">
+        <strong>The precise relationship:</strong> Latency and throughput are not always in conflict - up to a point, adding more requests to a batch improves throughput with minimal latency impact. But past a certain batch size, each new request added increases queue wait time and TTFT without proportional throughput gains. Finding that inflection point for a specific workload is the core task of inference capacity planning.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: The curve -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">2</span>
+        The Latency-Throughput Curve - Interactive
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>As load increases on an inference server, throughput rises - until it hits a ceiling set by GPU compute and memory capacity. Latency starts low but climbs sharply as the system saturates. The sweet spot for most production workloads is just below the saturation point.</p>
+
+      <div class="plot-wrap">
+        <div class="plot-title">Latency-Throughput curve - click a region to see operating characteristics</div>
+        <div class="plot-controls">
+          <button class="plot-btn" style="background:#E3F2FD; color:#1565C0; border:2px solid #1565C0;" onclick="showRegion('low')">Low load</button>
+          <button class="plot-btn" style="background:#E8F5E9; color:#2E7D32; border:2px solid #2E7D32;" onclick="showRegion('sweet')">Sweet spot</button>
+          <button class="plot-btn" style="background:#FFF3E0; color:#E65100; border:2px solid #E65100;" onclick="showRegion('sat')">Saturation</button>
+          <button class="plot-btn" style="background:#FFEBEE; color:#C62828; border:2px solid #C62828;" onclick="showRegion('over')">Overloaded</button>
+        </div>
+
+        <svg class="scatter" viewBox="0 0 600 240" id="plotSvg">
+          <!-- axes -->
+          <line x1="50" y1="210" x2="570" y2="210" stroke="#DDD" stroke-width="1.5"/>
+          <line x1="50" y1="10"  x2="50"  y2="210" stroke="#DDD" stroke-width="1.5"/>
+          <!-- axis labels -->
+          <text x="305" y="232" text-anchor="middle" font-size="11" font-family="Arial" fill="#999">Throughput (tokens/sec) →</text>
+          <text x="16" y="115" text-anchor="middle" font-size="11" font-family="Arial" fill="#999" transform="rotate(-90,16,115)">Latency (ms) →</text>
+          <!-- throughput ticks -->
+          <text x="100" y="222" text-anchor="middle" font-size="10" font-family="Arial" fill="#AAA">low</text>
+          <text x="240" y="222" text-anchor="middle" font-size="10" font-family="Arial" fill="#AAA">medium</text>
+          <text x="380" y="222" text-anchor="middle" font-size="10" font-family="Arial" fill="#AAA">high</text>
+          <text x="510" y="222" text-anchor="middle" font-size="10" font-family="Arial" fill="#AAA">max</text>
+          <!-- shaded regions -->
+          <rect x="52" y="12" width="130" height="196" fill="#E3F2FD" opacity="0.4" id="reg-low"/>
+          <rect x="182" y="12" width="160" height="196" fill="#E8F5E9" opacity="0.4" id="reg-sweet"/>
+          <rect x="342" y="12" width="110" height="196" fill="#FFF3E0" opacity="0.4" id="reg-sat"/>
+          <rect x="452" y="12" width="116" height="196" fill="#FFEBEE" opacity="0.4" id="reg-over"/>
+          <!-- region labels -->
+          <text x="117" y="28" text-anchor="middle" font-size="10" font-family="Arial" fill="#1565C0" font-weight="bold">Low load</text>
+          <text x="262" y="28" text-anchor="middle" font-size="10" font-family="Arial" fill="#2E7D32" font-weight="bold">Sweet spot</text>
+          <text x="397" y="28" text-anchor="middle" font-size="10" font-family="Arial" fill="#E65100" font-weight="bold">Saturation</text>
+          <text x="510" y="28" text-anchor="middle" font-size="10" font-family="Arial" fill="#C62828" font-weight="bold">Overloaded</text>
+          <!-- curve: latency rises slowly then sharply -->
+          <polyline points="60,185 100,178 140,172 180,165 220,158 260,150 300,142 340,132 380,116 420,95 460,70 500,44 530,22 555,14"
+            fill="none" stroke="#D84315" stroke-width="3" stroke-linejoin="round"/>
+          <!-- throughput ceiling line -->
+          <line x1="452" y1="12" x2="452" y2="210" stroke="#C62828" stroke-width="1.5" stroke-dasharray="6,4"/>
+          <!-- dot at sweet spot -->
+          <circle cx="295" cy="143" r="8" fill="#2E7D32" opacity="0.85" id="dot-sweet"/>
+          <text x="295" y="138" text-anchor="middle" font-size="9" font-family="Arial" fill="white" font-weight="bold">opt</text>
+        </svg>
+
+        <div id="region-info" style="background:white; border-radius:8px; padding:12px 16px; font-family:Arial,sans-serif; font-size:13.5px; line-height:1.7; border:1px solid #E0E0E0; margin-top:8px; min-height:60px; color:#444;">
+          Click a region above to see its operating characteristics.
+        </div>
+      </div>
+
+      <div class="callout callout-purple">
+        <strong>Why the curve goes vertical:</strong> As the system approaches maximum GPU capacity, new requests queue longer and longer. TTFT climbs steeply - not because the GPU slowed down, but because requests are waiting behind a full pipeline. Adding one more request to an already-saturated system can disproportionately increase latency for everyone. This is the queueing theory effect: utilisation above ~80% causes latency to rise non-linearly.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Workload profiles -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">3</span>
+        Workload Profiles - Where Each Type Sits on the Curve
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Different applications have fundamentally different positions on the throughput-latency curve. Recognising the workload type quickly is the first step to any inference architecture conversation.</p>
+
+      <div style="display:flex; flex-direction:column; gap:12px; margin:16px 0;">
+
+        <div class="profile-row">
+          <div class="profile-icon" style="background:#1565C0;">CH</div>
+          <div class="profile-body" style="background:#E3F2FD; border-left:3px solid #1565C0;">
+            <div class="profile-title">Interactive Chat / Copilot</div>
+            <div class="profile-grid">
+              <div class="profile-cell"><span class="profile-label">Priority:</span> TTFT &lt; 500ms, TPOT &lt; 30ms</div>
+              <div class="profile-cell"><span class="profile-label">Batch size:</span> Small (2–16)</div>
+              <div class="profile-cell"><span class="profile-label">Queue tolerance:</span> Near zero</div>
+              <div class="profile-cell"><span class="profile-label">Cost sensitivity:</span> Medium - users pay per message</div>
+              <div class="profile-cell"><span class="profile-label">Curve position:</span> Left of sweet spot - intentionally under-saturated</div>
+              <div class="profile-cell"><span class="profile-label">Examples:</span> Claude.ai, GitHub Copilot, ChatGPT</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-row">
+          <div class="profile-icon" style="background:#7B1FA2;">API</div>
+          <div class="profile-body" style="background:#F3E8FD; border-left:3px solid #7B1FA2;">
+            <div class="profile-title">Developer API (mixed workloads)</div>
+            <div class="profile-grid">
+              <div class="profile-cell"><span class="profile-label">Priority:</span> Balanced - SLA on P95 latency</div>
+              <div class="profile-cell"><span class="profile-label">Batch size:</span> Medium (16–64)</div>
+              <div class="profile-cell"><span class="profile-label">Queue tolerance:</span> Low - seconds acceptable</div>
+              <div class="profile-cell"><span class="profile-label">Cost sensitivity:</span> High - charged per token</div>
+              <div class="profile-cell"><span class="profile-label">Curve position:</span> At the sweet spot</div>
+              <div class="profile-cell"><span class="profile-label">Examples:</span> Anthropic API, OpenAI API</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-row">
+          <div class="profile-icon" style="background:#2E7D32;">RAG</div>
+          <div class="profile-body" style="background:#E8F5E9; border-left:3px solid #2E7D32;">
+            <div class="profile-title">RAG / Agentic Pipelines</div>
+            <div class="profile-grid">
+              <div class="profile-cell"><span class="profile-label">Priority:</span> Moderate TTFT, high quality</div>
+              <div class="profile-cell"><span class="profile-label">Batch size:</span> Medium (8–32)</div>
+              <div class="profile-cell"><span class="profile-label">Queue tolerance:</span> Seconds - user is reading retrieved results</div>
+              <div class="profile-cell"><span class="profile-label">Cost sensitivity:</span> High - many LLM calls per pipeline</div>
+              <div class="profile-cell"><span class="profile-label">Curve position:</span> Near sweet spot, slight throughput bias</div>
+              <div class="profile-cell"><span class="profile-label">Examples:</span> Document Q&A, code review agents</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-row">
+          <div class="profile-icon" style="background:#BF360C;">BCH</div>
+          <div class="profile-body" style="background:#FBE9E7; border-left:3px solid #BF360C;">
+            <div class="profile-title">Batch / Offline Processing</div>
+            <div class="profile-grid">
+              <div class="profile-cell"><span class="profile-label">Priority:</span> Maximum throughput, minimum cost</div>
+              <div class="profile-cell"><span class="profile-label">Batch size:</span> Large (64–512)</div>
+              <div class="profile-cell"><span class="profile-label">Queue tolerance:</span> Minutes to hours</div>
+              <div class="profile-cell"><span class="profile-label">Cost sensitivity:</span> Very high - millions of documents</div>
+              <div class="profile-cell"><span class="profile-label">Curve position:</span> Right of sweet spot - near saturation</div>
+              <div class="profile-cell"><span class="profile-label">Examples:</span> Document classification, data extraction, evals</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>The mixed-workload challenge:</strong> Most production systems serve multiple workload types simultaneously - interactive users and batch jobs on the same cluster. The common solution is priority queuing: interactive requests jump the queue and get served before batch jobs, keeping TTFT low for users while batch jobs fill remaining capacity. vLLM and TensorRT-LLM both support request priority levels for exactly this pattern.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Measuring and SLAs -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">4</span>
+        How to Measure Performance - Percentiles and SLAs
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>Averages lie. A system with a 200ms average TTFT can still have 10% of users waiting over 2 seconds - and those users leave. Production inference systems are measured with percentiles, and SLAs (Service Level Agreements) are written against them.</p>
+
+      <div class="curve-wrap">
+        <div class="curve-title">TTFT distribution - same system, different ways of reporting it</div>
+        <div class="curve-row">
+          <span class="curve-label">Mean (average)</span>
+          <div class="curve-bar-bg">
+            <div class="curve-fill" style="background:#1565C0; width:28%;">210ms</div>
+          </div>
+          <span class="curve-annotation" style="color:#60A5FA;">Looks good</span>
+        </div>
+        <div class="curve-row">
+          <span class="curve-label">P50 (median)</span>
+          <div class="curve-bar-bg">
+            <div class="curve-fill" style="background:#2E7D32; width:22%;">170ms</div>
+          </div>
+          <span class="curve-annotation" style="color:#86EFAC;">Most users OK</span>
+        </div>
+        <div class="curve-row">
+          <span class="curve-label">P95</span>
+          <div class="curve-bar-bg">
+            <div class="curve-fill" style="background:#E65100; width:55%;">420ms</div>
+          </div>
+          <span class="curve-annotation" style="color:#FB923C;">Getting slow</span>
+        </div>
+        <div class="curve-row">
+          <span class="curve-label">P99</span>
+          <div class="curve-bar-bg">
+            <div class="curve-fill" style="background:#C62828; width:82%;">620ms</div>
+          </div>
+          <span class="curve-annotation" style="color:#F87171;">Poor UX</span>
+        </div>
+        <div class="curve-row">
+          <span class="curve-label">P99.9 (tail)</span>
+          <div class="curve-bar-bg">
+            <div class="curve-fill" style="background:#7B1FA2; width:96%;">2,400ms</div>
+          </div>
+          <span class="curve-annotation" style="color:#D8B4FE;">Unacceptable</span>
+        </div>
+        <div style="font-size:12px; opacity:0.5; margin-top:10px; line-height:1.6;">The mean of 210ms would pass most informal checks. The P99 of 620ms and P99.9 of 2,400ms reveal a tail latency problem - likely caused by occasional KV Cache evictions or queue spikes.</div>
+      </div>
+
+      <table class="sla-table">
+        <thead>
+          <tr><th>Workload</th><th>Typical TTFT SLA</th><th>Typical TPOT SLA</th><th>Measured at</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="sla-name">Real-time chat</td>
+            <td class="sla-good">&lt; 500ms</td>
+            <td class="sla-good">&lt; 30ms</td>
+            <td>P95</td>
+          </tr>
+          <tr>
+            <td class="sla-name">Copilot / autocomplete</td>
+            <td class="sla-good">&lt; 200ms</td>
+            <td class="sla-good">&lt; 20ms</td>
+            <td>P99</td>
+          </tr>
+          <tr>
+            <td class="sla-name">Developer API</td>
+            <td>&lt; 1 second</td>
+            <td>&lt; 50ms</td>
+            <td>P95</td>
+          </tr>
+          <tr>
+            <td class="sla-name">Agentic pipeline step</td>
+            <td>&lt; 2 seconds</td>
+            <td>&lt; 60ms</td>
+            <td>P90</td>
+          </tr>
+          <tr>
+            <td class="sla-name">Batch processing</td>
+            <td class="sla-trade">Not specified</td>
+            <td class="sla-trade">Not specified</td>
+            <td>Total job time</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-slate">
+        <strong>Tail latency is where production systems fail users:</strong> The P99.9 is typically caused by infrequent but severe events - KV Cache full causing an eviction, a long request getting inserted into a batch, a garbage collection pause, or a thermal throttle on the GPU. Monitoring P99 and P99.9 separately from the mean is non-negotiable in production. A system that looks healthy on average can be silently failing its most demanding users.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: The levers -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">5</span>
+        The Levers - What Actually Moves the Needle
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>When a customer needs to improve their throughput-latency position, there are a small number of high-leverage interventions. Understanding what each lever moves - and what it costs - is the core of inference architecture advice:</p>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin:16px 0;">
+
+        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; font-family:Arial,sans-serif; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#888; padding:0 12px;">
+          <span>Lever</span><span>Latency</span><span>Throughput</span><span>Notes</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#E8F5E9; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
+          <span style="font-weight:bold;">Continuous batching</span>
+          <span style="color:#2E7D32;">Neutral</span>
+          <span style="color:#2E7D32; font-weight:bold;">+++ </span>
+          <span style="color:#555;">Free - config change only. Most impactful single step from static batching.</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#E3F2FD; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
+          <span style="font-weight:bold;">Smaller model</span>
+          <span style="color:#2E7D32; font-weight:bold;">+++</span>
+          <span style="color:#2E7D32; font-weight:bold;">+++</span>
+          <span style="color:#555;">Reduces both. Quality trade-off - must validate before deploying.</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#E8F5E9; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
+          <span style="font-weight:bold;">Quantisation (INT8)</span>
+          <span style="color:#2E7D32;">+</span>
+          <span style="color:#2E7D32; font-weight:bold;">++</span>
+          <span style="color:#555;">Reduces model memory → more KV Cache space → higher concurrency.</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#E3F2FD; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
+          <span style="font-weight:bold;">Prefix caching</span>
+          <span style="color:#2E7D32; font-weight:bold;">+++</span>
+          <span style="color:#2E7D32;">++</span>
+          <span style="color:#555;">Reduces TTFT dramatically for prefix-heavy workloads. Near-zero cost.</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#FFF3E0; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
+          <span style="font-weight:bold;">More GPUs</span>
+          <span style="color:#2E7D32;">+</span>
+          <span style="color:#2E7D32; font-weight:bold;">+++</span>
+          <span style="color:#555;">Linear throughput scaling. High cost. Right answer only after software optimisations exhausted.</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#FBE9E7; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
+          <span style="font-weight:bold;">Increase batch size</span>
+          <span style="color:#C62828;">-</span>
+          <span style="color:#2E7D32; font-weight:bold;">++</span>
+          <span style="color:#555;">Improves throughput but increases TTFT. Choose based on workload type.</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#F3E8FD; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
+          <span style="font-weight:bold;">Disaggregation</span>
+          <span style="color:#2E7D32; font-weight:bold;">++</span>
+          <span style="color:#2E7D32; font-weight:bold;">++</span>
+          <span style="color:#555;">Separates Prefill/Decode onto dedicated hardware. Complex but powerful at scale.</span>
+        </div>
+
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>The right sequence for a customer struggling with performance:</strong> Start with continuous batching (free, immediate). Then prefix caching if workload has repeated prefixes. Then quantisation to increase concurrency. Then model selection review. Only after those are exhausted consider more hardware. Adding GPUs before optimising software is the most expensive mistake in inference architecture.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Decision framework -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">6</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <div class="key-item">
+        <div class="key-num" style="color:#D84315;">01</div>
+        <div>
+          <div class="key-title">Latency is felt by users; throughput is felt by the finance team</div>
+          <div class="key-desc">Latency determines user experience - will they wait, or will they leave? Throughput determines cost efficiency - how many users can you serve per dollar of GPU spend? Both matter, but they speak to different stakeholders and are optimised with different levers.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#7B1FA2;">02</div>
+        <div>
+          <div class="key-title">The latency-throughput curve has a sweet spot - and a cliff</div>
+          <div class="key-desc">Up to roughly 70–80% GPU utilisation, throughput rises with minimal latency impact. Past that point, queue depth grows and latency rises non-linearly. Operating near saturation is efficient for batch workloads but disastrous for interactive ones.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#2E7D32;">03</div>
+        <div>
+          <div class="key-title">Measure P95 and P99 - never just the mean</div>
+          <div class="key-desc">Average latency hides tail events. A system with 210ms average TTFT and 2,400ms P99.9 is failing its highest-traffic moments. SLAs should be written against P95 or P99. Monitoring only the mean gives false confidence.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">04</div>
+        <div>
+          <div class="key-title">Optimise software before buying hardware</div>
+          <div class="key-desc">The most common and expensive mistake in inference architecture is adding GPUs before exhausting software optimisations. Continuous batching, prefix caching, and quantisation together can often double or triple effective throughput with zero additional hardware cost.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat Sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 2.4 - CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Latency</div>
+        <div class="cheat-def">Time for one request. Decomposed into TTFT and TPOT. Felt by the individual user. Degraded by large batches and full queues.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Throughput</div>
+        <div class="cheat-def">Tokens or requests processed per second across all users. Determines cost per token. Improved by larger batches and higher GPU utilisation.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Sweet Spot</div>
+        <div class="cheat-def">The GPU utilisation level (typically 70–80%) where throughput is near-maximum and latency is still acceptable. The target for balanced workloads.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Saturation</div>
+        <div class="cheat-def">When the system is near or at maximum GPU capacity. Throughput plateaus. Latency rises steeply and non-linearly. Queue depth grows.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">P95 / P99 Latency</div>
+        <div class="cheat-def">The latency experienced by the 95th or 99th percentile of requests. The correct metric for SLAs. Much more informative than the mean.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Tail Latency</div>
+        <div class="cheat-def">P99.9+ latency - the worst-case outliers. Usually caused by KV Cache evictions, batch queue spikes, or hardware events. The source of user complaints.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Priority Queuing</div>
+        <div class="cheat-def">Serving interactive requests before batch jobs on the same cluster. Keeps TTFT low for users while batch fills remaining capacity.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Optimisation Order</div>
+        <div class="cheat-def">Continuous batching → prefix caching → quantisation → model selection → hardware. Never buy GPUs before exhausting software options.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK - PART 2 FINAL</div>
+    <div class="quiz-q">A customer's CTO says: "Our P50 latency looks fine but our users are complaining. We're thinking of doubling our GPU fleet to fix it." What is your response, and what would you investigate first?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Doubling GPUs is the right call - more hardware always reduces latency
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        P50 looking fine while users complain is a tail latency problem. Check P95 and P99 - they are almost certainly high. Before buying more GPUs, investigate: (1) whether continuous batching is enabled, (2) KV Cache eviction events causing latency spikes, (3) whether a small number of long requests are creating queue delays for short ones. Hardware is the last resort, not the first.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        The model is too large - switch to a smaller model to reduce per-token latency
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        The complaints are probably about response quality, not speed - this is a model fine-tuning issue
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <a href="module2_5.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next - Module 2.5</div>
+      <div class="next-title">Memory Bottleneck</div>
+      <div class="next-sub">why GPUs run out of memory</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var colors={1:'#D84315',2:'#7B1FA2',3:'#E65100',4:'#2E7D32',5:'#1565C0',6:'#283593'};
+  var bgs   ={1:'#FBE9E7',2:'#F3E8FD',3:'#FFF3E0',4:'#E8F5E9',5:'#E3F2FD',6:'#E8EAF6'};
+  function toggle(n){
+    var body=document.getElementById('bdy'+n),chv=document.getElementById('chv'+n),hdr=document.getElementById('hdr'+n);
+    var isOpen=body.classList.contains('open');
+    body.classList.toggle('open'); chv.classList.toggle('open');
+    hdr.style.borderLeftColor=isOpen?'#E8E8E8':colors[n];
+    hdr.style.background=isOpen?'white':bgs[n];
+  }
+
+  /* ── Region info ── */
+  var regionText = {
+    low:   {bg:'#E3F2FD', c:'#1565C0', text:'<strong>Low load:</strong> GPU utilisation is 10–30%. Latency is excellent - requests are served almost immediately with minimal queue wait. Throughput is low. This is the right operating zone for latency-critical workloads like copilot autocomplete. The cost trade-off: you are paying for GPU capacity you are not fully using.'},
+    sweet: {bg:'#E8F5E9', c:'#2E7D32', text:'<strong>Sweet spot:</strong> GPU utilisation 60–80%. Throughput is near-maximum while latency remains acceptable. This is the target for most balanced API workloads. P95 TTFT is typically under 800ms. Continuous batching and good KV Cache management are what keep you here under variable load.'},
+    sat:   {bg:'#FFF3E0', c:'#E65100', text:'<strong>Saturation:</strong> GPU utilisation 80–95%. Throughput has plateaued - adding more requests produces diminishing returns. Latency is rising meaningfully. P99 TTFT is likely over 1 second. Queue depth is growing. This is acceptable for cost-optimised batch jobs, but will cause user-visible latency degradation for interactive workloads.'},
+    over:  {bg:'#FFEBEE', c:'#C62828', text:'<strong>Overloaded:</strong> GPU is at or beyond maximum capacity. New requests queue behind a growing backlog. TTFT can reach tens of seconds. P99.9 tail latency is catastrophic. The system needs either more hardware, lower traffic, or urgent optimisation. Priority queuing can protect interactive users, but this is not a sustainable operating state.'}
+  };
+  function showRegion(k){
+    var r=regionText[k];
+    document.getElementById('region-info').style.background=r.bg;
+    document.getElementById('region-info').style.borderColor=r.c;
+    document.getElementById('region-info').innerHTML=r.text;
+  }
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    var opts=document.querySelectorAll('.quiz-option'),letters=['a','b','c','d'];
+    opts.forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      if(letters[i]==='b')o.classList.add('correct');
+      else if(letters[i]===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct - and this is exactly the conversation that saves customers from expensive mistakes.</strong> "P50 fine, users complaining" is the textbook tail latency pattern. The P50 tells you most requests are fast. User complaints tell you a meaningful minority are experiencing very high latency - almost certainly in the P95–P99.9 range. The right sequence: (1) pull P95 and P99 metrics immediately - quantify the actual problem, (2) check KV Cache eviction logs - evictions cause sudden latency spikes that hit a small fraction of requests, (3) check whether any long batch jobs are sharing queue capacity with interactive requests - a single 10,000-token batch job can delay dozens of short requests if there is no priority queuing. Only after those investigations, if the issue persists, consider capacity. Doubling GPUs on a system with eviction-driven tail latency will not help - it will just evict less often.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> The key diagnostic signal is "P50 fine, users complaining" - this is tail latency, not average latency. Option B correctly identifies this and recommends investigating P95/P99, KV Cache evictions, and queue contention before hardware. More GPUs (Option A) will not fix tail latency caused by evictions or priority queue issues. Model size (Option C) affects average TPOT, not tail spikes. Quality (Option D) is not indicated by a latency complaint.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>

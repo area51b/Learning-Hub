@@ -168,7 +168,7 @@
   <div class="header">
     <div class="header-eyebrow">PART 1 · MODULE 1.6</div>
     <h1>The Full Transformer Block</h1>
-    <p>How Attention and FFN stack together into layers — and what depth means for inference</p>
+    <p>How Attention and FFN stack together into layers - and what depth means for inference</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -180,18 +180,18 @@
   <div class="nav-bar">
     <a href="module1_5.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">1.5 — Feed Forward Network</div>
+      <div class="nav-title">1.5 - Feed Forward Network</div>
     </a>
     <a href="module1_7.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">1.7 — The two phases: Prefill vs Decode</div>
+      <div class="nav-title">1.7 - The two phases: Prefill vs Decode</div>
     </a>
   </div>
 
   <!-- Intro -->
   <div class="intro-card">
-    <p>You now know the two core components of a Transformer: <strong>Attention</strong> (which gathers context across tokens) and the <strong>FFN</strong> (which processes each token individually). In this module, you will see how they are assembled into a single <em>transformer block</em> — and how stacking many of these blocks creates the deep, powerful models used in production today.</p>
-    <p>This is the module where all the previous concepts connect. Understanding how blocks stack also gives you the intuition for why increasing model depth (more layers) increases both quality <em>and</em> inference cost — and how techniques like pipeline parallelism exploit this structure.</p>
+    <p>You now know the two core components of a Transformer: <strong>Attention</strong> (which gathers context across tokens) and the <strong>FFN</strong> (which processes each token individually). In this module, you will see how they are assembled into a single <em>transformer block</em> - and how stacking many of these blocks creates the deep, powerful models used in production today.</p>
+    <p>This is the module where all the previous concepts connect. Understanding how blocks stack also gives you the intuition for why increasing model depth (more layers) increases both quality <em>and</em> inference cost - and how techniques like pipeline parallelism exploit this structure.</p>
   </div>
 
   <!-- Section 1: Anatomy of one block -->
@@ -204,10 +204,10 @@
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>A single transformer block is a fixed sequence of four operations. Every block in every model — from the smallest 1B model to the largest 400B model — follows the same structure:</p>
+      <p>A single transformer block is a fixed sequence of four operations. Every block in every model - from the smallest 1B model to the largest 400B model - follows the same structure:</p>
 
       <div class="block-diagram">
-        <div class="bd-title-bar">One transformer block — executed once per layer</div>
+        <div class="bd-title-bar">One transformer block - executed once per layer</div>
         <div class="bd-flow">
 
           <div class="bd-node" style="background:#E3F2FD; border:1px solid #90CAF9;">
@@ -218,7 +218,7 @@
 
           <div class="bd-node" style="background:#F3E8FD; border:1px solid #CE93D8;">
             <div class="bd-node-title" style="color:#7B1FA2;">Layer Normalisation</div>
-            <div class="bd-node-desc">Stabilises the numbers before attention — keeps training and inference numerically stable</div>
+            <div class="bd-node-desc">Stabilises the numbers before attention - keeps training and inference numerically stable</div>
           </div>
           <div class="bd-arrow-down">&#8595;</div>
 
@@ -230,7 +230,7 @@
 
           <div class="bd-node" style="background:#FFF3E0; border:1px solid #FFCC80;">
             <div class="bd-node-title" style="color:#E65100;">Residual Connection (Add)</div>
-            <div class="bd-node-desc">Attention output is <em>added</em> to the original input — preserving what the token knew before attention ran</div>
+            <div class="bd-node-desc">Attention output is <em>added</em> to the original input - preserving what the token knew before attention ran</div>
           </div>
           <div class="bd-arrow-down">&#8595;</div>
 
@@ -242,26 +242,26 @@
 
           <div class="bd-node" style="background:#FFEBEE; border:1px solid #FFCDD2;">
             <div class="bd-node-title" style="color:#C62828;">Feed Forward Network (FFN)</div>
-            <div class="bd-node-desc">Each token individually processed — expand to think widely, contract to a refined representation</div>
+            <div class="bd-node-desc">Each token individually processed - expand to think widely, contract to a refined representation</div>
           </div>
           <div class="bd-arrow-down">&#8595;</div>
 
           <div class="bd-node" style="background:#FFF3E0; border:1px solid #FFCC80;">
             <div class="bd-node-title" style="color:#E65100;">Residual Connection (Add)</div>
-            <div class="bd-node-desc">FFN output added to pre-FFN input — again preserving existing information</div>
+            <div class="bd-node-desc">FFN output added to pre-FFN input - again preserving existing information</div>
           </div>
           <div class="bd-arrow-down">&#8595;</div>
 
           <div class="bd-node" style="background:#E0F2F1; border:1px solid #80CBC4;">
             <div class="bd-node-title" style="color:#004D40;">Output to next layer</div>
-            <div class="bd-node-desc">Richer token embeddings — carry everything learned so far, passed to the block above</div>
+            <div class="bd-node-desc">Richer token embeddings - carry everything learned so far, passed to the block above</div>
           </div>
 
         </div>
       </div>
 
       <div class="callout callout-teal">
-        <strong>The two new components:</strong> You have already learned Attention and FFN in depth. The two additions here are <strong>Layer Normalisation</strong> (a stability mechanism — think of it as resetting the scale before each major operation) and <strong>Residual Connections</strong> (which ensure the block <em>adds</em> to what it knows rather than replacing it). Both are covered in the next two sections.
+        <strong>The two new components:</strong> You have already learned Attention and FFN in depth. The two additions here are <strong>Layer Normalisation</strong> (a stability mechanism - think of it as resetting the scale before each major operation) and <strong>Residual Connections</strong> (which ensure the block <em>adds</em> to what it knows rather than replacing it). Both are covered in the next two sections.
       </div>
     </div>
   </div>
@@ -271,15 +271,15 @@
     <div class="section-header" id="hdr2" onclick="toggle(2)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#E65100;">2</span>
-        Residual Connections — Why Blocks Add, Not Replace
+        Residual Connections - Why Blocks Add, Not Replace
       </div>
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
     <div class="section-body" id="bdy2">
-      <p>Residual connections are one of the most elegant ideas in deep learning — and they are easy to understand conceptually. The core idea is: <strong>instead of a layer transforming the input into something new, it transforms the input into a small update that gets added to the original</strong>.</p>
+      <p>Residual connections are one of the most elegant ideas in deep learning - and they are easy to understand conceptually. The core idea is: <strong>instead of a layer transforming the input into something new, it transforms the input into a small update that gets added to the original</strong>.</p>
 
       <div class="residual-wrap">
-        <div class="residual-title">Residual connection — illustrated</div>
+        <div class="residual-title">Residual connection - illustrated</div>
         <div class="res-row">
           <span class="res-box" style="background:rgba(21,101,192,0.3); color:#90CAF9;">Token before attention</span>
           <span class="res-plus">+</span>
@@ -294,13 +294,13 @@
           <span class="res-arrow">&#8594;</span>
           <span class="res-result">Even richer token</span>
         </div>
-        <div class="res-note">Each operation contributes an increment. The token's representation grows richer with each block — it never loses what it already knew.</div>
+        <div class="res-note">Each operation contributes an increment. The token's representation grows richer with each block - it never loses what it already knew.</div>
       </div>
 
-      <p>Without residual connections, information from early layers can get "washed out" as it passes through dozens of layers. With them, the original token information always flows forward, and each layer only needs to learn the <em>delta</em> — what new information to add. This is why models can be made very deep (80, 96, 128 layers) without degrading quality.</p>
+      <p>Without residual connections, information from early layers can get "washed out" as it passes through dozens of layers. With them, the original token information always flows forward, and each layer only needs to learn the <em>delta</em> - what new information to add. This is why models can be made very deep (80, 96, 128 layers) without degrading quality.</p>
 
       <div class="callout callout-blue">
-        <strong>Why this matters for inference:</strong> Residual connections mean every layer's output depends on the layer below it — which is why transformer inference cannot be trivially parallelised across layers. Layer 10 cannot start until layer 9 finishes. This sequential dependency is what <strong>pipeline parallelism</strong> is designed to manage when running large models across multiple GPUs. You will learn this in Module 3.4.
+        <strong>Why this matters for inference:</strong> Residual connections mean every layer's output depends on the layer below it - which is why transformer inference cannot be trivially parallelised across layers. Layer 10 cannot start until layer 9 finishes. This sequential dependency is what <strong>pipeline parallelism</strong> is designed to manage when running large models across multiple GPUs. You will learn this in Module 3.4.
       </div>
     </div>
   </div>
@@ -310,7 +310,7 @@
     <div class="section-header" id="hdr3" onclick="toggle(3)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">3</span>
-        Layer Normalisation — The Stability Mechanism
+        Layer Normalisation - The Stability Mechanism
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
@@ -329,7 +329,7 @@
       </div>
 
       <div class="callout callout-purple">
-        <strong>The analogy:</strong> Think of layer normalisation like a mixing board engineer adjusting audio levels before each stage of a recording. If one instrument is unexpectedly loud, it gets turned down before it hits the next processor — otherwise the distortion would compound through every stage. Layer norm does the same for token embeddings: resets the scale before every major operation.
+        <strong>The analogy:</strong> Think of layer normalisation like a mixing board engineer adjusting audio levels before each stage of a recording. If one instrument is unexpectedly loud, it gets turned down before it hits the next processor - otherwise the distortion would compound through every stage. Layer norm does the same for token embeddings: resets the scale before every major operation.
       </div>
 
       <div class="callout callout-teal" style="margin-top:10px;">
@@ -338,51 +338,51 @@
     </div>
   </div>
 
-  <!-- Section 4: Stacking blocks — the depth story -->
+  <!-- Section 4: Stacking blocks - the depth story -->
   <div class="section-card">
     <div class="section-header" id="hdr4" onclick="toggle(4)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">4</span>
-        Stacking Blocks — What Depth Actually Means
+        Stacking Blocks - What Depth Actually Means
       </div>
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
     <div class="section-body" id="bdy4">
-      <p>A single transformer block gives the model one pass at understanding the input. Modern models repeat this block many times — a 7B model has 32 layers, a 70B model has 80. Each pass builds on the previous one.</p>
+      <p>A single transformer block gives the model one pass at understanding the input. Modern models repeat this block many times - a 7B model has 32 layers, a 70B model has 80. Each pass builds on the previous one.</p>
 
       <div class="layer-journey">
         <div class="lj-row">
           <div class="lj-num" style="background:#B0BEC5;">1–4</div>
           <div class="lj-body" style="background:#F5F5F5; border-left:3px solid #B0BEC5;">
-            <div class="lj-title">Early layers — surface features</div>
+            <div class="lj-title">Early layers - surface features</div>
             <div class="lj-desc">The model learns basic syntax, word boundaries, and simple local relationships. "This is a noun." "This token follows a preposition." Pattern recognition at a surface level.</div>
           </div>
         </div>
         <div class="lj-row">
           <div class="lj-num" style="background:#42A5F5;">5–16</div>
           <div class="lj-body" style="background:#E3F2FD; border-left:3px solid #42A5F5;">
-            <div class="lj-title">Middle layers — semantic understanding</div>
+            <div class="lj-title">Middle layers - semantic understanding</div>
             <div class="lj-desc">The model builds meaning, resolves references, and understands context. "This 'it' refers to 'server'." "This sentence describes a failure." Topic and entity relationships emerge.</div>
           </div>
         </div>
         <div class="lj-row">
           <div class="lj-num" style="background:#00796B;">17–28</div>
           <div class="lj-body" style="background:#E0F2F1; border-left:3px solid #00796B;">
-            <div class="lj-title">Later layers — reasoning and knowledge</div>
+            <div class="lj-title">Later layers - reasoning and knowledge</div>
             <div class="lj-desc">The model applies learned world knowledge, reasons about implications, and makes judgements. "A memory error in a server usually means the process was killed by the OS." Domain expertise emerges.</div>
           </div>
         </div>
         <div class="lj-row">
           <div class="lj-num" style="background:#C62828;">29–32</div>
           <div class="lj-body" style="background:#FFEBEE; border-left:3px solid #C62828;">
-            <div class="lj-title">Final layers — output preparation</div>
+            <div class="lj-title">Final layers - output preparation</div>
             <div class="lj-desc">The model consolidates its representation into a form ready for the next-token prediction. The final layer's output is used to select the most likely next token from the vocabulary.</div>
           </div>
         </div>
       </div>
 
       <div class="callout callout-orange">
-        <strong>Why layer count matters for inference cost:</strong> Every layer must execute sequentially. A 32-layer model runs 32 full Attention + FFN cycles per token. An 80-layer model runs 80. More layers = higher latency per token and more parameters = more GPU memory. This is the direct trade-off between model quality and inference cost — and why model selection (7B vs 70B) is often the single biggest infrastructure decision.
+        <strong>Why layer count matters for inference cost:</strong> Every layer must execute sequentially. A 32-layer model runs 32 full Attention + FFN cycles per token. An 80-layer model runs 80. More layers = higher latency per token and more parameters = more GPU memory. This is the direct trade-off between model quality and inference cost - and why model selection (7B vs 70B) is often the single biggest infrastructure decision.
       </div>
     </div>
   </div>
@@ -442,7 +442,7 @@
       <p>Because a transformer is simply a stack of identical blocks, it is straightforward to split those blocks across multiple GPUs. This is called <strong>pipeline parallelism</strong>.</p>
 
       <div style="background:#FFFDE7; border:1px solid #FFE082; border-radius:12px; padding:20px 22px; margin:16px 0; font-family:Arial,sans-serif;">
-        <div style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:14px;">Pipeline parallelism — 4 GPUs, 32-layer model</div>
+        <div style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:14px;">Pipeline parallelism - 4 GPUs, 32-layer model</div>
         <div style="display:flex; flex-direction:column; gap:8px;">
           <div style="display:flex; align-items:center; gap:10px;">
             <div style="background:#1565C0; color:white; border-radius:6px; padding:6px 12px; font-size:13px; font-weight:bold; min-width:70px; text-align:center;">GPU 0</div>
@@ -465,7 +465,7 @@
       </div>
 
       <div class="callout callout-orange">
-        <strong>Pipeline parallelism vs tensor parallelism:</strong> Pipeline parallelism splits the model <em>vertically</em> by layers — different GPUs handle different layers. Tensor parallelism splits the model <em>horizontally</em> — each GPU handles a slice of every layer simultaneously. Most large-scale deployments use both. You will learn this in detail in Module 3.4.
+        <strong>Pipeline parallelism vs tensor parallelism:</strong> Pipeline parallelism splits the model <em>vertically</em> by layers - different GPUs handle different layers. Tensor parallelism splits the model <em>horizontally</em> - each GPU handles a slice of every layer simultaneously. Most large-scale deployments use both. You will learn this in detail in Module 3.4.
       </div>
     </div>
   </div>
@@ -484,14 +484,14 @@
         <div class="key-num" style="color:#00796B;">01</div>
         <div>
           <div class="key-title">Every transformer block = LayerNorm + Attention + Residual + LayerNorm + FFN + Residual</div>
-          <div class="key-desc">This six-step sequence is identical in every block of every transformer model. Knowing this structure lets you reason about where time and memory go at each layer — and which optimisations target which step.</div>
+          <div class="key-desc">This six-step sequence is identical in every block of every transformer model. Knowing this structure lets you reason about where time and memory go at each layer - and which optimisations target which step.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">02</div>
         <div>
           <div class="key-title">Residual connections mean each layer adds knowledge, not replaces it</div>
-          <div class="key-desc">This is what makes deep models (80+ layers) work well. It also creates sequential layer dependencies — layer N cannot start until layer N-1 finishes — which is the constraint pipeline parallelism is designed to manage.</div>
+          <div class="key-desc">This is what makes deep models (80+ layers) work well. It also creates sequential layer dependencies - layer N cannot start until layer N-1 finishes - which is the constraint pipeline parallelism is designed to manage.</div>
         </div>
       </div>
       <div class="key-item">
@@ -513,7 +513,7 @@
 
   <!-- Cheat Sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 1.6 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 1.6 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Transformer Block</div>
@@ -533,15 +533,15 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Pipeline Parallelism</div>
-        <div class="cheat-def">Splits model layers across GPUs — different GPUs handle different layer ranges. Solves the "model too large for one GPU" problem.</div>
+        <div class="cheat-def">Splits model layers across GPUs - different GPUs handle different layer ranges. Solves the "model too large for one GPU" problem.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Tensor Parallelism</div>
-        <div class="cheat-def">Splits each layer's weights across GPUs horizontally — every GPU works on every layer but only a slice. High bandwidth needed between GPUs.</div>
+        <div class="cheat-def">Splits each layer's weights across GPUs horizontally - every GPU works on every layer but only a slice. High bandwidth needed between GPUs.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Sequential Dependency</div>
-        <div class="cheat-def">Layer N must wait for layer N-1. Inference cannot be parallelised across layers for a single request — only across requests (batching).</div>
+        <div class="cheat-def">Layer N must wait for layer N-1. Inference cannot be parallelised across layers for a single request - only across requests (batching).</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Early vs Late Layers</div>
@@ -557,15 +557,15 @@
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        Pipeline parallelism means each GPU processes a different token simultaneously — the limitation is that tokens must arrive in batches
+        Pipeline parallelism means each GPU processes a different token simultaneously - the limitation is that tokens must arrive in batches
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        Pipeline parallelism means each GPU holds a different group of layers (e.g. GPU 0 handles layers 1–20, GPU 1 handles 21–40, etc.). The key limitation is pipeline bubbles — GPUs earlier in the pipeline sit idle while waiting for the next batch when the current one finishes
+        Pipeline parallelism means each GPU holds a different group of layers (e.g. GPU 0 handles layers 1–20, GPU 1 handles 21–40, etc.). The key limitation is pipeline bubbles - GPUs earlier in the pipeline sit idle while waiting for the next batch when the current one finishes
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Pipeline parallelism means the model weights are duplicated across all 4 GPUs for redundancy — the limitation is 4x the memory cost
+        Pipeline parallelism means the model weights are duplicated across all 4 GPUs for redundancy - the limitation is 4x the memory cost
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
@@ -580,8 +580,8 @@
   <a href="module1_7.html" class="next-module">
     <div>
       <div class="next-label">UP NEXT</div>
-      <div class="next-title">Module 1.7 — The Two Phases: Prefill vs Decode</div>
-      <div class="next-sub">Your bridge to disaggregation — how the model's two modes create completely different hardware demands</div>
+      <div class="next-title">Module 1.7 - The Two Phases: Prefill vs Decode</div>
+      <div class="next-sub">Your bridge to disaggregation - how the model's two modes create completely different hardware demands</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -682,10 +682,10 @@
     result.style.display = 'block';
     if (selected === 'b') {
       result.style.background = '#E8F5E9';
-      result.innerHTML = '<strong>Correct!</strong> Pipeline parallelism assigns layer ranges to each GPU — for a 70B model (80 layers) across 4 GPUs, each GPU holds 20 layers and ~35GB of weights. The pipeline bubble is the key limitation: when request batch N has passed all layers and request batch N+1 has not yet started flowing through, some GPUs sit idle. This reduces GPU utilisation. Techniques like micro-batching reduce bubble time by keeping multiple micro-batches flowing through the pipeline simultaneously. In practice, pipeline parallelism is often combined with tensor parallelism for large-scale 70B+ deployments.';
+      result.innerHTML = '<strong>Correct!</strong> Pipeline parallelism assigns layer ranges to each GPU - for a 70B model (80 layers) across 4 GPUs, each GPU holds 20 layers and ~35GB of weights. The pipeline bubble is the key limitation: when request batch N has passed all layers and request batch N+1 has not yet started flowing through, some GPUs sit idle. This reduces GPU utilisation. Techniques like micro-batching reduce bubble time by keeping multiple micro-batches flowing through the pipeline simultaneously. In practice, pipeline parallelism is often combined with tensor parallelism for large-scale 70B+ deployments.';
     } else {
       result.style.background = '#FFF3E0';
-      result.innerHTML = '<strong>Not quite.</strong> Pipeline parallelism splits the model by layer groups across GPUs (Option B). It does not duplicate weights, and residual connections do not prevent it — in fact the sequential layer structure is exactly what makes it natural. The main challenge is the pipeline bubble: GPUs earlier in the chain can sit idle between batches.';
+      result.innerHTML = '<strong>Not quite.</strong> Pipeline parallelism splits the model by layer groups across GPUs (Option B). It does not duplicate weights, and residual connections do not prevent it - in fact the sequential layer structure is exactly what makes it natural. The main challenge is the pipeline bubble: GPUs earlier in the chain can sit idle between batches.';
     }
     document.getElementById('check-btn').style.display = 'none';
   }
