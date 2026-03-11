@@ -86,7 +86,15 @@
     .compare-grid { grid-template-columns: 1fr; }
     .cheat-grid { grid-template-columns: 1fr; }
     .header { padding: 24px 20px; }
+    .nav-bar { flex-direction: column; }
   }
+  /* Navigation styles */
+  .nav-bar { display: flex; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+  .nav-btn { flex: 1; border-radius: 10px; padding: 12px 16px; border: 1px solid #C5CAE9; background: white; font-family: Arial, sans-serif; font-size: 13px; text-decoration: none; color: inherit; }
+  .nav-btn .nav-dir { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #999; margin-bottom: 3px; }
+  .nav-btn .nav-title { font-weight: bold; color: #333; font-size: 13.5px; }
+  .nav-btn.prev { text-align: left; border-left: 4px solid #1a237e; }
+  .nav-btn.next { text-align: right; border-right: 4px solid #00796B; }
 </style>
 </head>
 <body>
@@ -101,6 +109,13 @@
       <span class="tag">Concept level</span>
       <span class="tag">No math</span>
     </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module1_2.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">1.2 — Tokens &amp; Embeddings</div>
+    </a>
   </div>
 
   <div class="intro-card">
@@ -282,14 +297,14 @@
   </div>
 
   <!-- Next -->
-  <div class="next-module">
+  <a href="module1_2.html" class="next-module">
     <div>
       <div class="next-label">UP NEXT</div>
       <div class="next-title">Module 1.2 — Tokens &amp; Embeddings</div>
       <div class="next-sub">How text becomes numbers a model can process</div>
     </div>
     <div class="next-arrow">&#8594;</div>
-  </div>
+  </a>
 
 </div>
 <script>
