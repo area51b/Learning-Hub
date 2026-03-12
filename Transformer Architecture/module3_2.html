@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 3.2 - Paged Attention</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #388E3C 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header-badge { display:inline-block; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:8px; padding:5px 14px; font-size:12px; font-family:Arial,sans-serif; margin-bottom:14px; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #C8E6C9; background:white; font-family:Arial,sans-serif; font-size:13px; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #0D47A1; }
+  .nav-btn.next { text-align:right; border-right:4px solid #1B5E20; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout        { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-green  { background:#E8F5E9; border-left:4px solid #2E7D32; }
+  .callout-blue   { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange { background:#FFF3E0; border-left:4px solid #FF9800; }
+  .callout-purple { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-teal   { background:#E0F2F1; border-left:4px solid #00796B; }
+  .callout-red    { background:#FFEBEE; border-left:4px solid #C62828; }
+
+  /* ── Fragmentation visualiser ── */
+  .frag-wrap { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .frag-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:6px; }
+  .frag-subtitle { font-size:12.5px; opacity:0.6; margin-bottom:16px; line-height:1.5; }
+  .frag-controls { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .frag-btn { border:none; border-radius:6px; padding:7px 14px; font-size:12.5px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; }
+  .frag-grid { display:grid; grid-template-columns: repeat(20, 1fr); gap:3px; margin-bottom:14px; }
+  .frag-cell { height:18px; border-radius:2px; transition:background 0.3s; }
+  .frag-legend { display:flex; gap:16px; flex-wrap:wrap; }
+  .frag-leg-item { display:flex; align-items:center; gap:7px; font-size:12px; }
+  .frag-leg-box  { width:14px; height:14px; border-radius:3px; flex-shrink:0; }
+  .frag-stat { display:flex; gap:16px; margin-top:12px; flex-wrap:wrap; }
+  .frag-stat-item { background:rgba(255,255,255,0.07); border-radius:6px; padding:8px 12px; }
+  .frag-stat-label { font-size:10px; opacity:0.5; letter-spacing:1px; text-transform:uppercase; margin-bottom:3px; }
+  .frag-stat-val   { font-size:16px; font-weight:bold; font-family:monospace; }
+
+  /* ── Page table visualiser ── */
+  .pt-wrap { background:#E8F5E9; border:1px solid #A5D6A7; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .pt-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#1B5E20; font-family:Arial,sans-serif; margin-bottom:14px; font-weight:bold; }
+  .pt-layout { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .pt-side-title { font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#555; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; }
+  .pt-logical { display:flex; flex-direction:column; gap:4px; }
+  .pt-log-block { border-radius:6px; padding:8px 12px; font-size:12.5px; font-family:monospace; display:flex; justify-content:space-between; align-items:center; }
+  .pt-log-arrow { font-size:11px; color:#888; font-family:Arial,sans-serif; }
+  .pt-physical { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; }
+  .pt-phys-block { height:36px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:10px; font-family:Arial,sans-serif; font-weight:bold; }
+  .pt-empty { background:#E0E0E0; color:#BDBDBD; }
+
+  /* ── Copy-on-write / beam search ── */
+  .cow-wrap { background:#F3E8FD; border:1px solid #CE93D8; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .cow-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#4A148C; font-family:Arial,sans-serif; margin-bottom:14px; font-weight:bold; }
+  .beam-tree { display:flex; flex-direction:column; gap:8px; font-family:Arial,sans-serif; font-size:13px; }
+  .beam-row  { display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; }
+  .beam-node { border-radius:8px; padding:7px 12px; font-weight:bold; text-align:center; min-width:80px; }
+  .beam-arrow { color:#CE93D8; font-size:18px; }
+  .beam-shared { border:2px dashed #7B1FA2; }
+  .beam-label { font-size:11px; font-family:Arial,sans-serif; text-align:center; color:#7B1FA2; margin-top:6px; }
+
+  /* ── Impact comparison ── */
+  .impact-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .impact-label { font-size:13px; min-width:200px; font-weight:bold; }
+  .impact-bar-bg { flex:1; background:#E8F5E9; border-radius:4px; height:22px; overflow:hidden; }
+  .impact-fill { height:22px; border-radius:4px; display:flex; align-items:center; padding-left:8px; font-size:12px; font-weight:bold; color:white; }
+  .impact-note { font-size:12px; color:#555; min-width:80px; text-align:right; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#1B5E20; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#A5D6A7; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.85; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#2E7D32; background:#E8F5E9; }
+  .quiz-option.selected { border-color:#2E7D32; background:#E8F5E9; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#2E7D32; }
+  .quiz-btn  { margin-top:14px; background:#1B5E20; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#2E7D32; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#E8F5E9,#E0F2F1); border:1px solid #C8E6C9; display:flex; justify-content:space-between; align-items:center; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .pt-layout,.cheat-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+    .frag-grid { grid-template-columns: repeat(10,1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-eyebrow">PART 3 · MODULE 3.2</div>
+    <div class="header-badge">Part 3 — Inference Optimisation Techniques</div>
+    <h1>Paged Attention</h1>
+    <p>How vLLM borrowed the OS concept of virtual memory to eliminate KV Cache fragmentation — and why it was the single biggest throughput advance in LLM serving.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+      <span class="tag">No math</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module3_1.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">3.1 — Flash Attention</div>
+    </a>
+    <a href="module3_3.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">3.3 — Quantisation</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>Before Paged Attention, LLM inference servers wasted up to 80% of their KV Cache memory — not because they ran out, but because of fragmentation. Memory was reserved in large contiguous blocks per request, and chunks sat unused as requests finished at different lengths. The result: GPUs that looked full were actually mostly empty.</p>
+    <p>Paged Attention, introduced in the vLLM paper (Kwon et al., 2023), solved this by borrowing a 50-year-old idea from operating systems: virtual memory paging. Instead of one big contiguous block per request, KV Cache is stored in small fixed-size pages that can be scattered anywhere in GPU memory. The result was a 2–4× throughput improvement on the same hardware, with no quality change. It is now the standard approach in every major inference server.</p>
+  </div>
+
+  <!-- Section 1: The fragmentation problem -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#C62828;">1</span>
+        The Problem — KV Cache Fragmentation
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>In a naive inference server, when a request arrives the system reserves a contiguous block of GPU memory for its entire potential KV Cache — sized for the maximum possible output length. This creates three types of waste:</p>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin:16px 0; font-family:Arial,sans-serif;">
+        <div style="display:grid; grid-template-columns:140px 1fr; gap:12px; background:#FFEBEE; border-radius:8px; padding:12px 14px; border-left:3px solid #C62828; align-items:start;">
+          <div style="font-weight:bold; font-size:13px; color:#C62828;">Internal fragmentation</div>
+          <div style="font-size:13.5px; line-height:1.7;">A request reserved space for 2,048 tokens but only generated 200. The remaining 1,848 token-slots sit empty but blocked — no other request can use them.</div>
+        </div>
+        <div style="display:grid; grid-template-columns:140px 1fr; gap:12px; background:#FFF3E0; border-radius:8px; padding:12px 14px; border-left:3px solid #E65100; align-items:start;">
+          <div style="font-weight:bold; font-size:13px; color:#E65100;">External fragmentation</div>
+          <div style="font-size:13.5px; line-height:1.7;">After several requests finish, freed blocks are scattered across memory. A new large request cannot fit even though total free space is sufficient — there is no single contiguous block big enough.</div>
+        </div>
+        <div style="display:grid; grid-template-columns:140px 1fr; gap:12px; background:#FCE4EC; border-radius:8px; padding:12px 14px; border-left:3px solid #C2185B; align-items:start;">
+          <div style="font-weight:bold; font-size:13px; color:#C2185B;">Over-reservation</div>
+          <div style="font-size:13.5px; line-height:1.7;">Because output length is unknown at request start, the server reserves space for the worst case. Most requests generate far less — so the reserved-but-unused space accumulates across the entire batch.</div>
+        </div>
+      </div>
+
+      <div class="frag-wrap">
+        <div class="frag-title">KV Cache memory — naive allocation vs Paged Attention</div>
+        <div class="frag-subtitle">100 blocks of GPU memory. Click to compare how each approach uses them.</div>
+        <div class="frag-controls">
+          <button class="frag-btn" style="background:#C62828; color:white;" onclick="showFrag('naive')">Naive allocation</button>
+          <button class="frag-btn" style="background:#2E7D32; color:white;" onclick="showFrag('paged')">Paged Attention</button>
+        </div>
+        <div class="frag-grid" id="fragGrid"></div>
+        <div class="frag-legend">
+          <div class="frag-leg-item"><div class="frag-leg-box" style="background:#1565C0;"></div>Active KV data (Req A)</div>
+          <div class="frag-leg-item"><div class="frag-leg-box" style="background:#7B1FA2;"></div>Active KV data (Req B)</div>
+          <div class="frag-leg-item"><div class="frag-leg-box" style="background:#E65100;"></div>Active KV data (Req C)</div>
+          <div class="frag-leg-item"><div class="frag-leg-box" style="background:#FFCC80; border:1px solid #E65100;"></div>Reserved but unused</div>
+          <div class="frag-leg-item"><div class="frag-leg-box" style="background:#E0E0E0;"></div>Truly free</div>
+        </div>
+        <div class="frag-stat" id="fragStat"></div>
+      </div>
+
+      <div class="callout callout-red">
+        <strong>The scale of the waste:</strong> The original vLLM paper measured fragmentation in real serving scenarios and found that naive KV Cache allocation wasted 60–80% of available GPU memory. A GPU that looked 90% full was actually only 10–30% productively utilised. This is why adding more GPU memory alone does not fix the problem — the waste scales with the memory you add.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: The OS analogy -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">2</span>
+        The OS Analogy — Virtual Memory Paging
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>Operating systems solved an identical fragmentation problem for RAM decades ago with virtual memory paging. Every CS textbook covers it. The vLLM authors applied the same concept to GPU KV Cache.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
+        <div style="background:#E8EAF6; border-radius:10px; padding:16px;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#283593; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">OS Virtual Memory</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">
+            <div style="margin-bottom:8px;">Each process sees a clean, contiguous <strong>virtual address space</strong></div>
+            <div style="margin-bottom:8px;">RAM is divided into fixed-size <strong>pages</strong> (e.g. 4KB)</div>
+            <div style="margin-bottom:8px;">A <strong>page table</strong> maps virtual pages to physical RAM pages — which can be scattered anywhere</div>
+            <div>Processes cannot tell their memory is non-contiguous — the OS handles the mapping transparently</div>
+          </div>
+        </div>
+        <div style="background:#E8F5E9; border-radius:10px; padding:16px;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#1B5E20; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Paged Attention</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">
+            <div style="margin-bottom:8px;">Each request sees a clean, contiguous <strong>logical KV sequence</strong></div>
+            <div style="margin-bottom:8px;">GPU memory is divided into fixed-size <strong>KV blocks</strong> (e.g. 16 tokens each)</div>
+            <div style="margin-bottom:8px;">A <strong>block table</strong> maps logical KV positions to physical GPU memory blocks — scattered anywhere</div>
+            <div>The attention kernel handles non-contiguous lookups transparently — output is identical</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>Why this is powerful:</strong> A request that generates 47 tokens needs exactly 3 physical blocks (at 16 tokens/block). It wastes at most 1 token-slot in the last partial block — not hundreds. When the request finishes, all 3 blocks are immediately available for any future request. There is no fragmentation beyond one partial block per request.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Block table interactive -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">3</span>
+        How the Block Table Works — Interactive
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Each request maintains a block table — a small lookup list that maps its logical token positions to physical GPU memory blocks. The attention kernel uses this table to find KV vectors wherever they happen to be stored.</p>
+
+      <div class="pt-wrap">
+        <div class="pt-title">Block table — 3 concurrent requests sharing scattered physical memory</div>
+        <div class="pt-layout">
+          <div>
+            <div class="pt-side-title">Logical view (per request)</div>
+            <div class="pt-logical">
+              <div style="font-size:12px; font-family:Arial,sans-serif; color:#888; margin-bottom:6px;">Request A — 48 tokens (3 blocks)</div>
+              <div class="pt-log-block" style="background:#BBDEFB; color:#0D47A1;">Tokens 1–16 <span class="pt-log-arrow">→ Block 7</span></div>
+              <div class="pt-log-block" style="background:#BBDEFB; color:#0D47A1;">Tokens 17–32 <span class="pt-log-arrow">→ Block 2</span></div>
+              <div class="pt-log-block" style="background:#BBDEFB; color:#0D47A1;">Tokens 33–48 <span class="pt-log-arrow">→ Block 11</span></div>
+              <div style="font-size:12px; font-family:Arial,sans-serif; color:#888; margin-top:10px; margin-bottom:6px;">Request B — 32 tokens (2 blocks)</div>
+              <div class="pt-log-block" style="background:#E1BEE7; color:#6A1B9A;">Tokens 1–16 <span class="pt-log-arrow">→ Block 4</span></div>
+              <div class="pt-log-block" style="background:#E1BEE7; color:#6A1B9A;">Tokens 17–32 <span class="pt-log-arrow">→ Block 9</span></div>
+              <div style="font-size:12px; font-family:Arial,sans-serif; color:#888; margin-top:10px; margin-bottom:6px;">Request C — 16 tokens (1 block)</div>
+              <div class="pt-log-block" style="background:#C8E6C9; color:#1B5E20;">Tokens 1–16 <span class="pt-log-arrow">→ Block 1</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="pt-side-title">Physical GPU memory (12 blocks shown)</div>
+            <div class="pt-physical">
+              <div class="pt-phys-block" style="background:#C8E6C9; color:#1B5E20;">B1<br><span style="font-size:9px;">Req C</span></div>
+              <div class="pt-phys-block" style="background:#BBDEFB; color:#0D47A1;">B2<br><span style="font-size:9px;">Req A</span></div>
+              <div class="pt-phys-block pt-empty">B3<br><span style="font-size:9px;">free</span></div>
+              <div class="pt-phys-block" style="background:#E1BEE7; color:#6A1B9A;">B4<br><span style="font-size:9px;">Req B</span></div>
+              <div class="pt-phys-block pt-empty">B5<br><span style="font-size:9px;">free</span></div>
+              <div class="pt-phys-block pt-empty">B6<br><span style="font-size:9px;">free</span></div>
+              <div class="pt-phys-block" style="background:#BBDEFB; color:#0D47A1;">B7<br><span style="font-size:9px;">Req A</span></div>
+              <div class="pt-phys-block pt-empty">B8<br><span style="font-size:9px;">free</span></div>
+              <div class="pt-phys-block" style="background:#E1BEE7; color:#6A1B9A;">B9<br><span style="font-size:9px;">Req B</span></div>
+              <div class="pt-phys-block pt-empty">B10<br><span style="font-size:9px;">free</span></div>
+              <div class="pt-phys-block" style="background:#BBDEFB; color:#0D47A1;">B11<br><span style="font-size:9px;">Req A</span></div>
+              <div class="pt-phys-block pt-empty">B12<br><span style="font-size:9px;">free</span></div>
+            </div>
+            <div style="font-size:12px; font-family:Arial,sans-serif; color:#555; margin-top:10px; line-height:1.6; background:white; padding:10px 12px; border-radius:6px;">
+              Req A's blocks (2, 7, 11) are scattered — but each request's block table records the mapping. The attention kernel follows the table to find KV vectors regardless of physical location. Free blocks (3, 5, 6, 8, 10, 12) are immediately available for any new request.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-green">
+        <strong>Allocation on demand:</strong> Unlike naive allocation that reserves a full block upfront, Paged Attention allocates blocks one at a time as tokens are generated. A request that will eventually produce 500 tokens starts with zero blocks reserved — blocks are added as each group of 16 tokens is generated. This means unused "future" space is never reserved, eliminating over-reservation entirely.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Copy-on-write and prefix sharing -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">4</span>
+        Copy-on-Write — Sharing Pages Across Requests
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>Because blocks are now independently addressable, multiple requests can point their block tables to the <em>same</em> physical block — as long as that block's content is identical. This unlocks two powerful capabilities: prefix caching and beam search memory sharing.</p>
+
+      <div class="cow-wrap">
+        <div class="cow-title">Shared prefix blocks — copy-on-write in action</div>
+        <div class="beam-tree">
+          <div class="beam-row">
+            <div class="beam-node" style="background:#7B1FA2; color:white; min-width:220px;">Shared system prompt (6,000 tokens)<br><span style="font-size:11px; opacity:0.8;">→ Stored in Blocks 1–375 (physical)</span></div>
+          </div>
+          <div style="text-align:center; color:#CE93D8; font-size:20px; margin:4px 0;">&#9662;</div>
+          <div style="text-align:center; font-size:12px; font-family:Arial,sans-serif; color:#7B1FA2; margin-bottom:8px;">All 3 requests point to the SAME physical blocks — no duplication</div>
+          <div class="beam-row">
+            <div class="beam-node beam-shared" style="background:#F3E8FD; color:#4A148C; font-size:12.5px;">Request 1<br>unique suffix →<br>new blocks only</div>
+            <div class="beam-arrow">|</div>
+            <div class="beam-node beam-shared" style="background:#F3E8FD; color:#4A148C; font-size:12.5px;">Request 2<br>unique suffix →<br>new blocks only</div>
+            <div class="beam-arrow">|</div>
+            <div class="beam-node beam-shared" style="background:#F3E8FD; color:#4A148C; font-size:12.5px;">Request 3<br>unique suffix →<br>new blocks only</div>
+          </div>
+        </div>
+        <div class="beam-label">Dashed border = logically separate but physically sharing the same KV blocks.<br>If a request modifies its KV content, only then is a private copy made (copy-on-write).</div>
+      </div>
+
+      <p>This is exactly how prefix caching works in vLLM. A system prompt that is 6,000 tokens long would normally require every request to recompute and store those 6,000 tokens' KV values. With Paged Attention and prefix caching, that KV data is stored once — in a set of physical blocks — and every subsequent request that shares that prefix simply gets pointers to the same blocks. TTFT drops from seconds to milliseconds for those requests.</p>
+
+      <div class="callout callout-purple">
+        <strong>Beam search benefit:</strong> Beam search generates multiple candidate continuations from a shared prefix. With naive allocation, each beam gets its own full copy of the shared tokens. With Paged Attention copy-on-write, all beams share the same physical blocks for their common prefix — only diverging tokens get new blocks. Memory use for beam search drops by the beam width factor.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Real-world impact -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">5</span>
+        Real-World Impact and What It Means for vLLM
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+
+      <div style="background:#F1F8E9; border:1px solid #AED581; border-radius:12px; padding:18px 20px; margin-bottom:16px;">
+        <div style="font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#33691E; font-family:Arial,sans-serif; margin-bottom:14px; font-weight:bold;">Impact of Paged Attention — from the vLLM paper</div>
+        <div class="impact-row">
+          <span class="impact-label">Memory waste eliminated</span>
+          <div class="impact-bar-bg"><div class="impact-fill" style="background:#C62828; width:75%;">60–80% → &lt;4%</div></div>
+          <span class="impact-note" style="color:#C62828;">Fragmentation</span>
+        </div>
+        <div class="impact-row">
+          <span class="impact-label">Throughput vs FasterTransformer</span>
+          <div class="impact-bar-bg"><div class="impact-fill" style="background:#2E7D32; width:80%;">2–4× higher</div></div>
+          <span class="impact-note" style="color:#2E7D32;">Same hardware</span>
+        </div>
+        <div class="impact-row">
+          <span class="impact-label">Throughput vs Orca (static)</span>
+          <div class="impact-bar-bg"><div class="impact-fill" style="background:#1565C0; width:92%;">Up to 24× higher</div></div>
+          <span class="impact-note" style="color:#1565C0;">With prefix</span>
+        </div>
+        <div class="impact-row">
+          <span class="impact-label">TTFT with prefix caching</span>
+          <div class="impact-bar-bg"><div class="impact-fill" style="background:#7B1FA2; width:88%;">~2s → &lt;100ms</div></div>
+          <span class="impact-note" style="color:#7B1FA2;">6k sys prompt</span>
+        </div>
+        <div class="impact-row">
+          <span class="impact-label">Output quality change</span>
+          <div class="impact-bar-bg"><div class="impact-fill" style="background:#455A64; width:3%;"></div></div>
+          <span class="impact-note" style="color:#455A64;">Zero</span>
+        </div>
+      </div>
+
+      <p>Paged Attention is the core architectural innovation in vLLM. TensorRT-LLM adopted an equivalent block-based memory manager. SGLang extends it further with RadixAttention for more sophisticated prefix sharing. Every modern high-throughput inference server uses some variant of this approach.</p>
+
+      <div class="callout callout-teal">
+        <strong>When customers ask why vLLM is faster than naive serving:</strong> The short answer is Paged Attention plus continuous batching. Continuous batching keeps GPU slots filled. Paged Attention keeps GPU memory efficiently used. Together, they transform the same hardware from serving 5–10 concurrent requests to serving 50–100+. That is the core of vLLM's value proposition relative to a basic inference loop.
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>The one limitation:</strong> Paged Attention adds a small overhead per decode step — the attention kernel must follow block table pointers to find KV data scattered in memory, rather than reading a single contiguous array. On very short sequences or tiny batch sizes, this indirection can add measurable latency. In practice, for any workload where throughput matters, the fragmentation savings vastly outweigh this overhead.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">6</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <div class="key-item">
+        <div class="key-num" style="color:#C62828;">01</div>
+        <div>
+          <div class="key-title">Naive KV Cache allocation wastes 60–80% of GPU memory through fragmentation</div>
+          <div class="key-desc">Reserving contiguous blocks sized for worst-case output leaves most of that space empty but blocked. A GPU that appears 90% full is often only 10–30% productively used. This is the problem Paged Attention was built to solve.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">02</div>
+        <div>
+          <div class="key-title">Paged Attention stores KV Cache in small fixed-size blocks — anywhere in GPU memory</div>
+          <div class="key-desc">A block table per request maps logical token positions to physical GPU blocks. Blocks can be scattered across all of HBM, allocated on demand as tokens are generated, and freed immediately when a request completes. Internal fragmentation is reduced to at most one partial block per request.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#7B1FA2;">03</div>
+        <div>
+          <div class="key-title">Copy-on-write enables prefix sharing — the foundation of prefix caching</div>
+          <div class="key-desc">Multiple requests can point to the same physical blocks for any shared prefix. This makes prefix caching possible: a 6,000-token system prompt stored once in GPU memory can be shared by thousands of requests. TTFT for those requests drops from seconds to milliseconds.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#2E7D32;">04</div>
+        <div>
+          <div class="key-title">Paged Attention is why vLLM exists — and why every serious inference server uses it</div>
+          <div class="key-desc">The 2–4× throughput improvement vs prior systems with no hardware change was the vLLM paper's central result. Combined with continuous batching, it defined what modern LLM inference serving looks like. TensorRT-LLM, SGLang, and others all implement equivalent block-based KV managers.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 3.2 — CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Paged Attention</div>
+        <div class="cheat-def">KV Cache management system that stores KV data in fixed-size non-contiguous blocks. Eliminates fragmentation. Core innovation in vLLM (2023).</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">KV Block</div>
+        <div class="cheat-def">Fixed-size chunk of GPU memory holding KV vectors for a set number of tokens (e.g. 16). Allocated on demand, freed immediately on request completion.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Block Table</div>
+        <div class="cheat-def">Per-request lookup structure mapping logical token positions to physical GPU memory blocks. Equivalent to a page table in OS virtual memory.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Internal Fragmentation</div>
+        <div class="cheat-def">Wasted space inside a reserved block — e.g. reserving 2,048 tokens but using 200. Paged Attention reduces this to at most one partial block per request.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">External Fragmentation</div>
+        <div class="cheat-def">Free memory scattered in unusable small chunks between allocated blocks. Paged Attention eliminates this — any free block can satisfy any allocation.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Copy-on-Write</div>
+        <div class="cheat-def">Multiple requests share the same physical blocks for identical content. A private copy is made only when a request modifies its content. Enables prefix sharing.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Prefix Caching</div>
+        <div class="cheat-def">Storing computed KV blocks for a shared prefix (e.g. system prompt) once, then sharing them via block tables across all requests with that prefix. Drops TTFT by orders of magnitude for prefix-heavy workloads.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">RadixAttention</div>
+        <div class="cheat-def">SGLang's extension of Paged Attention — uses a radix tree to share KV blocks across arbitrary common prefixes, not just fixed system prompts. More general-purpose prefix sharing.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer's vLLM deployment serves a customer support chatbot. Every request starts with the same 4,000-token system prompt describing the product and tone guidelines. They are seeing TTFT of 1.8 seconds and want to cut it below 300ms without changing hardware. What do you recommend, and why will it work?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Reduce the system prompt to under 500 tokens — long system prompts are inherently slow to process.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        Enable prefix caching in vLLM. The 4,000-token system prompt will be computed once and its KV blocks stored in GPU memory. Every subsequent request with the same prefix will skip Prefill for those 4,000 tokens entirely — loading pre-computed KV blocks instead. TTFT will drop from ~1.8s to under 100ms for cached requests, with no hardware change and no quality impact.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        Switch from vLLM to TensorRT-LLM — it handles system prompts more efficiently by default.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        Enable Flash Attention — it reduces Prefill time for long sequences like system prompts.
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <a href="module3_3.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next — Module 3.3</div>
+      <div class="next-title">Quantisation — INT8, FP8, INT4</div>
+      <div class="next-sub">How using smaller numbers to represent model weights reduces memory, increases speed, and what the quality trade-offs actually look like</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var colors={1:'#C62828',2:'#1565C0',3:'#2E7D32',4:'#7B1FA2',5:'#E65100',6:'#283593'};
+  var bgs   ={1:'#FFEBEE',2:'#E3F2FD',3:'#E8F5E9',4:'#F3E8FD',5:'#FFF3E0',6:'#E8EAF6'};
+  function toggle(n){
+    var body=document.getElementById('bdy'+n),chv=document.getElementById('chv'+n),hdr=document.getElementById('hdr'+n);
+    var isOpen=body.classList.contains('open');
+    body.classList.toggle('open'); chv.classList.toggle('open');
+    hdr.style.borderLeftColor=isOpen?'#E8E8E8':colors[n];
+    hdr.style.background=isOpen?'white':bgs[n];
+  }
+
+  /* ── Fragmentation visualiser ── */
+  function showFrag(mode){
+    var g=document.getElementById('fragGrid');
+    g.innerHTML='';
+    var stat=document.getElementById('fragStat');
+
+    // naive: ReqA gets 30 blocks (uses 12), ReqB gets 25 (uses 8), ReqC gets 20 (uses 5) = 75 reserved, 45 wasted, 25 free
+    // paged: ReqA uses 12, ReqB uses 8, ReqC uses 5 = 25 used, 75 free
+    var blocks=[];
+    if(mode==='naive'){
+      for(var i=0;i<100;i++){
+        if(i<12) blocks.push({type:'active-a'});
+        else if(i<30) blocks.push({type:'reserved'});
+        else if(i<38) blocks.push({type:'active-b'});
+        else if(i<55) blocks.push({type:'reserved'});
+        else if(i<60) blocks.push({type:'active-c'});
+        else if(i<75) blocks.push({type:'reserved'});
+        else blocks.push({type:'free'});
+      }
+      stat.innerHTML=
+        fsi('Active KV data','25 blocks','#2E7D32')+
+        fsi('Reserved but unused','50 blocks','#E65100')+
+        fsi('Truly free','25 blocks','#9E9E9E')+
+        fsi('Effective utilisation','25%','#C62828');
+    } else {
+      // paged: scattered active blocks, lots of free
+      var active=[0,3,7,11,15,19,23,27,31,35,39,43,47,51,55,59,63,67,71,75,79,83,87,91,95,99];
+      // ReqA blocks scattered: 12 blocks
+      var reqA=[2,8,14,22,34,47,53,61,72,85];
+      var reqB=[5,17,29,41,65,78,90,6];
+      var reqC=[1,13,25];
+      for(var i=0;i<100;i++){
+        if(reqA.indexOf(i)>=0) blocks.push({type:'active-a'});
+        else if(reqB.indexOf(i)>=0) blocks.push({type:'active-b'});
+        else if(reqC.indexOf(i)>=0) blocks.push({type:'active-c'});
+        else blocks.push({type:'free'});
+      }
+      stat.innerHTML=
+        fsi('Active KV data','25 blocks','#2E7D32')+
+        fsi('Wasted (fragmentation)','&lt;1 block','#2E7D32')+
+        fsi('Truly free','75 blocks','#1565C0')+
+        fsi('Effective utilisation','~99%','#2E7D32');
+    }
+
+    var colorMap={'active-a':'#1565C0','active-b':'#7B1FA2','active-c':'#E65100','reserved':'#FFCC80','free':'#E0E0E0'};
+    blocks.forEach(function(b){
+      var d=document.createElement('div');
+      d.className='frag-cell';
+      d.style.background=colorMap[b.type];
+      if(b.type==='reserved') d.style.border='1px solid #E65100';
+      g.appendChild(d);
+    });
+  }
+  function fsi(label,val,col){
+    return '<div class="frag-stat-item"><div class="frag-stat-label">'+label+'</div><div class="frag-stat-val" style="color:'+col+'">'+val+'</div></div>';
+  }
+  showFrag('naive');
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    var opts=document.querySelectorAll('.quiz-option'),letters=['a','b','c','d'];
+    opts.forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      if(letters[i]==='b')o.classList.add('correct');
+      else if(letters[i]===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct — and this is one of the highest-value, lowest-effort wins in LLM serving.</strong> A fixed 4,000-token system prompt is exactly the workload prefix caching was designed for. The mechanics: on the first request, the full 4,000 tokens are processed in Prefill and their KV blocks stored in GPU memory with a hash of the prompt as the key. Every subsequent request with the same system prompt hits the cache — the 4,000-token Prefill is skipped entirely and pre-computed KV blocks are loaded directly into the KV Cache. The only Prefill work remaining is for the user\'s unique message (typically tens to low hundreds of tokens). TTFT drops from ~1.8s to under 100ms in typical deployments. In vLLM, prefix caching is enabled with <code>--enable-prefix-caching</code>. It requires no model change, no hardware change, and produces bit-identical output.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The root cause is that 4,000 tokens of Prefill runs every request — but since the content is identical each time, this work is being repeated unnecessarily. Prefix caching (which Paged Attention makes possible via copy-on-write block sharing) eliminates that repeated work. Flash Attention (Option D) would reduce Prefill time by 2–4× — helpful, but still leaves you at ~450ms rather than &lt;100ms. Switching servers (Option C) would not help without also enabling prefix caching. Shortening the prompt (Option A) might help but at the cost of quality.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 3.3 - Quantisation</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #4A148C 0%, #6A1B9A 50%, #7B1FA2 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header-badge { display:inline-block; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:8px; padding:5px 14px; font-size:12px; font-family:Arial,sans-serif; margin-bottom:14px; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #E1BEE7; background:white; font-family:Arial,sans-serif; font-size:13px; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #1B5E20; }
+  .nav-btn.next { text-align:right; border-right:4px solid #4A148C; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout        { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-purple { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-blue   { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange { background:#FFF3E0; border-left:4px solid #FF9800; }
+  .callout-green  { background:#E8F5E9; border-left:4px solid #4CAF50; }
+  .callout-teal   { background:#E0F2F1; border-left:4px solid #00796B; }
+  .callout-red    { background:#FFEBEE; border-left:4px solid #C62828; }
+
+  /* ── Precision number line ── */
+  .numline-wrap { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .nl-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:16px; }
+  .nl-row   { margin-bottom:18px; }
+  .nl-label { font-size:12px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+  .nl-bar   { height:32px; border-radius:6px; display:flex; align-items:stretch; overflow:hidden; gap:2px; margin-bottom:6px; }
+  .nl-bit   { flex:1; border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:9px; font-family:monospace; }
+  .nl-meta  { font-size:11.5px; opacity:0.55; line-height:1.5; }
+  .nl-badge { font-size:10px; border-radius:4px; padding:2px 8px; font-weight:bold; }
+
+  /* ── Format comparison cards ── */
+  .fmt-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:18px 0; }
+  .fmt-card { border-radius:12px; padding:16px 14px; text-align:center; border:2px solid transparent; transition:all 0.15s; cursor:default; }
+  .fmt-card:hover { transform:translateY(-2px); }
+  .fmt-name { font-size:16px; font-weight:bold; font-family:monospace; margin-bottom:8px; }
+  .fmt-bits { font-size:12px; font-family:Arial,sans-serif; opacity:0.7; margin-bottom:10px; }
+  .fmt-stat { font-size:12px; font-family:Arial,sans-serif; margin-bottom:4px; line-height:1.5; }
+  .fmt-stat strong { display:block; font-size:11px; opacity:0.6; font-weight:normal; }
+
+  /* ── Interactive model sizer ── */
+  .sizer-wrap { background:#F3E8FD; border:1px solid #CE93D8; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .sizer-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#4A148C; font-family:Arial,sans-serif; margin-bottom:14px; font-weight:bold; }
+  .sizer-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; font-family:Arial,sans-serif; flex-wrap:wrap; }
+  .sizer-label { font-size:13px; min-width:150px; color:#444; }
+  .sizer-select { border:1px solid #CE93D8; border-radius:6px; padding:7px 10px; font-size:13px; font-family:Arial,sans-serif; background:white; color:#333; cursor:pointer; }
+  .sizer-result { background:#4A148C; color:white; border-radius:10px; padding:16px 20px; margin-top:8px; }
+  .sizer-result-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.65; font-family:Arial,sans-serif; margin-bottom:10px; }
+  .sizer-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .sizer-cell { background:rgba(255,255,255,0.1); border-radius:7px; padding:10px 8px; text-align:center; }
+  .sizer-cell-label { font-size:10px; opacity:0.6; font-family:Arial,sans-serif; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px; }
+  .sizer-cell-val   { font-size:15px; font-weight:bold; font-family:monospace; }
+  .sizer-cell-sub   { font-size:10px; opacity:0.55; font-family:Arial,sans-serif; margin-top:2px; }
+
+  /* ── Quality trade-off chart ── */
+  .qual-wrap { background:#F8F9FF; border:1px solid #C5CAE9; border-radius:12px; padding:20px 22px; margin:18px 0; }
+  .qual-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#283593; font-family:Arial,sans-serif; margin-bottom:14px; }
+  .qual-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .qual-fmt { font-size:13px; font-weight:bold; font-family:monospace; min-width:52px; }
+  .qual-bar-bg { flex:1; background:#E8EAF6; border-radius:4px; height:22px; overflow:hidden; }
+  .qual-fill   { height:22px; border-radius:4px; display:flex; align-items:center; padding-left:8px; font-size:12px; font-weight:bold; color:white; transition:width 0.5s; }
+  .qual-note   { font-size:12px; color:#555; min-width:130px; text-align:right; }
+  .qual-task-select { border:1px solid #9FA8DA; border-radius:6px; padding:6px 10px; font-size:13px; font-family:Arial,sans-serif; margin-bottom:14px; cursor:pointer; }
+
+  /* ── Technique table ── */
+  .tech-table { width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:13px; margin:16px 0; }
+  .tech-table th { background:#4A148C; color:white; padding:10px 12px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .tech-table td { padding:11px 12px; border-bottom:1px solid #F0F0F0; vertical-align:top; line-height:1.6; }
+  .tech-table tr:nth-child(even) td { background:#F8F8F8; }
+  .tech-table tr:last-child td { border-bottom:none; }
+  .tech-name { font-weight:bold; color:#4A148C; }
+  .tech-good { color:#2E7D32; font-weight:bold; }
+  .tech-warn { color:#E65100; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#4A148C; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#CE93D8; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.85; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#7B1FA2; background:#F3E8FD; }
+  .quiz-option.selected { border-color:#7B1FA2; background:#F3E8FD; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#7B1FA2; }
+  .quiz-btn  { margin-top:14px; background:#4A148C; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#6A1B9A; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#F3E8FD,#E8EAF6); border:1px solid #E1BEE7; display:flex; justify-content:space-between; align-items:center; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .fmt-grid { grid-template-columns:1fr 1fr; }
+    .sizer-grid { grid-template-columns:1fr 1fr; }
+    .cheat-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-eyebrow">PART 3 · MODULE 3.3</div>
+    <div class="header-badge">Part 3 — Inference Optimisation Techniques</div>
+    <h1>Quantisation — INT8, FP8, INT4</h1>
+    <p>Using smaller numbers to represent model weights reduces memory, increases throughput, and enables larger models on the same hardware — with carefully managed quality trade-offs.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+      <span class="tag">No math</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module3_2.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">3.2 — Paged Attention</div>
+    </a>
+    <a href="module3_4.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">3.4 — Tensor &amp; Pipeline Parallelism</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>Every number stored in a neural network takes up space. A standard FP16 weight uses 16 bits — two bytes. Quantisation compresses those numbers into fewer bits: INT8 uses 8 bits, FP8 uses 8 bits with a different layout, INT4 uses only 4 bits. Halving the bit-width halves the memory required and, because Decode is memory-bandwidth-bound, roughly doubles throughput.</p>
+    <p>The catch: fewer bits means less precision, and less precision means some loss of model quality. The art of quantisation is choosing the right format for the right layer so quality loss is acceptable — ideally imperceptible. Modern quantisation methods (GPTQ, AWQ, SmoothQuant, FP8) have made this trade-off so favourable that INT8 is now nearly lossless on most tasks, and FP8 is the new standard for H100 deployments.</p>
+  </div>
+
+  <!-- Section 1: What quantisation is -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#6A1B9A;">1</span>
+        What Quantisation Actually Does
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>A model weight is just a number — typically a decimal like 0.3847291. In FP16 (16-bit floating point), that number is stored using 16 bits, giving very fine precision. Quantisation maps those precise values to a smaller set of representable values using fewer bits.</p>
+      <p>Think of it like rounding: instead of storing 0.3847291, you store 0.38 — close enough for most purposes, but using less space. The question quantisation research is answering is: how do you choose what to round to, so the rounding errors cancel out rather than compound across hundreds of billions of weights?</p>
+
+      <div class="numline-wrap">
+        <div class="nl-title">Bit-width comparison — same weight, different precisions</div>
+
+        <div class="nl-row">
+          <div class="nl-label">
+            <span>FP32 — 32 bits</span>
+            <span class="nl-badge" style="background:#455A64; color:white;">Training baseline</span>
+          </div>
+          <div class="nl-bar">
+            <div class="nl-bit" style="background:#C62828; color:white; flex:1;">sign</div>
+            <div class="nl-bit" style="background:#1565C0; color:white; flex:8;">exponent (8b)</div>
+            <div class="nl-bit" style="background:#2E7D32; color:white; flex:23;">mantissa (23b) — very fine precision</div>
+          </div>
+          <div class="nl-meta">4 bytes/weight &nbsp;|&nbsp; ~infinite precision for LLMs &nbsp;|&nbsp; Rarely used at inference</div>
+        </div>
+
+        <div class="nl-row">
+          <div class="nl-label">
+            <span>FP16 — 16 bits</span>
+            <span class="nl-badge" style="background:#1565C0; color:white;">Inference default</span>
+          </div>
+          <div class="nl-bar">
+            <div class="nl-bit" style="background:#C62828; color:white; flex:1;">s</div>
+            <div class="nl-bit" style="background:#1565C0; color:white; flex:5;">exp (5b)</div>
+            <div class="nl-bit" style="background:#2E7D32; color:white; flex:10;">mantissa (10b)</div>
+          </div>
+          <div class="nl-meta">2 bytes/weight &nbsp;|&nbsp; Negligible quality loss vs FP32 &nbsp;|&nbsp; Current standard</div>
+        </div>
+
+        <div class="nl-row">
+          <div class="nl-label">
+            <span>FP8 — 8 bits</span>
+            <span class="nl-badge" style="background:#7B1FA2; color:white;">H100 standard</span>
+          </div>
+          <div class="nl-bar">
+            <div class="nl-bit" style="background:#C62828; color:white; flex:1;">s</div>
+            <div class="nl-bit" style="background:#1565C0; color:white; flex:4;">exp (4b)</div>
+            <div class="nl-bit" style="background:#2E7D32; color:white; flex:3;">mantissa (3b)</div>
+          </div>
+          <div class="nl-meta">1 byte/weight &nbsp;|&nbsp; Minimal loss, H100 native support &nbsp;|&nbsp; Recommended for H100/H200</div>
+        </div>
+
+        <div class="nl-row" style="margin-bottom:0;">
+          <div class="nl-label">
+            <span>INT4 — 4 bits</span>
+            <span class="nl-badge" style="background:#E65100; color:white;">Aggressive compression</span>
+          </div>
+          <div class="nl-bar">
+            <div class="nl-bit" style="background:#E65100; color:white; flex:4;">4 bits — 16 possible values</div>
+          </div>
+          <div class="nl-meta">0.5 bytes/weight &nbsp;|&nbsp; Noticeable on complex tasks &nbsp;|&nbsp; Use carefully</div>
+        </div>
+      </div>
+
+      <div class="callout callout-purple">
+        <strong>The critical insight:</strong> Quantisation does not change the model architecture — the number of layers, attention heads, or parameters stays identical. It only changes the precision of the stored values. The computational graph is the same; the numbers flowing through it are slightly less precise. Most of the time, for most tasks, the model cannot tell the difference.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Format comparison -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">2</span>
+        Format Comparison — FP16, FP8, INT8, INT4
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+
+      <div class="fmt-grid">
+        <div class="fmt-card" style="background:#E3F2FD; border-color:#90CAF9;">
+          <div class="fmt-name" style="color:#0D47A1;">FP16</div>
+          <div class="fmt-bits" style="color:#1565C0;">16 bits · 2 bytes</div>
+          <div class="fmt-stat">2 bytes<strong>per weight</strong></div>
+          <div class="fmt-stat">Baseline<strong>quality</strong></div>
+          <div class="fmt-stat" style="color:#2E7D32; font-weight:bold;">None<strong style="color:#555; font-weight:normal;">quality loss</strong></div>
+          <div style="font-size:11.5px; color:#555; margin-top:10px; line-height:1.6;">Current inference default. Supported everywhere.</div>
+        </div>
+        <div class="fmt-card" style="background:#F3E8FD; border-color:#CE93D8;">
+          <div class="fmt-name" style="color:#4A148C;">FP8</div>
+          <div class="fmt-bits" style="color:#6A1B9A;">8 bits · 1 byte</div>
+          <div class="fmt-stat">1 byte<strong>per weight</strong></div>
+          <div class="fmt-stat">~2× faster<strong>vs FP16</strong></div>
+          <div class="fmt-stat" style="color:#2E7D32; font-weight:bold;">~0.1–0.5%<strong style="color:#555; font-weight:normal;">quality drop</strong></div>
+          <div style="font-size:11.5px; color:#555; margin-top:10px; line-height:1.6;">H100/H200 hardware-native. Recommended path for new H100 deployments.</div>
+        </div>
+        <div class="fmt-card" style="background:#E8F5E9; border-color:#A5D6A7;">
+          <div class="fmt-name" style="color:#1B5E20;">INT8</div>
+          <div class="fmt-bits" style="color:#2E7D32;">8 bits · 1 byte</div>
+          <div class="fmt-stat">1 byte<strong>per weight</strong></div>
+          <div class="fmt-stat">~1.5–2× faster<strong>vs FP16</strong></div>
+          <div class="fmt-stat" style="color:#2E7D32; font-weight:bold;">~0.5–1%<strong style="color:#555; font-weight:normal;">quality drop</strong></div>
+          <div style="font-size:11.5px; color:#555; margin-top:10px; line-height:1.6;">Battle-tested. Runs everywhere. Good default for A100 deployments.</div>
+        </div>
+        <div class="fmt-card" style="background:#FFF3E0; border-color:#FFCC80;">
+          <div class="fmt-name" style="color:#E65100;">INT4</div>
+          <div class="fmt-bits" style="color:#E65100;">4 bits · 0.5 bytes</div>
+          <div class="fmt-stat">0.5 bytes<strong>per weight</strong></div>
+          <div class="fmt-stat">~3–4× faster<strong>vs FP16</strong></div>
+          <div class="fmt-stat" style="color:#E65100; font-weight:bold;">1–5%+<strong style="color:#555; font-weight:normal;">quality drop</strong></div>
+          <div style="font-size:11.5px; color:#555; margin-top:10px; line-height:1.6;">Use for edge/mobile or when memory is critical. Always benchmark first.</div>
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>FP8 vs INT8 — why both exist at 8 bits:</strong> INT8 stores integers (whole numbers from -128 to 127). FP8 stores floating-point values with an exponent, giving it a much wider dynamic range — it can represent both very large and very small numbers accurately. For neural network weights, which span a large dynamic range, FP8 typically achieves lower quality loss than INT8 at the same bit-width. H100 GPUs have dedicated FP8 Tensor Cores that make FP8 operations faster than INT8 on that hardware.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Interactive model size calculator -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">3</span>
+        Interactive: Model Size and Throughput by Precision
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Select a model and see exactly how memory footprint, GPU requirements, and estimated throughput change across precision formats.</p>
+
+      <div class="sizer-wrap">
+        <div class="sizer-title">Model size and hardware requirements by precision</div>
+        <div class="sizer-row">
+          <span class="sizer-label">Model</span>
+          <select class="sizer-select" id="sizerModel" onchange="updateSizer()">
+            <option value="7">Llama 3 8B (7B params)</option>
+            <option value="13">Llama 2 13B</option>
+            <option value="34">CodeLlama 34B</option>
+            <option value="70" selected>Llama 3 70B</option>
+            <option value="405">Llama 3.1 405B</option>
+          </select>
+        </div>
+        <div class="sizer-row">
+          <span class="sizer-label">Quantisation</span>
+          <select class="sizer-select" id="sizerPrec" onchange="updateSizer()">
+            <option value="fp16">FP16 (2 bytes)</option>
+            <option value="fp8">FP8 (1 byte)</option>
+            <option value="int8">INT8 (1 byte)</option>
+            <option value="int4">INT4 (0.5 bytes)</option>
+          </select>
+        </div>
+        <div class="sizer-result" id="sizerResult"></div>
+      </div>
+
+      <div class="callout callout-green">
+        <strong>The 70B example:</strong> Llama 3 70B in FP16 requires ~140GB — two A100 80GB GPUs minimum. In INT8 it fits on a single A100 80GB with room for KV Cache. In INT4 it fits on a single 40GB A100. This is what quantisation means practically: it determines whether you need 4 GPUs, 2 GPUs, or 1 GPU. At $2–3/hr per A100, that difference compounds quickly in production.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Quality trade-offs -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#C62828;">4</span>
+        Quality Trade-offs — What Actually Degrades and When
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>Quality loss from quantisation is not uniform — it depends on the task and the model size. Larger models are more robust to quantisation (they have redundant capacity to absorb precision loss). Harder tasks like multi-step reasoning are more sensitive than simple classification or summarisation.</p>
+
+      <div class="qual-wrap">
+        <div class="qual-title">Relative quality retention by precision and task — select a task type</div>
+        <select class="qual-task-select" id="qualTask" onchange="updateQual()">
+          <option value="summary">Summarisation / Classification</option>
+          <option value="chat">Conversational chat</option>
+          <option value="code">Code generation</option>
+          <option value="math">Complex reasoning / Math</option>
+        </select>
+        <div id="qualBars"></div>
+        <div id="qualNote" style="font-size:12.5px; color:#555; font-family:Arial,sans-serif; margin-top:10px; line-height:1.6; background:white; padding:10px 12px; border-radius:6px;"></div>
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>The first-token vs later-token asymmetry:</strong> Quantisation affects different parts of the model differently. Embedding layers (which handle the first token) and final output layers are more sensitive to precision loss than middle layers. Advanced quantisation methods like GPTQ and AWQ account for this — they use higher precision for sensitive layers and more aggressive quantisation for robust ones, rather than applying the same format uniformly.
+      </div>
+
+      <div class="callout callout-red">
+        <strong>The mandatory benchmark:</strong> Quality loss from quantisation is task-dependent and cannot be fully predicted from benchmarks alone. Before deploying INT4 (or even INT8 for critical applications), always run your actual task against your actual evaluation set. A 1% drop on MMLU may be acceptable; a 1% drop on your specific code generation or medical reasoning task may not be. Never skip this step.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Quantisation methods -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">5</span>
+        Quantisation Methods — How It Is Actually Done
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>Not all quantisation is equal. The method used to map FP16 values to lower-precision formats significantly affects quality. These are the methods you will encounter in practice:</p>
+
+      <table class="tech-table">
+        <thead>
+          <tr><th>Method</th><th>How it works</th><th>Quality</th><th>Speed</th><th>Where used</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tech-name">RTN<br><span style="font-weight:normal; font-size:11px; color:#888;">Round-to-Nearest</span></td>
+            <td>Divide each weight by a scale factor, round to nearest integer. Simplest possible approach.</td>
+            <td class="tech-warn">Lowest — significant degradation at INT4</td>
+            <td class="tech-good">Instant</td>
+            <td>Quick experiments only</td>
+          </tr>
+          <tr>
+            <td class="tech-name">GPTQ</td>
+            <td>Post-training quantisation using a small calibration dataset. Minimises quantisation error layer-by-layer by finding optimal rounding decisions.</td>
+            <td class="tech-good">Good — near-lossless at INT8, acceptable INT4</td>
+            <td class="tech-good">Fast (minutes)</td>
+            <td>vLLM, AutoGPTQ, most open models</td>
+          </tr>
+          <tr>
+            <td class="tech-name">AWQ</td>
+            <td>Activation-aware — identifies the most important weights per channel (those with large activations) and protects them with higher precision.</td>
+            <td class="tech-good">Better than GPTQ at INT4</td>
+            <td class="tech-good">Fast</td>
+            <td>vLLM, llama.cpp, edge deployments</td>
+          </tr>
+          <tr>
+            <td class="tech-name">SmoothQuant</td>
+            <td>Mathematically transfers quantisation difficulty from activations to weights, making both easier to quantise without quality loss. Designed for INT8.</td>
+            <td class="tech-good">Near-lossless at INT8</td>
+            <td class="tech-good">Fast</td>
+            <td>TensorRT-LLM, A100 INT8 deployments</td>
+          </tr>
+          <tr>
+            <td class="tech-name">FP8 (native)</td>
+            <td>Hardware-native on H100/H200 — the GPU performs FP8 matrix multiplications directly. No separate quantisation step needed if training in FP8.</td>
+            <td class="tech-good">Near-lossless — best 8-bit option</td>
+            <td class="tech-good">2× vs FP16 on H100</td>
+            <td>TensorRT-LLM, vLLM on H100/H200</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-teal">
+        <strong>The practical recommendation matrix:</strong> On A100 — use INT8 with SmoothQuant or GPTQ. On H100/H200 — use FP8 natively where possible, INT8 otherwise. For edge/memory-constrained — use AWQ INT4. For maximum quality preservation — INT8 everywhere. Never use RTN INT4 in production.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: KV Cache quantisation -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#00796B;">6</span>
+        KV Cache Quantisation — A Separate Lever
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>Quantisation applies to two separate things in inference: the model weights, and the KV Cache. These are independent decisions with different trade-offs — and it is common to quantise them differently.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
+        <div style="background:#E8F5E9; border-radius:10px; padding:16px; border-left:3px solid #2E7D32;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#1B5E20; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Weight Quantisation</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">
+            <div style="margin-bottom:6px;">Reduces model size in memory</div>
+            <div style="margin-bottom:6px;">Improves throughput (less memory to read)</div>
+            <div style="margin-bottom:6px;">Quality-sensitive — benchmark carefully</div>
+            <div>Done once at model load time</div>
+          </div>
+        </div>
+        <div style="background:#E3F2FD; border-radius:10px; padding:16px; border-left:3px solid #1565C0;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#0D47A1; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">KV Cache Quantisation</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">
+            <div style="margin-bottom:6px;">Reduces KV Cache memory per token</div>
+            <div style="margin-bottom:6px;">Increases max concurrent requests</div>
+            <div style="margin-bottom:6px;">Less quality-sensitive than weights</div>
+            <div>Applied dynamically during serving</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-purple">
+        <strong>Why KV Cache is less sensitive to quantisation:</strong> Model weights are used in every forward pass — errors in weights compound over many layers and tokens. KV Cache values are read once per decode step and used for attention scoring — small errors in individual KV values tend to average out across hundreds of attention queries. This is why INT8 KV Cache quantisation is nearly lossless in practice even when INT8 weight quantisation might show some degradation on hard tasks. vLLM supports KV Cache quantisation with <code>--kv-cache-dtype fp8</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr7" onclick="toggle(7)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">7</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv7">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy7">
+      <div class="key-item">
+        <div class="key-num" style="color:#6A1B9A;">01</div>
+        <div>
+          <div class="key-title">Halving bit-width halves memory and roughly doubles throughput</div>
+          <div class="key-desc">FP16 to INT8 cuts weight memory in half. Because Decode is memory-bandwidth-bound, reading half the data in the same time roughly doubles how many tokens per second the GPU produces. This is the most direct path to throughput improvement short of adding hardware.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">02</div>
+        <div>
+          <div class="key-title">INT8 is nearly lossless; INT4 requires task-specific validation</div>
+          <div class="key-desc">Modern INT8 methods (SmoothQuant, GPTQ) achieve quality within 0.5–1% of FP16 on almost all tasks. INT4 can be 1–5%+ degraded on hard tasks and should always be validated on your specific workload before production deployment. FP8 on H100 is now the best balance of speed and quality.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#2E7D32;">03</div>
+        <div>
+          <div class="key-title">Weight quantisation and KV Cache quantisation are independent decisions</div>
+          <div class="key-desc">A common and effective configuration: run FP16 weights (full quality) with INT8 KV Cache (doubles concurrency with negligible quality loss). Or INT8 weights with INT8 KV Cache for maximum throughput. Each lever can be turned independently based on where the constraint is.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">04</div>
+        <div>
+          <div class="key-title">FP8 on H100 is now the recommended default — not a compromise</div>
+          <div class="key-desc">The H100's hardware-native FP8 Tensor Cores, combined with the wider dynamic range of floating-point representation, make FP8 the best available option for H100/H200 deployments — not a trade-off. It is faster than FP16, uses half the memory, and has quality loss in the 0.1–0.5% range that is imperceptible on most tasks.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 3.3 — CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Quantisation</div>
+        <div class="cheat-def">Storing model weights or KV Cache in fewer bits. Reduces memory, increases throughput. Does not change model architecture.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">FP16 → INT8</div>
+        <div class="cheat-def">Halves weight memory. ~1.5–2× throughput gain. &lt;1% quality loss on most tasks with modern methods. Recommended baseline.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">FP8 (H100)</div>
+        <div class="cheat-def">8-bit floating point with hardware-native H100/H200 support. Better quality than INT8 at same bit-width. ~2× faster than FP16. Best option for H100 deployments.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">INT4</div>
+        <div class="cheat-def">4 bits per weight — 4× memory reduction vs FP16. 1–5%+ quality drop on hard tasks. Use for edge/memory-critical deployments. Always benchmark first.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">GPTQ / AWQ</div>
+        <div class="cheat-def">Post-training quantisation methods that minimise quality loss using calibration data. AWQ is better at INT4; both are better than naive rounding.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">SmoothQuant</div>
+        <div class="cheat-def">INT8 quantisation method that transfers difficulty from activations to weights. Near-lossless at INT8. Used in TensorRT-LLM.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">KV Cache quantisation</div>
+        <div class="cheat-def">Independent from weight quantisation. INT8 KV roughly doubles concurrency with negligible quality loss. Less sensitive than weight quantisation.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Recommendation matrix</div>
+        <div class="cheat-def">A100: INT8 weights + INT8 KV. H100/H200: FP8 weights + FP8 KV. Edge: AWQ INT4. Always benchmark quality on your task before deploying INT4.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer running Llama 3 70B on two A100 80GB GPUs wants to increase concurrent users without adding hardware. They are currently using FP16. What is your recommendation, and what should they expect?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Switch to INT4 — it gives the maximum memory savings and will quadruple concurrent users.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        Switch model weights to INT8 (SmoothQuant or GPTQ) and KV Cache to INT8 quantisation. Weight INT8 frees ~70GB of the 160GB total — freeing headroom for more concurrent KV Caches. INT8 KV then roughly doubles KV capacity per GB. Together, this should increase concurrent users 3–4× with less than 1% quality degradation on most tasks, and no hardware change.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        Quantisation will not help — the bottleneck is the number of attention heads, not memory.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        Switch to FP8 — it is the best option available and will solve the problem on A100s.
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <a href="module3_4.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next — Module 3.4</div>
+      <div class="next-title">Tensor &amp; Pipeline Parallelism</div>
+      <div class="next-sub">How to split a model that is too large for one GPU across multiple GPUs — and the trade-offs of each approach</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var sColors={1:'#6A1B9A',2:'#1565C0',3:'#7B1FA2',4:'#C62828',5:'#E65100',6:'#00796B',7:'#283593'};
+  var sBgs   ={1:'#F3E8FD',2:'#E3F2FD',3:'#F3E8FD',4:'#FFEBEE',5:'#FFF3E0',6:'#E0F2F1',7:'#E8EAF6'};
+  function toggle(n){
+    var body=document.getElementById('bdy'+n),chv=document.getElementById('chv'+n),hdr=document.getElementById('hdr'+n);
+    var isOpen=body.classList.contains('open');
+    body.classList.toggle('open'); chv.classList.toggle('open');
+    hdr.style.borderLeftColor=isOpen?'#E8E8E8':sColors[n];
+    hdr.style.background=isOpen?'white':sBgs[n];
+  }
+
+  /* ── Model sizer ── */
+  var modelParams={'7':7,'13':13,'34':34,'70':70,'405':405};
+  var precBytes={'fp16':2,'fp8':1,'int8':1,'int4':0.5};
+  var precSpeedup={'fp16':1,'fp8':2,'int8':1.7,'int4':3.5};
+  var precQuality={'fp16':'None','fp8':'~0.1–0.5%','int8':'~0.5–1%','int4':'1–5%+'};
+  var precColor={'fp16':'#2E7D32','fp8':'#2E7D32','int8':'#2E7D32','int4':'#E65100'};
+
+  function updateSizer(){
+    var p=parseInt(document.getElementById('sizerModel').value);
+    var prec=document.getElementById('sizerPrec').value;
+    var bytes=precBytes[prec];
+    var weightGB=(p*1e9*bytes/1e9).toFixed(1);
+    var a100_80=Math.ceil(parseFloat(weightGB)/70); // ~70GB usable per A100 80GB after overhead
+    var a100_40=Math.ceil(parseFloat(weightGB)/32);
+    var h100=Math.ceil(parseFloat(weightGB)/72);
+    var speedup=precSpeedup[prec].toFixed(1);
+    var qual=precQuality[prec];
+    var qcol=precColor[prec];
+
+    document.getElementById('sizerResult').innerHTML=
+      '<div class="sizer-result-title">'+p+'B model at '+prec.toUpperCase()+'</div>'+
+      '<div class="sizer-grid">'+
+        sc('Weight memory',weightGB+'GB','')+
+        sc('Throughput vs FP16',speedup+'×','')+
+        sc('Quality loss',qual,qcol)+
+        sc('Min A100 80GB',a100_80+' GPU'+(a100_80>1?'s':''),'')+
+      '</div>'+
+      '<div style="font-size:12px; opacity:0.6; font-family:Arial,sans-serif; margin-top:10px; line-height:1.6;">Weight memory only — add ~3GB overhead + KV Cache headroom for total GPU requirement. KV Cache scales with concurrent requests and context length.</div>';
+  }
+  function sc(label,val,col){
+    return '<div class="sizer-cell"><div class="sizer-cell-label">'+label+'</div><div class="sizer-cell-val"'+(col?' style="color:'+col+'"':'')+'>'+val+'</div></div>';
+  }
+  updateSizer();
+
+  /* ── Quality bars ── */
+  var qualData={
+    summary:{fp16:100,fp8:99.7,int8:99.2,int4:97.5, note:'Summarisation and classification are highly robust to quantisation. Even INT4 typically shows less than 3% quality drop. These tasks are good candidates for aggressive quantisation.'},
+    chat:   {fp16:100,fp8:99.5,int8:98.8,int4:95.5, note:'Conversational quality is moderately sensitive. INT8 is generally imperceptible to users. INT4 may show subtle coherence issues on complex multi-turn conversations.'},
+    code:   {fp16:100,fp8:99.3,int8:98.2,int4:93.0, note:'Code generation is more sensitive — syntax errors and logic bugs increase with lower precision. INT8 is usually acceptable; INT4 should be validated carefully on your target languages and complexity.'},
+    math:   {fp16:100,fp8:99.0,int8:97.0,int4:88.0, note:'Complex reasoning and mathematics are the most sensitive to quantisation. INT4 can show 10–15% degradation on hard reasoning benchmarks. Use INT8 minimum, and benchmark extensively on your specific task.'}
+  };
+  var qualColors={fp16:'#455A64',fp8:'#4A148C',int8:'#1565C0',int4:'#E65100'};
+
+  function updateQual(){
+    var task=document.getElementById('qualTask').value;
+    var d=qualData[task];
+    var html='';
+    ['fp16','fp8','int8','int4'].forEach(function(f){
+      html+='<div class="qual-row">'+
+        '<span class="qual-fmt" style="color:'+qualColors[f]+'">'+f.toUpperCase()+'</span>'+
+        '<div class="qual-bar-bg"><div class="qual-fill" style="background:'+qualColors[f]+'; width:'+d[f]+'%;">'+d[f]+'%</div></div>'+
+        '<span class="qual-note" style="color:'+qualColors[f]+'">'+d[f]+'% quality</span>'+
+      '</div>';
+    });
+    document.getElementById('qualBars').innerHTML=html;
+    document.getElementById('qualNote').textContent=d.note;
+  }
+  updateQual();
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    var opts=document.querySelectorAll('.quiz-option'),letters=['a','b','c','d'];
+    opts.forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      if(letters[i]==='b')o.classList.add('correct');
+      else if(letters[i]===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct.</strong> INT8 weights + INT8 KV is the right prescription here. The two levers work together: weight quantisation frees GPU memory so more of it is available for KV Cache (allowing more concurrent requests before exhaustion), while KV quantisation makes each concurrent request\'s KV footprint smaller (further multiplying capacity). Combined on a 2×A100 setup with a 70B model, this typically moves from ~8–12 concurrent users to ~30–50, depending on context length. The quality caveat is important to mention: benchmark on the customer\'s specific task before rolling to production — most general tasks will see under 1% degradation. Option A (INT4) is too aggressive without task validation. Option D (FP8) is the right answer for H100s, not A100s — the A100 does not have hardware-native FP8 support, so FP8 on A100 would fall back to slower emulation.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. INT4 (Option A) is risky without task validation and more aggressive than necessary — INT8 gets most of the benefit with less risk. Quantisation absolutely helps concurrency (Option C is wrong) — it directly expands KV Cache headroom. FP8 (Option D) is the right path for H100/H200, but A100 GPUs do not have native FP8 hardware support, so this would not deliver the expected speedup on the customer\'s current hardware.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>
