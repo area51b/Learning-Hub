@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 4.1 - NVIDIA Hardware Primer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #388E3C 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+  .home-icon { position:absolute; top:16px; right:16px; font-size:24px; color:white; text-decoration:none; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #C8E6C9; background:white; font-family:Arial,sans-serif; font-size:13px; text-decoration:none; display:block; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #1A237E; }
+  .nav-btn.next { text-align:right; border-right:4px solid #1B5E20; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout        { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-green  { background:#E8F5E9; border-left:4px solid #2E7D32; }
+  .callout-blue   { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange { background:#FFF3E0; border-left:4px solid #FF9800; }
+  .callout-purple { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-teal   { background:#E0F2F1; border-left:4px solid #00796B; }
+  .callout-slate  { background:#ECEFF1; border-left:4px solid #546E7A; }
+
+  /* ── GPU anatomy diagram ── */
+  .gpu-wrap { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .gpu-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:16px; }
+  .gpu-grid  { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .gpu-block { border-radius:8px; padding:12px 14px; }
+  .gpu-block-title { font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; opacity:0.8; margin-bottom:6px; }
+  .gpu-block-body  { font-size:11.5px; opacity:0.6; line-height:1.6; }
+  .gpu-block-stat  { font-size:13px; font-weight:bold; font-family:monospace; margin-top:6px; }
+  .gpu-note  { font-size:11.5px; opacity:0.45; margin-top:8px; line-height:1.6; }
+
+  /* ── GPU comparison table ── */
+  .gpu-table { width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:13px; margin:16px 0; overflow-x:auto; display:block; }
+  .gpu-table th { background:#1B5E20; color:white; padding:10px 12px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; white-space:nowrap; }
+  .gpu-table td { padding:10px 12px; border-bottom:1px solid #F0F0F0; vertical-align:top; line-height:1.6; white-space:nowrap; }
+  .gpu-table tr:nth-child(even) td { background:#F8F8F8; }
+  .gpu-table tr:last-child td { border-bottom:none; }
+  .gpu-gen   { font-weight:bold; color:#1B5E20; }
+  .gpu-good  { color:#2E7D32; font-weight:bold; }
+  .gpu-note-cell { font-size:11.5px; color:#888; white-space:normal !important; }
+
+  /* ── Memory hierarchy ── */
+  .mem-wrap { background:#E8F5E9; border:1px solid #A5D6A7; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .mem-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#1B5E20; margin-bottom:14px; font-weight:bold; }
+  .mem-row   { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .mem-label { font-size:13px; font-weight:bold; min-width:80px; }
+  .mem-bar-bg { flex:1; background:#C8E6C9; border-radius:4px; height:28px; overflow:hidden; }
+  .mem-fill  { height:28px; border-radius:4px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:bold; color:white; }
+  .mem-stat  { font-size:12px; color:#555; min-width:160px; text-align:right; font-family:monospace; }
+
+  /* ── NVLink interactive ── */
+  .nvlink-wrap { background:#F3E8FD; border:1px solid #CE93D8; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .nvlink-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#4A148C; margin-bottom:14px; font-weight:bold; }
+  .nvlink-controls { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .nvlink-btn { border:none; border-radius:6px; padding:7px 16px; font-size:13px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; }
+  .nvlink-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+  .nvlink-cell { background:white; border-radius:8px; padding:12px 10px; text-align:center; }
+  .nvlink-cell-label { font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#888; margin-bottom:6px; }
+  .nvlink-cell-val   { font-size:15px; font-weight:bold; font-family:monospace; }
+  .nvlink-cell-sub   { font-size:11px; color:#888; margin-top:3px; }
+  .nvlink-note { font-size:12.5px; color:#555; line-height:1.6; background:white; border-radius:6px; padding:10px 12px; }
+
+  /* ── CUDA stack ── */
+  .stack-wrap { display:flex; flex-direction:column; gap:3px; margin:18px 0; }
+  .stack-row  { border-radius:8px; padding:12px 16px; display:flex; align-items:center; gap:16px; }
+  .stack-layer { font-size:13px; font-weight:bold; font-family:Arial,sans-serif; min-width:180px; }
+  .stack-desc  { font-size:13px; line-height:1.6; color:rgba(255,255,255,0.75); }
+  .stack-arrow { text-align:center; font-size:14px; color:#888; margin:0 8px; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#1B5E20; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#A5D6A7; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.85; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#2E7D32; background:#E8F5E9; }
+  .quiz-option.selected { border-color:#2E7D32; background:#E8F5E9; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#2E7D32; }
+  .quiz-btn  { margin-top:14px; background:#1B5E20; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#2E7D32; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#E8F5E9,#E3F2FD); border:1px solid #C8E6C9; display:flex; justify-content:space-between; align-items:center; text-decoration:none; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; color:#1a1a1a; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .cheat-grid,.gpu-grid,.nvlink-grid { grid-template-columns:1fr 1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <a href="index.html" class="home-icon" title="Home">🏠</a>
+    <div class="header-eyebrow">PART 4 · MODULE 4.1</div>
+    <h1>NVIDIA Hardware Primer: GPUs, CUDA, NVLink &amp; HBM</h1>
+    <p>What the hardware actually is, why it matters for LLM inference, and how to talk about it confidently with customers who own or are buying it.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module3_6.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">3.6 — Disaggregation</div>
+    </a>
+    <a href="module4_2.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">4.2 — vLLM Architecture</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>Parts 1–3 explained the concepts: why KV Cache matters, why Decode is memory-bandwidth-bound, why NVLink enables Tensor Parallelism while InfiniBand only handles Pipeline Parallelism. Part 4 now grounds those concepts in actual hardware and software products that customers buy, configure, and ask about.</p>
+    <p>This module covers the NVIDIA hardware stack: what a GPU is (versus a CPU), what HBM memory is and why it determines throughput, what CUDA is and why it underpins every LLM framework, and what NVLink and NVSwitch do. After this module you should be able to look at a customer's DGX H100 cluster spec sheet and immediately map every number to an inference concept you already understand.</p>
+  </div>
+
+  <!-- Section 1: GPU vs CPU -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#388E3C;">1</span>
+        GPU vs CPU — Why LLMs Need GPUs
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>A CPU is designed for sequential, complex logic — a small number of powerful cores (8–128) that can each handle branching code, OS scheduling, and general-purpose tasks. A GPU is designed for parallel arithmetic — thousands of simpler cores (H100: 16,896 CUDA cores) that all execute the same operation simultaneously on different data.</p>
+      <p>LLM inference is almost entirely matrix multiplication — multiplying activations by weight matrices across hundreds of layers. Matrix multiplication is perfectly parallel: every output element is an independent dot product. A GPU can compute thousands of these simultaneously; a CPU must compute them one after another.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
+        <div style="background:#ECEFF1; border-radius:10px; padding:18px; border-left:3px solid #546E7A;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#546E7A; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">CPU — built for general logic</div>
+          <div style="font-size:13.5px; line-height:1.9; color:#333;">
+            8–128 powerful cores<br>
+            Complex branch prediction<br>
+            Large cache per core (MB)<br>
+            Clock: 3–5 GHz<br>
+            FP32 throughput: ~1–5 TFLOPS<br>
+            <div style="margin-top:8px; font-size:12px; font-family:Arial,sans-serif; color:#888;">Best at: OS, branching logic, sequential code</div>
+          </div>
+        </div>
+        <div style="background:#E8F5E9; border-radius:10px; padding:18px; border-left:3px solid #2E7D32;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">GPU — built for parallel math</div>
+          <div style="font-size:13.5px; line-height:1.9; color:#333;">
+            16,896+ simple CUDA cores<br>
+            Thousands run same instruction<br>
+            Small shared cache (SRAM)<br>
+            Clock: 1.5–2 GHz<br>
+            FP16 throughput: ~1,979 TFLOPS (H100)<br>
+            <div style="margin-top:8px; font-size:12px; font-family:Arial,sans-serif; color:#666;">Best at: matrix multiply, attention, FFN</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-green">
+        <strong>The practical implication:</strong> Running a 70B LLM on a CPU would take minutes per token. The same model on a single A100 80GB produces tokens in milliseconds. The difference is not software — it is the fundamental architecture. Every serving framework (vLLM, TensorRT-LLM, Triton) is ultimately orchestrating GPU matrix multiplications. Understanding the GPU is understanding why the software works the way it does.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: CUDA -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">2</span>
+        CUDA — The Software Layer Everything Runs On
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>CUDA (Compute Unified Device Architecture) is NVIDIA's parallel computing platform — the programming model and runtime that allows software to talk to GPU hardware. Every LLM framework — PyTorch, vLLM, TensorRT-LLM, JAX — compiles down to CUDA kernels that execute on the GPU. CUDA is why all of these tools only work on NVIDIA GPUs.</p>
+
+      <div class="stack-wrap">
+        <div class="stack-row" style="background:#1B5E20;">
+          <div class="stack-layer" style="color:#A5D6A7;">Application / API</div>
+          <div class="stack-desc">Customer's Python app, REST API call, inference request</div>
+        </div>
+        <div class="stack-arrow">&#9660;</div>
+        <div class="stack-row" style="background:#1565C0;">
+          <div class="stack-layer" style="color:#90CAF9;">Inference framework</div>
+          <div class="stack-desc">vLLM, TensorRT-LLM — manage batching, KV Cache, scheduling</div>
+        </div>
+        <div class="stack-arrow">&#9660;</div>
+        <div class="stack-row" style="background:#4A148C;">
+          <div class="stack-layer" style="color:#CE93D8;">cuDNN / cuBLAS / NCCL</div>
+          <div class="stack-desc">NVIDIA libraries: optimised attention, matrix multiply, collective comms</div>
+        </div>
+        <div class="stack-arrow">&#9660;</div>
+        <div class="stack-row" style="background:#E65100;">
+          <div class="stack-layer" style="color:#FFCC80;">CUDA runtime &amp; driver</div>
+          <div class="stack-desc">Launches kernels, manages GPU memory, schedules work on hardware</div>
+        </div>
+        <div class="stack-arrow">&#9660;</div>
+        <div class="stack-row" style="background:#37474F;">
+          <div class="stack-layer" style="color:#B0BEC5;">GPU hardware</div>
+          <div class="stack-desc">Tensor Cores, CUDA cores, HBM memory, NVLink interconnect</div>
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>Why this matters in customer conversations:</strong> When a customer says "we're using CUDA 12.4" or "we need to update our CUDA drivers," they are talking about this layer. CUDA version compatibility is a frequent deployment friction point — TensorRT-LLM and vLLM both have minimum CUDA version requirements, and mismatches between the driver version installed by IT and the version the software expects are a common cause of deployment failures. Always ask about CUDA and driver versions early in technical discovery.
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>Key CUDA libraries for LLMs:</strong> cuBLAS handles matrix multiplication (the dominant operation). cuDNN provides optimised attention implementations. NCCL (NVIDIA Collective Communications Library) handles AllReduce operations between GPUs in Tensor Parallelism — when you read about AllReduce in Part 3, NCCL is what actually executes those synchronisations.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: HBM -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">3</span>
+        HBM — Why Memory Bandwidth Is the Bottleneck
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>HBM (High Bandwidth Memory) is the memory technology used in data-centre GPUs. Unlike DDR5 RAM in a CPU (which sits on a PCIe bus), HBM is stacked directly alongside the GPU die using silicon interposer connections — giving it dramatically higher bandwidth at the cost of high manufacturing complexity and price.</p>
+
+      <div class="mem-wrap">
+        <div class="mem-title">Memory bandwidth comparison — why HBM matters for Decode</div>
+        <div class="mem-row">
+          <div class="mem-label" style="color:#546E7A;">DDR5 RAM</div>
+          <div class="mem-bar-bg"><div class="mem-fill" style="width:4%; background:#546E7A;">~100</div></div>
+          <div class="mem-stat">~100 GB/s &nbsp;|&nbsp; CPU server RAM</div>
+        </div>
+        <div class="mem-row">
+          <div class="mem-label" style="color:#1565C0;">PCIe SSD</div>
+          <div class="mem-bar-bg"><div class="mem-fill" style="width:1%; background:#1565C0;">~7</div></div>
+          <div class="mem-stat">~7 GB/s &nbsp;|&nbsp; NVMe storage</div>
+        </div>
+        <div class="mem-row">
+          <div class="mem-label" style="color:#E65100;">A100 HBM2e</div>
+          <div class="mem-bar-bg"><div class="mem-fill" style="width:40%; background:#E65100;">2,000</div></div>
+          <div class="mem-stat">2,000 GB/s &nbsp;|&nbsp; A100 80GB</div>
+        </div>
+        <div class="mem-row">
+          <div class="mem-label" style="color:#7B1FA2;">H100 HBM3</div>
+          <div class="mem-bar-bg"><div class="mem-fill" style="width:67%; background:#7B1FA2;">3,350</div></div>
+          <div class="mem-stat">3,350 GB/s &nbsp;|&nbsp; H100 SXM</div>
+        </div>
+        <div class="mem-row">
+          <div class="mem-label" style="color:#1B5E20;">B200 HBM3e</div>
+          <div class="mem-bar-bg"><div class="mem-fill" style="width:100%; background:#1B5E20;">8,000</div></div>
+          <div class="mem-stat">8,000 GB/s &nbsp;|&nbsp; B200 (Blackwell)</div>
+        </div>
+      </div>
+
+      <p>Recall from Module 2.5: Decode is memory-bandwidth-bound. Every token generation requires reading all model weights from HBM into the compute units. A 70B model at FP16 requires reading ~140GB of weights per decode step. At A100 bandwidth (2,000 GB/s), this takes ~70ms — which sets a hard floor on TPOT regardless of all other optimisations. The H100 (3,350 GB/s) does the same read in ~42ms, and the B200 (8,000 GB/s) in ~17ms.</p>
+
+      <div class="callout callout-purple">
+        <strong>HBM capacity vs HBM bandwidth — two separate specs:</strong> HBM has both a capacity (how many GB it holds) and a bandwidth (how fast data moves). The A100 comes in 40GB and 80GB variants — same bandwidth (2,000 GB/s), different capacity. Capacity determines how large a model fits and how many concurrent KV Caches you can hold. Bandwidth determines TPOT for a given model size. When a customer asks "should I get A100 40GB or 80GB?", the answer is almost always 80GB for LLM inference — the capacity difference is critical, the bandwidth is identical.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Tensor Cores -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#00796B;">4</span>
+        Tensor Cores — What Makes Modern GPUs Fast at Transformers
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>Standard CUDA cores multiply one number at a time. Tensor Cores — introduced in Volta (V100) and substantially improved each generation — perform a 4&#215;4 matrix multiply-accumulate operation in a single clock cycle. For LLM inference, which is almost entirely matrix multiplication, Tensor Cores are the primary throughput driver.</p>
+
+      <div class="gpu-wrap">
+        <div class="gpu-title">Tensor Core evolution — peak throughput per GPU</div>
+        <div class="gpu-grid">
+          <div class="gpu-block" style="background:rgba(84,110,122,0.3);">
+            <div class="gpu-block-title">V100 (Volta, 2017)</div>
+            <div class="gpu-block-body">First Tensor Cores. FP16 only.</div>
+            <div class="gpu-block-stat">125 TFLOPS FP16</div>
+          </div>
+          <div class="gpu-block" style="background:rgba(230,81,0,0.3);">
+            <div class="gpu-block-title">A100 (Ampere, 2020)</div>
+            <div class="gpu-block-body">Added BF16, TF32, INT8, sparsity support.</div>
+            <div class="gpu-block-stat">312 TFLOPS FP16 &nbsp;|&nbsp; 624 INT8</div>
+          </div>
+          <div class="gpu-block" style="background:rgba(123,31,162,0.35);">
+            <div class="gpu-block-title">H100 (Hopper, 2022)</div>
+            <div class="gpu-block-body">Added FP8, Transformer Engine (auto precision).</div>
+            <div class="gpu-block-stat">1,979 TFLOPS FP16 &nbsp;|&nbsp; 3,958 FP8</div>
+          </div>
+          <div class="gpu-block" style="background:rgba(27,94,32,0.35);">
+            <div class="gpu-block-title">B200 (Blackwell, 2024)</div>
+            <div class="gpu-block-body">FP4 support, 2nd gen Transformer Engine.</div>
+            <div class="gpu-block-stat">~9,000 TFLOPS FP8 &nbsp;|&nbsp; ~18,000 FP4</div>
+          </div>
+        </div>
+        <div class="gpu-note">TFLOPS = trillion floating point operations per second. Prefill is compute-bound — more TFLOPS directly improves TTFT. Decode is memory-bandwidth-bound — TFLOPS matter less than HBM bandwidth for Decode.</div>
+      </div>
+
+      <div class="callout callout-green">
+        <strong>The Transformer Engine (H100+):</strong> The H100 introduced a Transformer Engine that automatically selects between FP8 and FP16 precision layer-by-layer during inference, maximising throughput without manual quantisation configuration. This is why FP8 is the recommended default for H100 deployments (Module 3.3) — the hardware handles the precision management automatically, and TensorRT-LLM exposes this through simple configuration flags.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: NVLink and NVSwitch -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">5</span>
+        NVLink &amp; NVSwitch — The Interconnect That Enables Tensor Parallelism
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>NVLink is NVIDIA's high-speed GPU-to-GPU interconnect. It is what makes Tensor Parallelism practical within a node — the AllReduce operations between GPUs that happen after every layer require bandwidth that PCIe (the standard CPU-GPU bus) cannot provide at acceptable latency.</p>
+
+      <div class="nvlink-wrap">
+        <div class="nvlink-title">NVLink generations — bandwidth and implications</div>
+        <div class="nvlink-controls">
+          <button class="nvlink-btn" style="background:#546E7A; color:white;" onclick="showNVLink('v100')">NVLink 2.0 (V100)</button>
+          <button class="nvlink-btn" style="background:#E65100; color:white;" onclick="showNVLink('a100')">NVLink 3.0 (A100)</button>
+          <button class="nvlink-btn" style="background:#7B1FA2; color:white;" onclick="showNVLink('h100')">NVLink 4.0 (H100)</button>
+          <button class="nvlink-btn" style="background:#1B5E20; color:white;" onclick="showNVLink('b200')">NVLink 5.0 (B200)</button>
+        </div>
+        <div class="nvlink-grid" id="nvlinkGrid"></div>
+        <div class="nvlink-note" id="nvlinkNote"></div>
+      </div>
+
+      <p>NVSwitch is a dedicated switch chip that provides full all-to-all NVLink connectivity between all GPUs in a DGX node — without NVSwitch, GPU A connecting to GPU H would consume bandwidth on intermediate GPUs. NVSwitch ensures every GPU pair in a node communicates at full NVLink bandwidth simultaneously, which is what makes 8-way Tensor Parallelism within a DGX node practical.</p>
+
+      <div class="callout callout-orange">
+        <strong>PCIe vs NVLink — the crucial distinction:</strong> Cloud instances without NVLink (e.g. some AWS and Azure GPU instances use PCIe between GPUs) have ~64 GB/s bidirectional between GPUs. NVLink H100 provides ~900 GB/s. For Tensor Parallelism, which runs AllReduce after every layer, this 14&#215; bandwidth difference is the difference between TP being net-positive for latency and being net-negative. Always ask customers whether their GPU interconnect is NVLink or PCIe before recommending TP configurations.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: GPU comparison table -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">6</span>
+        GPU Comparison — A100 vs H100 vs H200 vs B200
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>These are the four GPUs you will encounter in almost every enterprise LLM inference conversation. Know them cold.</p>
+
+      <div style="overflow-x:auto;">
+        <table class="gpu-table">
+          <thead>
+            <tr>
+              <th>GPU</th>
+              <th>Arch</th>
+              <th>HBM</th>
+              <th>HBM BW</th>
+              <th>FP16 TFLOPS</th>
+              <th>FP8 TFLOPS</th>
+              <th>NVLink BW</th>
+              <th>Key inference note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="gpu-gen">A100 SXM</td>
+              <td>Ampere</td>
+              <td>80GB HBM2e</td>
+              <td>2,000 GB/s</td>
+              <td>312</td>
+              <td>— (INT8: 624)</td>
+              <td>600 GB/s</td>
+              <td class="gpu-note-cell">Workhorse of current deployments. No native FP8. INT8 with SmoothQuant is standard.</td>
+            </tr>
+            <tr>
+              <td class="gpu-gen">H100 SXM</td>
+              <td>Hopper</td>
+              <td>80GB HBM3</td>
+              <td>3,350 GB/s</td>
+              <td>1,979</td>
+              <td class="gpu-good">3,958</td>
+              <td>900 GB/s</td>
+              <td class="gpu-note-cell">Current recommendation for new deployments. Native FP8 via Transformer Engine. ~2&#215; A100 on most LLM benchmarks.</td>
+            </tr>
+            <tr>
+              <td class="gpu-gen">H200 SXM</td>
+              <td>Hopper</td>
+              <td class="gpu-good">141GB HBM3e</td>
+              <td class="gpu-good">4,800 GB/s</td>
+              <td>1,979</td>
+              <td class="gpu-good">3,958</td>
+              <td>900 GB/s</td>
+              <td class="gpu-note-cell">Same compute as H100 but ~1.75&#215; more HBM and ~1.4&#215; more bandwidth. Key for 70B+ models needing more memory. Best current option for 70B serving.</td>
+            </tr>
+            <tr>
+              <td class="gpu-gen">B200 SXM</td>
+              <td>Blackwell</td>
+              <td class="gpu-good">192GB HBM3e</td>
+              <td class="gpu-good">8,000 GB/s</td>
+              <td>~4,500</td>
+              <td class="gpu-good">~9,000</td>
+              <td class="gpu-good">1,800 GB/s</td>
+              <td class="gpu-note-cell">Next generation. Adds FP4 support. ~2.4&#215; H100 bandwidth. Enables 405B on 2 GPUs at FP8. Limited availability as of early 2025.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-slate">
+        <strong>H100 PCIe vs H100 SXM — not the same GPU:</strong> NVIDIA sells the H100 in two form factors. SXM (used in DGX H100 servers) has NVLink 4.0 at 900 GB/s and higher TDP (700W). PCIe (used in standard rack servers) has PCIe 5.0 at 64 GB/s and lower TDP (350W). HBM bandwidth is also lower: 3,350 vs 2,000 GB/s. For Tensor Parallelism and high-throughput inference, always ask which form factor the customer has — the SXM variant is significantly more capable for LLM workloads.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr7" onclick="toggle(7)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">7</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv7">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy7">
+      <div class="key-item">
+        <div class="key-num" style="color:#388E3C;">01</div>
+        <div>
+          <div class="key-title">HBM bandwidth sets the TPOT floor — it is the single most important spec for Decode</div>
+          <div class="key-desc">Decode reads all model weights from HBM every token. A100 at 2,000 GB/s, H100 at 3,350 GB/s, B200 at 8,000 GB/s — these numbers directly translate to minimum achievable TPOT for a given model size. When a customer asks why their TPOT is what it is, start here.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">02</div>
+        <div>
+          <div class="key-title">NVLink bandwidth determines whether Tensor Parallelism is viable</div>
+          <div class="key-desc">TP requires AllReduce after every layer. NVLink H100 (900 GB/s) makes this fast enough to be net-positive for latency. PCIe (64 GB/s) makes it net-negative. Before recommending a TP configuration, confirm NVLink vs PCIe. DGX nodes always have NVLink; cloud "GPU instances" may not.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#7B1FA2;">03</div>
+        <div>
+          <div class="key-title">The H100's Transformer Engine makes FP8 the right default — no extra work needed</div>
+          <div class="key-desc">The Transformer Engine auto-selects FP8 vs FP16 per layer at runtime. TensorRT-LLM exposes this through a single config flag. The quality-vs-speed analysis from Module 3.3 is real, but on H100 the hardware largely handles it. On A100, you need to choose and validate INT8 explicitly.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">04</div>
+        <div>
+          <div class="key-title">CUDA is the foundation everything builds on — version compatibility is a real deployment risk</div>
+          <div class="key-desc">vLLM, TensorRT-LLM, PyTorch — all compile to CUDA kernels. CUDA driver version mismatches are among the most common causes of deployment failures in the field. When a customer reports "it won't install" or "the framework crashes on startup," CUDA/driver version incompatibility is the first thing to check.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 4.1 — CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">HBM (High Bandwidth Memory)</div>
+        <div class="cheat-def">GPU memory stacked alongside the die. Higher bandwidth than DDR5. A100: 2TB/s, H100: 3.35TB/s, B200: 8TB/s. Bandwidth sets the TPOT floor for Decode.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">CUDA</div>
+        <div class="cheat-def">NVIDIA's parallel computing platform. Every LLM framework compiles to CUDA kernels. Version compatibility between CUDA runtime, driver, and framework is a common deployment issue.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Tensor Cores</div>
+        <div class="cheat-def">Specialised matrix multiply units on NVIDIA GPUs. Process 4&#215;4 matrix ops per clock cycle. Primary driver of Prefill (compute-bound) throughput. H100 Tensor Cores support FP8 natively.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Transformer Engine</div>
+        <div class="cheat-def">H100+ feature that automatically selects FP8 vs FP16 per layer at inference time. Makes FP8 the recommended default without manual quantisation work.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">NVLink</div>
+        <div class="cheat-def">GPU-to-GPU interconnect within a node. H100: 900 GB/s. Required for Tensor Parallelism — AllReduce after every layer needs this bandwidth. PCIe (64 GB/s) is too slow for TP.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">NVSwitch</div>
+        <div class="cheat-def">Switch chip in DGX nodes that provides full all-to-all NVLink connectivity between all GPUs. Enables 8-way TP at full bandwidth without bandwidth sharing across intermediate GPUs.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">SXM vs PCIe form factor</div>
+        <div class="cheat-def">H100 SXM: 3,350 GB/s HBM, 900 GB/s NVLink, 700W. H100 PCIe: 2,000 GB/s HBM, 64 GB/s PCIe, 350W. For LLM inference at scale, SXM is substantially superior. Always confirm which form factor.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">H200 vs H100</div>
+        <div class="cheat-def">Same Tensor Cores as H100, but 141GB HBM (vs 80GB) and 4,800 GB/s bandwidth (vs 3,350 GB/s). Best current option for 70B models where memory capacity and Decode speed are both constraints.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer has a cluster of 8&#215; H100 PCIe GPUs (not SXM) and wants to serve Llama 3 70B with Tensor Parallelism=8 to minimise TPOT. Your colleague recommends this configuration. What concern should you raise?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        The H100 PCIe does not support FP8, so quantisation will not work on this hardware.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        H100 PCIe GPUs are connected via PCIe 5.0 (~64 GB/s), not NVLink (~900 GB/s). Tensor Parallelism=8 requires AllReduce communication after every layer across all 8 GPUs — at PCIe bandwidth, this communication overhead will likely dominate the forward pass time and make TP=8 net-negative for TPOT compared to running the model with TP=1 or TP=2. Recommend validating with a benchmark, and consider TP=2 at most, or switching to a configuration with NVLink-connected GPUs if budget allows.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        70B is too large for 8&#215; H100 PCIe — the model will not fit in GPU memory.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        Tensor Parallelism is only supported on A100, not H100.
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <a href="module4_2.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next — Module 4.2</div>
+      <div class="next-title">vLLM Architecture</div>
+      <div class="next-sub">How vLLM implements Paged Attention, continuous batching, and the full inference serving stack — and how to configure it for production</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var sColors={1:'#388E3C',2:'#1565C0',3:'#7B1FA2',4:'#00796B',5:'#E65100',6:'#1565C0',7:'#283593'};
+  var sBgs   ={1:'#E8F5E9',2:'#E3F2FD',3:'#F3E8FD',4:'#E0F2F1',5:'#FFF3E0',6:'#E3F2FD',7:'#E8EAF6'};
+  function toggle(n){
+    var body=document.getElementById('bdy'+n),chv=document.getElementById('chv'+n),hdr=document.getElementById('hdr'+n);
+    var isOpen=body.classList.contains('open');
+    body.classList.toggle('open'); chv.classList.toggle('open');
+    hdr.style.borderLeftColor=isOpen?'#E8E8E8':sColors[n];
+    hdr.style.background=isOpen?'white':sBgs[n];
+  }
+
+  /* ── NVLink interactive ── */
+  var nvData={
+    v100:{ gen:'NVLink 2.0', gpu:'V100', bw:'300 GB/s', links:6,  gpuPerNode:8, tpMax:'TP=4 practical', note:'6 NVLink lanes per GPU. 300 GB/s bidirectional. Sufficient for TP=2 and TP=4 configurations. TP=8 begins showing diminishing returns due to AllReduce overhead at this bandwidth.' },
+    a100:{ gen:'NVLink 3.0', gpu:'A100', bw:'600 GB/s', links:12, gpuPerNode:8, tpMax:'TP=8 practical', note:'12 NVLink lanes per GPU. 600 GB/s bidirectional. Standard DGX A100 nodes use NVSwitch for all-to-all connectivity. TP=8 is viable and commonly deployed for large models.' },
+    h100:{ gen:'NVLink 4.0', gpu:'H100', bw:'900 GB/s', links:18, gpuPerNode:8, tpMax:'TP=8 recommended', note:'18 NVLink lanes per GPU. 900 GB/s bidirectional. DGX H100 nodes support full 8-way TP with NVSwitch. AllReduce overhead is low enough that TP=8 is the standard configuration for 70B+ models.' },
+    b200:{ gen:'NVLink 5.0', gpu:'B200', bw:'1,800 GB/s', links:18, gpuPerNode:8, tpMax:'TP=8 highly efficient', note:'1,800 GB/s bidirectional — double H100. Enables very large batch AllReduce with minimal overhead. Combined with 192GB HBM per GPU, a single DGX B200 node (8 GPUs, 1.5TB total HBM) can serve 405B at FP8 with TP=8.' }
+  };
+  function showNVLink(gpu){
+    var d=nvData[gpu];
+    document.getElementById('nvlinkGrid').innerHTML=
+      nc('Generation',d.gen)+nc('Bidirectional BW',d.bw)+nc('NVLink lanes',d.links+' per GPU')+nc('Max practical TP',d.tpMax);
+    document.getElementById('nvlinkNote').textContent=d.note;
+  }
+  function nc(label,val){
+    return '<div class="nvlink-cell"><div class="nvlink-cell-label">'+label+'</div><div class="nvlink-cell-val">'+val+'</div></div>';
+  }
+  showNVLink('h100');
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    var opts=document.querySelectorAll('.quiz-option'),letters=['a','b','c','d'];
+    opts.forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      if(letters[i]==='b')o.classList.add('correct');
+      else if(letters[i]===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct — and this is an easy win to catch in a customer conversation.</strong> The H100 PCIe form factor is a common point of confusion. Customers see "H100" and assume all H100s are equivalent. The critical difference is the interconnect: PCIe 5.0 between GPUs gives ~64 GB/s bidirectional bandwidth. NVLink 4.0 on SXM gives ~900 GB/s. For Tensor Parallelism=8, AllReduce runs across all 8 GPUs after every single transformer layer (~80 layers in a 70B model). At PCIe speeds, each AllReduce at the layer output size (~16MB for a 70B model) takes ~0.25ms, totalling ~20ms just in communication per token — which likely exceeds the compute time. On NVLink, the same AllReduce takes ~0.017ms, totalling ~1.4ms, which is acceptable overhead. Option A is incorrect — H100 PCIe does support FP8 via the Transformer Engine. Option C is incorrect — 8&#215; H100 PCIe provides 8&#215; 80GB = 640GB total, more than sufficient for 70B at FP16 (140GB). Option D is incorrect — TP is supported on all NVIDIA data-centre GPUs.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The key issue is interconnect bandwidth: H100 PCIe GPUs communicate via PCIe 5.0 (~64 GB/s), not NVLink (~900 GB/s). TP=8 AllReduce after every layer becomes the bottleneck — the communication overhead at PCIe speeds will likely make TP=8 slower than TP=1 or TP=2. Option A is incorrect (H100 PCIe supports FP8). Option C is incorrect (8&#215; 80GB = 640GB, 70B at FP16 only needs 140GB). Option D is incorrect (TP works on all NVIDIA data-centre GPUs).';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>
