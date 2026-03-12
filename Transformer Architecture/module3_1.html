@@ -139,12 +139,20 @@
     .header { padding:24px 20px; }
     .nav-bar { flex-direction:column; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 3 · MODULE 3.1</div>
     <h1>Flash Attention</h1>
     <p>The same mathematical result as standard attention — computed 2–4× faster and using a fraction of the GPU memory. How reordering the same operations changes everything.</p>

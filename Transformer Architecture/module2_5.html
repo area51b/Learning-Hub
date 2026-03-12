@@ -167,12 +167,20 @@
     .header { padding:24px 20px; }
     .nav-bar { flex-direction:column; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 2 · MODULE 2.5</div>
     <h1>The Memory Bottleneck</h1>
     <p>Why GPUs run out of memory, what happens when they do, and the practical toolkit for fitting more into the memory you have.</p>

@@ -159,13 +159,21 @@
     .bd-branch { flex-direction:column; }
     .res-row { flex-direction:column; align-items:flex-start; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
   <!-- Header -->
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 1 · MODULE 1.6</div>
     <h1>The Full Transformer Block</h1>
     <p>How Attention and FFN stack together into layers - and what depth means for inference</p>

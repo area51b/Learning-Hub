@@ -154,12 +154,20 @@
     .nav-bar { flex-direction:column; }
     .cb-time-header { display:none; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 2 · MODULE 2.3</div>
     <h1>Batching Strategies</h1>
     <p>How grouping requests together transforms GPU utilisation - and why continuous batching is the single biggest throughput improvement in modern inference serving.</p>

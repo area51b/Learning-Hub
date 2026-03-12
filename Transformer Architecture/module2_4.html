@@ -151,12 +151,20 @@
     .header { padding:24px 20px; }
     .nav-bar { flex-direction:column; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 2 · MODULE 2.4</div>
     <h1>Throughput vs Latency</h1>
     <p>The central trade-off in inference serving - what each means, why they conflict, and how to advise customers on the right balance for their workload.</p>

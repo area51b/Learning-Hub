@@ -166,13 +166,21 @@
     .header { padding:24px 20px; }
     .nav-bar { flex-direction:column; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
   <!-- Header -->
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 1 · MODULE 1.7</div>
     <h1>The Two Phases: Prefill vs Decode</h1>
     <p>The most important concept for inference optimisation - and your direct bridge to disaggregation, KV Cache management, and everything in Part 2</p>

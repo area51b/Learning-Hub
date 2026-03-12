@@ -147,12 +147,20 @@
     .header { padding:24px 20px; }
     .nav-bar { flex-direction:column; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 3 · MODULE 3.3</div>
     <h1>Quantisation — INT8, FP8, INT4</h1>
     <p>Using smaller numbers to represent model weights reduces memory, increases throughput, and enables larger models on the same hardware — with carefully managed quality trade-offs.</p>

@@ -138,12 +138,20 @@
     .nav-bar { flex-direction:column; }
     .frag-grid { grid-template-columns: repeat(10,1fr); }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 3 · MODULE 3.2</div>
     <h1>Paged Attention</h1>
     <p>How vLLM borrowed the OS concept of virtual memory to eliminate KV Cache fragmentation — and why it was the single biggest throughput advance in LLM serving.</p>

@@ -148,13 +148,21 @@
     .nav-bar { flex-direction:column; }
     .ob-row { grid-template-columns:1fr; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
   <!-- Header -->
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 2 · MODULE 2.1</div>
     <h1>What Is Inference?</h1>
     <p>Training built the model. Inference is everything that happens after - serving it to users at speed, scale, and cost that actually works in production.</p>

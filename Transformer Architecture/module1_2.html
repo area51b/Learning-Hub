@@ -139,13 +139,21 @@
     .nav-bar { flex-direction: column; }
     .embed-row { flex-direction: column; align-items: flex-start; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
   <!-- Header -->
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 1 · MODULE 1.2</div>
     <h1>Tokens &amp; Embeddings</h1>
     <p>How text becomes something a model can actually work with</p>

@@ -153,12 +153,20 @@
     .pp-stage:first-child { border-radius:8px 8px 0 0; }
     .pp-stage:last-child  { border-radius:0 0 8px 8px; border-bottom:none; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 3 · MODULE 3.4</div>
     <h1>Tensor &amp; Pipeline Parallelism</h1>
     <p>How to split a model that is too large — or too slow — for a single GPU across multiple GPUs, and the distinct trade-offs of cutting along different dimensions.</p>

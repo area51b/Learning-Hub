@@ -143,13 +143,21 @@
     .header { padding:24px 20px; }
     .nav-bar { flex-direction:column; }
   }
+  .home-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
   <!-- Header -->
-  <div class="header">
+  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 2 · MODULE 2.2</div>
     <h1>KV Cache - What It Is and Why It Matters</h1>
     <p>The single most important concept in inference serving. It determines how many users you can serve, at what speed, and at what cost.</p>
