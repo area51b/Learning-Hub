@@ -154,7 +154,7 @@
   <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 3 · MODULE 3.2</div>
     <h1>Paged Attention</h1>
-    <p>How vLLM borrowed the OS concept of virtual memory to eliminate KV Cache fragmentation — and why it was the single biggest throughput advance in LLM serving.</p>
+    <p>How vLLM borrowed the OS concept of virtual memory to eliminate KV Cache fragmentation - and why it was the single biggest throughput advance in LLM serving.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -164,16 +164,16 @@
   <div class="nav-bar">
     <a href="module3_1.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">3.1 — Flash Attention</div>
+      <div class="nav-title">3.1 - Flash Attention</div>
     </a>
     <a href="module3_3.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">3.3 — Quantisation</div>
+      <div class="nav-title">3.3 - Quantisation</div>
     </a>
   </div>
 
   <div class="intro-card">
-    <p>Before Paged Attention, LLM inference servers wasted up to 80% of their KV Cache memory — not because they ran out, but because of fragmentation. Memory was reserved in large contiguous blocks per request, and chunks sat unused as requests finished at different lengths. The result: GPUs that looked full were actually mostly empty.</p>
+    <p>Before Paged Attention, LLM inference servers wasted up to 80% of their KV Cache memory - not because they ran out, but because of fragmentation. Memory was reserved in large contiguous blocks per request, and chunks sat unused as requests finished at different lengths. The result: GPUs that looked full were actually mostly empty.</p>
     <p>Paged Attention, introduced in the vLLM paper (Kwon et al., 2023), solved this by borrowing a 50-year-old idea from operating systems: virtual memory paging. Instead of one big contiguous block per request, KV Cache is stored in small fixed-size pages that can be scattered anywhere in GPU memory. The result was a 2–4× throughput improvement on the same hardware, with no quality change. It is now the standard approach in every major inference server.</p>
   </div>
 
@@ -182,30 +182,30 @@
     <div class="section-header" id="hdr1" onclick="toggle(1)">
       <div class="section-title">
         <span class="section-num" style="background:#C62828;">1</span>
-        The Problem — KV Cache Fragmentation
+        The Problem - KV Cache Fragmentation
       </div>
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>In a naive inference server, when a request arrives the system reserves a contiguous block of GPU memory for its entire potential KV Cache — sized for the maximum possible output length. This creates three types of waste:</p>
+      <p>In a naive inference server, when a request arrives the system reserves a contiguous block of GPU memory for its entire potential KV Cache - sized for the maximum possible output length. This creates three types of waste:</p>
 
       <div style="display:flex; flex-direction:column; gap:10px; margin:16px 0; font-family:Arial,sans-serif;">
         <div style="display:grid; grid-template-columns:140px 1fr; gap:12px; background:#FFEBEE; border-radius:8px; padding:12px 14px; border-left:3px solid #C62828; align-items:start;">
           <div style="font-weight:bold; font-size:13px; color:#C62828;">Internal fragmentation</div>
-          <div style="font-size:13.5px; line-height:1.7;">A request reserved space for 2,048 tokens but only generated 200. The remaining 1,848 token-slots sit empty but blocked — no other request can use them.</div>
+          <div style="font-size:13.5px; line-height:1.7;">A request reserved space for 2,048 tokens but only generated 200. The remaining 1,848 token-slots sit empty but blocked - no other request can use them.</div>
         </div>
         <div style="display:grid; grid-template-columns:140px 1fr; gap:12px; background:#FFF3E0; border-radius:8px; padding:12px 14px; border-left:3px solid #E65100; align-items:start;">
           <div style="font-weight:bold; font-size:13px; color:#E65100;">External fragmentation</div>
-          <div style="font-size:13.5px; line-height:1.7;">After several requests finish, freed blocks are scattered across memory. A new large request cannot fit even though total free space is sufficient — there is no single contiguous block big enough.</div>
+          <div style="font-size:13.5px; line-height:1.7;">After several requests finish, freed blocks are scattered across memory. A new large request cannot fit even though total free space is sufficient - there is no single contiguous block big enough.</div>
         </div>
         <div style="display:grid; grid-template-columns:140px 1fr; gap:12px; background:#FCE4EC; border-radius:8px; padding:12px 14px; border-left:3px solid #C2185B; align-items:start;">
           <div style="font-weight:bold; font-size:13px; color:#C2185B;">Over-reservation</div>
-          <div style="font-size:13.5px; line-height:1.7;">Because output length is unknown at request start, the server reserves space for the worst case. Most requests generate far less — so the reserved-but-unused space accumulates across the entire batch.</div>
+          <div style="font-size:13.5px; line-height:1.7;">Because output length is unknown at request start, the server reserves space for the worst case. Most requests generate far less - so the reserved-but-unused space accumulates across the entire batch.</div>
         </div>
       </div>
 
       <div class="frag-wrap">
-        <div class="frag-title">KV Cache memory — naive allocation vs Paged Attention</div>
+        <div class="frag-title">KV Cache memory - naive allocation vs Paged Attention</div>
         <div class="frag-subtitle">100 blocks of GPU memory. Click to compare how each approach uses them.</div>
         <div class="frag-controls">
           <button class="frag-btn" style="background:#C62828; color:white;" onclick="showFrag('naive')">Naive allocation</button>
@@ -223,7 +223,7 @@
       </div>
 
       <div class="callout callout-red">
-        <strong>The scale of the waste:</strong> The original vLLM paper measured fragmentation in real serving scenarios and found that naive KV Cache allocation wasted 60–80% of available GPU memory. A GPU that looked 90% full was actually only 10–30% productively utilised. This is why adding more GPU memory alone does not fix the problem — the waste scales with the memory you add.
+        <strong>The scale of the waste:</strong> The original vLLM paper measured fragmentation in real serving scenarios and found that naive KV Cache allocation wasted 60–80% of available GPU memory. A GPU that looked 90% full was actually only 10–30% productively utilised. This is why adding more GPU memory alone does not fix the problem - the waste scales with the memory you add.
       </div>
     </div>
   </div>
@@ -233,7 +233,7 @@
     <div class="section-header" id="hdr2" onclick="toggle(2)">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">2</span>
-        The OS Analogy — Virtual Memory Paging
+        The OS Analogy - Virtual Memory Paging
       </div>
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
@@ -246,8 +246,8 @@
           <div style="font-size:13.5px; line-height:1.8; color:#333;">
             <div style="margin-bottom:8px;">Each process sees a clean, contiguous <strong>virtual address space</strong></div>
             <div style="margin-bottom:8px;">RAM is divided into fixed-size <strong>pages</strong> (e.g. 4KB)</div>
-            <div style="margin-bottom:8px;">A <strong>page table</strong> maps virtual pages to physical RAM pages — which can be scattered anywhere</div>
-            <div>Processes cannot tell their memory is non-contiguous — the OS handles the mapping transparently</div>
+            <div style="margin-bottom:8px;">A <strong>page table</strong> maps virtual pages to physical RAM pages - which can be scattered anywhere</div>
+            <div>Processes cannot tell their memory is non-contiguous - the OS handles the mapping transparently</div>
           </div>
         </div>
         <div style="background:#E8F5E9; border-radius:10px; padding:16px;">
@@ -255,14 +255,14 @@
           <div style="font-size:13.5px; line-height:1.8; color:#333;">
             <div style="margin-bottom:8px;">Each request sees a clean, contiguous <strong>logical KV sequence</strong></div>
             <div style="margin-bottom:8px;">GPU memory is divided into fixed-size <strong>KV blocks</strong> (e.g. 16 tokens each)</div>
-            <div style="margin-bottom:8px;">A <strong>block table</strong> maps logical KV positions to physical GPU memory blocks — scattered anywhere</div>
-            <div>The attention kernel handles non-contiguous lookups transparently — output is identical</div>
+            <div style="margin-bottom:8px;">A <strong>block table</strong> maps logical KV positions to physical GPU memory blocks - scattered anywhere</div>
+            <div>The attention kernel handles non-contiguous lookups transparently - output is identical</div>
           </div>
         </div>
       </div>
 
       <div class="callout callout-blue">
-        <strong>Why this is powerful:</strong> A request that generates 47 tokens needs exactly 3 physical blocks (at 16 tokens/block). It wastes at most 1 token-slot in the last partial block — not hundreds. When the request finishes, all 3 blocks are immediately available for any future request. There is no fragmentation beyond one partial block per request.
+        <strong>Why this is powerful:</strong> A request that generates 47 tokens needs exactly 3 physical blocks (at 16 tokens/block). It wastes at most 1 token-slot in the last partial block - not hundreds. When the request finishes, all 3 blocks are immediately available for any future request. There is no fragmentation beyond one partial block per request.
       </div>
     </div>
   </div>
@@ -272,27 +272,27 @@
     <div class="section-header" id="hdr3" onclick="toggle(3)">
       <div class="section-title">
         <span class="section-num" style="background:#2E7D32;">3</span>
-        How the Block Table Works — Interactive
+        How the Block Table Works - Interactive
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>Each request maintains a block table — a small lookup list that maps its logical token positions to physical GPU memory blocks. The attention kernel uses this table to find KV vectors wherever they happen to be stored.</p>
+      <p>Each request maintains a block table - a small lookup list that maps its logical token positions to physical GPU memory blocks. The attention kernel uses this table to find KV vectors wherever they happen to be stored.</p>
 
       <div class="pt-wrap">
-        <div class="pt-title">Block table — 3 concurrent requests sharing scattered physical memory</div>
+        <div class="pt-title">Block table - 3 concurrent requests sharing scattered physical memory</div>
         <div class="pt-layout">
           <div>
             <div class="pt-side-title">Logical view (per request)</div>
             <div class="pt-logical">
-              <div style="font-size:12px; font-family:Arial,sans-serif; color:#888; margin-bottom:6px;">Request A — 48 tokens (3 blocks)</div>
+              <div style="font-size:12px; font-family:Arial,sans-serif; color:#888; margin-bottom:6px;">Request A - 48 tokens (3 blocks)</div>
               <div class="pt-log-block" style="background:#BBDEFB; color:#0D47A1;">Tokens 1–16 <span class="pt-log-arrow">→ Block 7</span></div>
               <div class="pt-log-block" style="background:#BBDEFB; color:#0D47A1;">Tokens 17–32 <span class="pt-log-arrow">→ Block 2</span></div>
               <div class="pt-log-block" style="background:#BBDEFB; color:#0D47A1;">Tokens 33–48 <span class="pt-log-arrow">→ Block 11</span></div>
-              <div style="font-size:12px; font-family:Arial,sans-serif; color:#888; margin-top:10px; margin-bottom:6px;">Request B — 32 tokens (2 blocks)</div>
+              <div style="font-size:12px; font-family:Arial,sans-serif; color:#888; margin-top:10px; margin-bottom:6px;">Request B - 32 tokens (2 blocks)</div>
               <div class="pt-log-block" style="background:#E1BEE7; color:#6A1B9A;">Tokens 1–16 <span class="pt-log-arrow">→ Block 4</span></div>
               <div class="pt-log-block" style="background:#E1BEE7; color:#6A1B9A;">Tokens 17–32 <span class="pt-log-arrow">→ Block 9</span></div>
-              <div style="font-size:12px; font-family:Arial,sans-serif; color:#888; margin-top:10px; margin-bottom:6px;">Request C — 16 tokens (1 block)</div>
+              <div style="font-size:12px; font-family:Arial,sans-serif; color:#888; margin-top:10px; margin-bottom:6px;">Request C - 16 tokens (1 block)</div>
               <div class="pt-log-block" style="background:#C8E6C9; color:#1B5E20;">Tokens 1–16 <span class="pt-log-arrow">→ Block 1</span></div>
             </div>
           </div>
@@ -313,14 +313,14 @@
               <div class="pt-phys-block pt-empty">B12<br><span style="font-size:9px;">free</span></div>
             </div>
             <div style="font-size:12px; font-family:Arial,sans-serif; color:#555; margin-top:10px; line-height:1.6; background:white; padding:10px 12px; border-radius:6px;">
-              Req A's blocks (2, 7, 11) are scattered — but each request's block table records the mapping. The attention kernel follows the table to find KV vectors regardless of physical location. Free blocks (3, 5, 6, 8, 10, 12) are immediately available for any new request.
+              Req A's blocks (2, 7, 11) are scattered - but each request's block table records the mapping. The attention kernel follows the table to find KV vectors regardless of physical location. Free blocks (3, 5, 6, 8, 10, 12) are immediately available for any new request.
             </div>
           </div>
         </div>
       </div>
 
       <div class="callout callout-green">
-        <strong>Allocation on demand:</strong> Unlike naive allocation that reserves a full block upfront, Paged Attention allocates blocks one at a time as tokens are generated. A request that will eventually produce 500 tokens starts with zero blocks reserved — blocks are added as each group of 16 tokens is generated. This means unused "future" space is never reserved, eliminating over-reservation entirely.
+        <strong>Allocation on demand:</strong> Unlike naive allocation that reserves a full block upfront, Paged Attention allocates blocks one at a time as tokens are generated. A request that will eventually produce 500 tokens starts with zero blocks reserved - blocks are added as each group of 16 tokens is generated. This means unused "future" space is never reserved, eliminating over-reservation entirely.
       </div>
     </div>
   </div>
@@ -330,21 +330,21 @@
     <div class="section-header" id="hdr4" onclick="toggle(4)">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">4</span>
-        Copy-on-Write — Sharing Pages Across Requests
+        Copy-on-Write - Sharing Pages Across Requests
       </div>
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
     <div class="section-body" id="bdy4">
-      <p>Because blocks are now independently addressable, multiple requests can point their block tables to the <em>same</em> physical block — as long as that block's content is identical. This unlocks two powerful capabilities: prefix caching and beam search memory sharing.</p>
+      <p>Because blocks are now independently addressable, multiple requests can point their block tables to the <em>same</em> physical block - as long as that block's content is identical. This unlocks two powerful capabilities: prefix caching and beam search memory sharing.</p>
 
       <div class="cow-wrap">
-        <div class="cow-title">Shared prefix blocks — copy-on-write in action</div>
+        <div class="cow-title">Shared prefix blocks - copy-on-write in action</div>
         <div class="beam-tree">
           <div class="beam-row">
             <div class="beam-node" style="background:#7B1FA2; color:white; min-width:220px;">Shared system prompt (6,000 tokens)<br><span style="font-size:11px; opacity:0.8;">→ Stored in Blocks 1–375 (physical)</span></div>
           </div>
           <div style="text-align:center; color:#CE93D8; font-size:20px; margin:4px 0;">&#9662;</div>
-          <div style="text-align:center; font-size:12px; font-family:Arial,sans-serif; color:#7B1FA2; margin-bottom:8px;">All 3 requests point to the SAME physical blocks — no duplication</div>
+          <div style="text-align:center; font-size:12px; font-family:Arial,sans-serif; color:#7B1FA2; margin-bottom:8px;">All 3 requests point to the SAME physical blocks - no duplication</div>
           <div class="beam-row">
             <div class="beam-node beam-shared" style="background:#F3E8FD; color:#4A148C; font-size:12.5px;">Request 1<br>unique suffix →<br>new blocks only</div>
             <div class="beam-arrow">|</div>
@@ -356,10 +356,10 @@
         <div class="beam-label">Dashed border = logically separate but physically sharing the same KV blocks.<br>If a request modifies its KV content, only then is a private copy made (copy-on-write).</div>
       </div>
 
-      <p>This is exactly how prefix caching works in vLLM. A system prompt that is 6,000 tokens long would normally require every request to recompute and store those 6,000 tokens' KV values. With Paged Attention and prefix caching, that KV data is stored once — in a set of physical blocks — and every subsequent request that shares that prefix simply gets pointers to the same blocks. TTFT drops from seconds to milliseconds for those requests.</p>
+      <p>This is exactly how prefix caching works in vLLM. A system prompt that is 6,000 tokens long would normally require every request to recompute and store those 6,000 tokens' KV values. With Paged Attention and prefix caching, that KV data is stored once - in a set of physical blocks - and every subsequent request that shares that prefix simply gets pointers to the same blocks. TTFT drops from seconds to milliseconds for those requests.</p>
 
       <div class="callout callout-purple">
-        <strong>Beam search benefit:</strong> Beam search generates multiple candidate continuations from a shared prefix. With naive allocation, each beam gets its own full copy of the shared tokens. With Paged Attention copy-on-write, all beams share the same physical blocks for their common prefix — only diverging tokens get new blocks. Memory use for beam search drops by the beam width factor.
+        <strong>Beam search benefit:</strong> Beam search generates multiple candidate continuations from a shared prefix. With naive allocation, each beam gets its own full copy of the shared tokens. With Paged Attention copy-on-write, all beams share the same physical blocks for their common prefix - only diverging tokens get new blocks. Memory use for beam search drops by the beam width factor.
       </div>
     </div>
   </div>
@@ -376,7 +376,7 @@
     <div class="section-body" id="bdy5">
 
       <div style="background:#F1F8E9; border:1px solid #AED581; border-radius:12px; padding:18px 20px; margin-bottom:16px;">
-        <div style="font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#33691E; font-family:Arial,sans-serif; margin-bottom:14px; font-weight:bold;">Impact of Paged Attention — from the vLLM paper</div>
+        <div style="font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#33691E; font-family:Arial,sans-serif; margin-bottom:14px; font-weight:bold;">Impact of Paged Attention - from the vLLM paper</div>
         <div class="impact-row">
           <span class="impact-label">Memory waste eliminated</span>
           <div class="impact-bar-bg"><div class="impact-fill" style="background:#C62828; width:75%;">60–80% → &lt;4%</div></div>
@@ -411,7 +411,7 @@
       </div>
 
       <div class="callout callout-orange">
-        <strong>The one limitation:</strong> Paged Attention adds a small overhead per decode step — the attention kernel must follow block table pointers to find KV data scattered in memory, rather than reading a single contiguous array. On very short sequences or tiny batch sizes, this indirection can add measurable latency. In practice, for any workload where throughput matters, the fragmentation savings vastly outweigh this overhead.
+        <strong>The one limitation:</strong> Paged Attention adds a small overhead per decode step - the attention kernel must follow block table pointers to find KV data scattered in memory, rather than reading a single contiguous array. On very short sequences or tiny batch sizes, this indirection can add measurable latency. In practice, for any workload where throughput matters, the fragmentation savings vastly outweigh this overhead.
       </div>
     </div>
   </div>
@@ -436,21 +436,21 @@
       <div class="key-item">
         <div class="key-num" style="color:#1565C0;">02</div>
         <div>
-          <div class="key-title">Paged Attention stores KV Cache in small fixed-size blocks — anywhere in GPU memory</div>
+          <div class="key-title">Paged Attention stores KV Cache in small fixed-size blocks - anywhere in GPU memory</div>
           <div class="key-desc">A block table per request maps logical token positions to physical GPU blocks. Blocks can be scattered across all of HBM, allocated on demand as tokens are generated, and freed immediately when a request completes. Internal fragmentation is reduced to at most one partial block per request.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#7B1FA2;">03</div>
         <div>
-          <div class="key-title">Copy-on-write enables prefix sharing — the foundation of prefix caching</div>
+          <div class="key-title">Copy-on-write enables prefix sharing - the foundation of prefix caching</div>
           <div class="key-desc">Multiple requests can point to the same physical blocks for any shared prefix. This makes prefix caching possible: a 6,000-token system prompt stored once in GPU memory can be shared by thousands of requests. TTFT for those requests drops from seconds to milliseconds.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#2E7D32;">04</div>
         <div>
-          <div class="key-title">Paged Attention is why vLLM exists — and why every serious inference server uses it</div>
+          <div class="key-title">Paged Attention is why vLLM exists - and why every serious inference server uses it</div>
           <div class="key-desc">The 2–4× throughput improvement vs prior systems with no hardware change was the vLLM paper's central result. Combined with continuous batching, it defined what modern LLM inference serving looks like. TensorRT-LLM, SGLang, and others all implement equivalent block-based KV managers.</div>
         </div>
       </div>
@@ -459,7 +459,7 @@
 
   <!-- Cheat sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 3.2 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 3.2 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Paged Attention</div>
@@ -475,11 +475,11 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Internal Fragmentation</div>
-        <div class="cheat-def">Wasted space inside a reserved block — e.g. reserving 2,048 tokens but using 200. Paged Attention reduces this to at most one partial block per request.</div>
+        <div class="cheat-def">Wasted space inside a reserved block - e.g. reserving 2,048 tokens but using 200. Paged Attention reduces this to at most one partial block per request.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">External Fragmentation</div>
-        <div class="cheat-def">Free memory scattered in unusable small chunks between allocated blocks. Paged Attention eliminates this — any free block can satisfy any allocation.</div>
+        <div class="cheat-def">Free memory scattered in unusable small chunks between allocated blocks. Paged Attention eliminates this - any free block can satisfy any allocation.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Copy-on-Write</div>
@@ -491,7 +491,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">RadixAttention</div>
-        <div class="cheat-def">SGLang's extension of Paged Attention — uses a radix tree to share KV blocks across arbitrary common prefixes, not just fixed system prompts. More general-purpose prefix sharing.</div>
+        <div class="cheat-def">SGLang's extension of Paged Attention - uses a radix tree to share KV blocks across arbitrary common prefixes, not just fixed system prompts. More general-purpose prefix sharing.</div>
       </div>
     </div>
   </div>
@@ -503,19 +503,19 @@
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        Reduce the system prompt to under 500 tokens — long system prompts are inherently slow to process.
+        Reduce the system prompt to under 500 tokens - long system prompts are inherently slow to process.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        Enable prefix caching in vLLM. The 4,000-token system prompt will be computed once and its KV blocks stored in GPU memory. Every subsequent request with the same prefix will skip Prefill for those 4,000 tokens entirely — loading pre-computed KV blocks instead. TTFT will drop from ~1.8s to under 100ms for cached requests, with no hardware change and no quality impact.
+        Enable prefix caching in vLLM. The 4,000-token system prompt will be computed once and its KV blocks stored in GPU memory. Every subsequent request with the same prefix will skip Prefill for those 4,000 tokens entirely - loading pre-computed KV blocks instead. TTFT will drop from ~1.8s to under 100ms for cached requests, with no hardware change and no quality impact.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Switch from vLLM to TensorRT-LLM — it handles system prompts more efficiently by default.
+        Switch from vLLM to TensorRT-LLM - it handles system prompts more efficiently by default.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        Enable Flash Attention — it reduces Prefill time for long sequences like system prompts.
+        Enable Flash Attention - it reduces Prefill time for long sequences like system prompts.
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
@@ -524,8 +524,8 @@
 
   <a href="module3_3.html" class="next-module">
     <div>
-      <div class="next-label">Up Next — Module 3.3</div>
-      <div class="next-title">Quantisation — INT8, FP8, INT4</div>
+      <div class="next-label">Up Next - Module 3.3</div>
+      <div class="next-title">Quantisation - INT8, FP8, INT4</div>
       <div class="next-sub">How using smaller numbers to represent model weights reduces memory, increases speed, and what the quality trade-offs actually look like</div>
     </div>
     <div class="next-arrow">&#8594;</div>
@@ -620,10 +620,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct — and this is one of the highest-value, lowest-effort wins in LLM serving.</strong> A fixed 4,000-token system prompt is exactly the workload prefix caching was designed for. The mechanics: on the first request, the full 4,000 tokens are processed in Prefill and their KV blocks stored in GPU memory with a hash of the prompt as the key. Every subsequent request with the same system prompt hits the cache — the 4,000-token Prefill is skipped entirely and pre-computed KV blocks are loaded directly into the KV Cache. The only Prefill work remaining is for the user\'s unique message (typically tens to low hundreds of tokens). TTFT drops from ~1.8s to under 100ms in typical deployments. In vLLM, prefix caching is enabled with <code>--enable-prefix-caching</code>. It requires no model change, no hardware change, and produces bit-identical output.';
+      r.innerHTML='<strong>Correct - and this is one of the highest-value, lowest-effort wins in LLM serving.</strong> A fixed 4,000-token system prompt is exactly the workload prefix caching was designed for. The mechanics: on the first request, the full 4,000 tokens are processed in Prefill and their KV blocks stored in GPU memory with a hash of the prompt as the key. Every subsequent request with the same system prompt hits the cache - the 4,000-token Prefill is skipped entirely and pre-computed KV blocks are loaded directly into the KV Cache. The only Prefill work remaining is for the user\'s unique message (typically tens to low hundreds of tokens). TTFT drops from ~1.8s to under 100ms in typical deployments. In vLLM, prefix caching is enabled with <code>--enable-prefix-caching</code>. It requires no model change, no hardware change, and produces bit-identical output.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The root cause is that 4,000 tokens of Prefill runs every request — but since the content is identical each time, this work is being repeated unnecessarily. Prefix caching (which Paged Attention makes possible via copy-on-write block sharing) eliminates that repeated work. Flash Attention (Option D) would reduce Prefill time by 2–4× — helpful, but still leaves you at ~450ms rather than &lt;100ms. Switching servers (Option C) would not help without also enabling prefix caching. Shortening the prompt (Option A) might help but at the cost of quality.';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The root cause is that 4,000 tokens of Prefill runs every request - but since the content is identical each time, this work is being repeated unnecessarily. Prefix caching (which Paged Attention makes possible via copy-on-write block sharing) eliminates that repeated work. Flash Attention (Option D) would reduce Prefill time by 2–4× - helpful, but still leaves you at ~450ms rather than &lt;100ms. Switching servers (Option C) would not help without also enabling prefix caching. Shortening the prompt (Option A) might help but at the cost of quality.';
     }
     document.getElementById('check-btn').style.display='none';
   }

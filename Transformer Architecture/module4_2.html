@@ -150,7 +150,7 @@
   <div class="header">
     <a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 4 · MODULE 4.2</div>
-    <h1>vLLM — Architecture, What It Solves, When to Recommend It</h1>
+    <h1>vLLM - Architecture, What It Solves, When to Recommend It</h1>
     <p>The open-source inference server that brought Paged Attention and continuous batching to production. What it actually is under the hood, what it does well, and when TensorRT-LLM is the better answer.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
@@ -161,17 +161,17 @@
   <div class="nav-bar">
     <a href="module4_1.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">4.1 — NVIDIA Hardware Primer</div>
+      <div class="nav-title">4.1 - NVIDIA Hardware Primer</div>
     </a>
     <a href="module4_3.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">4.3 — TensorRT-LLM</div>
+      <div class="nav-title">4.3 - TensorRT-LLM</div>
     </a>
   </div>
 
   <div class="intro-card">
     <p>vLLM is the most widely deployed open-source LLM inference server. Released by UC Berkeley in 2023, it became the de-facto standard for self-hosted LLM serving by solving the KV Cache fragmentation problem that made all prior systems leave 60–80% of GPU memory wasted. It is the first thing most teams reach for, and understanding it well positions you to have credible conversations about when it is the right tool and when something else (TensorRT-LLM, Module 4.3) would serve better.</p>
-    <p>This module covers what vLLM actually does internally — its architecture, its two core innovations (Paged Attention and continuous batching), its key configuration parameters, and its limitations. By the end you should be able to explain vLLM accurately in a customer discovery call and know which questions to ask to determine whether it is the right fit.</p>
+    <p>This module covers what vLLM actually does internally - its architecture, its two core innovations (Paged Attention and continuous batching), its key configuration parameters, and its limitations. By the end you should be able to explain vLLM accurately in a customer discovery call and know which questions to ask to determine whether it is the right fit.</p>
   </div>
 
   <!-- Section 1: What vLLM is -->
@@ -179,15 +179,15 @@
     <div class="section-header" id="hdr1" onclick="toggle(1)">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">1</span>
-        What vLLM Is — The Full Architecture Stack
+        What vLLM Is - The Full Architecture Stack
       </div>
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>vLLM is an inference server — it sits between your application and the GPU, handling all the complexity of batching, KV Cache management, and scheduling so that the GPU stays utilised and requests are served efficiently. It exposes an OpenAI-compatible REST API, which is why most teams can swap from OpenAI to a self-hosted vLLM endpoint by changing one URL.</p>
+      <p>vLLM is an inference server - it sits between your application and the GPU, handling all the complexity of batching, KV Cache management, and scheduling so that the GPU stays utilised and requests are served efficiently. It exposes an OpenAI-compatible REST API, which is why most teams can swap from OpenAI to a self-hosted vLLM endpoint by changing one URL.</p>
 
       <div class="arch-wrap">
-        <div class="arch-title">vLLM internal architecture — request lifecycle</div>
+        <div class="arch-title">vLLM internal architecture - request lifecycle</div>
         <div class="arch-layer" style="background:rgba(123,31,162,0.25);">
           <div class="arch-layer-label" style="color:#CE93D8;">OpenAI-compatible API</div>
           <div class="arch-layer-desc">HTTP endpoint (/v1/chat/completions, /v1/completions). Accepts requests, streams tokens back. Drop-in replacement for OpenAI API in most SDKs.</div>
@@ -195,7 +195,7 @@
         <div class="arch-arrow-row">&#9660;</div>
         <div class="arch-layer" style="background:rgba(21,101,192,0.25);">
           <div class="arch-layer-label" style="color:#90CAF9;">LLM Engine / Scheduler</div>
-          <div class="arch-layer-desc">Core of vLLM. Runs continuous batching — decides each iteration which requests join the batch, which wait, which are preempted. Manages request priority and sequence groups.</div>
+          <div class="arch-layer-desc">Core of vLLM. Runs continuous batching - decides each iteration which requests join the batch, which wait, which are preempted. Manages request priority and sequence groups.</div>
         </div>
         <div class="arch-arrow-row">&#9660;</div>
         <div class="arch-layer" style="background:rgba(230,81,0,0.25);">
@@ -212,7 +212,7 @@
           <div class="arch-layer-label" style="color:#B0BEC5;">GPU / CUDA runtime</div>
           <div class="arch-layer-desc">NVIDIA GPU executing CUDA kernels. vLLM uses PyTorch for model execution and custom kernels (Flash Attention, Paged Attention) for attention computation.</div>
         </div>
-        <div class="arch-note">vLLM is Python-first with custom CUDA kernels for the performance-critical paths. This makes it highly readable and extensible — a key reason for its rapid community adoption — but also means it carries more Python overhead than TensorRT-LLM.</div>
+        <div class="arch-note">vLLM is Python-first with custom CUDA kernels for the performance-critical paths. This makes it highly readable and extensible - a key reason for its rapid community adoption - but also means it carries more Python overhead than TensorRT-LLM.</div>
       </div>
 
       <div class="callout callout-purple">
@@ -226,15 +226,15 @@
     <div class="section-header" id="hdr2" onclick="toggle(2)">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">2</span>
-        Paged Attention — vLLM's Core Innovation
+        Paged Attention - vLLM's Core Innovation
       </div>
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
     <div class="section-body" id="bdy2">
-      <p>Before vLLM, every inference system allocated KV Cache memory contiguously — one large pre-reserved block per request, sized for the maximum possible output length. A request with a 2,048-token max output reserved 2,048 tokens of KV Cache upfront, even if it only generated 50 tokens. The result: 60–80% of GPU memory sat wasted as internal fragmentation. Paged Attention solves this by managing KV Cache the same way an OS manages RAM — in fixed-size pages allocated on demand.</p>
+      <p>Before vLLM, every inference system allocated KV Cache memory contiguously - one large pre-reserved block per request, sized for the maximum possible output length. A request with a 2,048-token max output reserved 2,048 tokens of KV Cache upfront, even if it only generated 50 tokens. The result: 60–80% of GPU memory sat wasted as internal fragmentation. Paged Attention solves this by managing KV Cache the same way an OS manages RAM - in fixed-size pages allocated on demand.</p>
 
       <div class="pa-wrap">
-        <div class="pa-title">KV Cache memory allocation — naive vs Paged Attention</div>
+        <div class="pa-title">KV Cache memory allocation - naive vs Paged Attention</div>
         <div class="pa-controls">
           <button class="pa-btn" style="background:#546E7A; color:white;" onclick="showPA('naive')">Naive allocation</button>
           <button class="pa-btn" style="background:#7B1FA2; color:white;" onclick="showPA('paged')">Paged Attention</button>
@@ -253,10 +253,10 @@
       </div>
 
       <div class="callout callout-blue">
-        <strong>The OS analogy is exact:</strong> Paged Attention maps KV Cache pages to physical GPU memory blocks the same way an OS maps virtual memory pages to physical RAM. A logical sequence of tokens (the request's KV Cache) can occupy scattered, non-contiguous physical blocks. A block table (like a page table) maps logical token positions to physical block addresses. The GPU's attention kernels are rewritten to follow these indirections — which is the custom CUDA work vLLM ships that made this possible.
+        <strong>The OS analogy is exact:</strong> Paged Attention maps KV Cache pages to physical GPU memory blocks the same way an OS maps virtual memory pages to physical RAM. A logical sequence of tokens (the request's KV Cache) can occupy scattered, non-contiguous physical blocks. A block table (like a page table) maps logical token positions to physical block addresses. The GPU's attention kernels are rewritten to follow these indirections - which is the custom CUDA work vLLM ships that made this possible.
       </div>
 
-      <p>Paged Attention also enables two features that build on top of block-level management. <strong>Prefix caching:</strong> if two requests share a common prefix (e.g. the same system prompt), their KV Cache blocks for that prefix are identical — vLLM can reference the same physical blocks for both requests without duplicating data. A 4,000-token system prompt cached once and shared by 100 concurrent users reduces TTFT from ~1.8s to under 100ms for those users. <strong>Copy-on-write:</strong> beam search and parallel sampling need multiple sequence branches that share a prefix — vLLM shares blocks until a branch diverges, then copies only the diverging blocks, saving memory proportional to the shared prefix length.</p>
+      <p>Paged Attention also enables two features that build on top of block-level management. <strong>Prefix caching:</strong> if two requests share a common prefix (e.g. the same system prompt), their KV Cache blocks for that prefix are identical - vLLM can reference the same physical blocks for both requests without duplicating data. A 4,000-token system prompt cached once and shared by 100 concurrent users reduces TTFT from ~1.8s to under 100ms for those users. <strong>Copy-on-write:</strong> beam search and parallel sampling need multiple sequence branches that share a prefix - vLLM shares blocks until a branch diverges, then copies only the diverging blocks, saving memory proportional to the shared prefix length.</p>
     </div>
   </div>
 
@@ -265,15 +265,15 @@
     <div class="section-header" id="hdr3" onclick="toggle(3)">
       <div class="section-title">
         <span class="section-num" style="background:#00796B;">3</span>
-        Continuous Batching — Keeping the GPU Busy
+        Continuous Batching - Keeping the GPU Busy
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>Without continuous batching, requests are grouped into fixed batches that enter and exit together. A 5-request batch stays together even if request 1 finishes after 20 tokens and request 5 needs 500 tokens — the GPU idles waiting for the slowest request before accepting new work. Continuous batching (also called iteration-level scheduling) fixes this by making batching decisions at every single decode step.</p>
+      <p>Without continuous batching, requests are grouped into fixed batches that enter and exit together. A 5-request batch stays together even if request 1 finishes after 20 tokens and request 5 needs 500 tokens - the GPU idles waiting for the slowest request before accepting new work. Continuous batching (also called iteration-level scheduling) fixes this by making batching decisions at every single decode step.</p>
 
       <div class="cb-wrap">
-        <div class="cb-title">GPU slot utilisation — static vs continuous batching (8 GPU slots, 12 steps shown)</div>
+        <div class="cb-title">GPU slot utilisation - static vs continuous batching (8 GPU slots, 12 steps shown)</div>
         <div class="cb-timeline" id="cbTimeline"></div>
         <div class="cb-legend">
           <div class="cb-leg"><div class="cb-leg-color" style="background:#1565C0;"></div>Req A</div>
@@ -304,7 +304,7 @@
     <div class="section-header" id="hdr4" onclick="toggle(4)">
       <div class="section-title">
         <span class="section-num" style="background:#E65100;">4</span>
-        Key Configuration Parameters — What to Set and Why
+        Key Configuration Parameters - What to Set and Why
       </div>
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
@@ -334,7 +334,7 @@
       </div>
 
       <div class="callout callout-orange">
-        <strong>gpu-memory-utilisation is the most important parameter to get right:</strong> The default of 0.90 reserves 90% of GPU HBM for vLLM (weights + KV Cache). If other processes share the GPU, lower this. If OOM errors appear under load, lower this to 0.85 or 0.80. If the GPU has spare memory and you want more concurrent KV Cache capacity, raising to 0.95 is reasonable. Never go to 1.0 — CUDA itself needs headroom for its own allocations.
+        <strong>gpu-memory-utilisation is the most important parameter to get right:</strong> The default of 0.90 reserves 90% of GPU HBM for vLLM (weights + KV Cache). If other processes share the GPU, lower this. If OOM errors appear under load, lower this to 0.85 or 0.80. If the GPU has spare memory and you want more concurrent KV Cache capacity, raising to 0.95 is reasonable. Never go to 1.0 - CUDA itself needs headroom for its own allocations.
       </div>
     </div>
   </div>
@@ -344,7 +344,7 @@
     <div class="section-header" id="hdr5" onclick="toggle(5)">
       <div class="section-title">
         <span class="section-num" style="background:#546E7A;">5</span>
-        vLLM's Limitations — When TensorRT-LLM Wins
+        vLLM's Limitations - When TensorRT-LLM Wins
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
@@ -360,7 +360,7 @@
 
         <div style="background:#FFF3E0; border-radius:10px; padding:16px; border-left:3px solid #E65100;">
           <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#E65100; margin-bottom:6px;">Model compilation is build-time vs runtime</div>
-          <div style="font-size:13.5px; line-height:1.8; color:#333;">vLLM runs models via PyTorch (with optional torch.compile). TensorRT-LLM compiles models ahead of time into optimised TensorRT engines — fusing operations, selecting optimal kernels per GPU. The compilation step takes time (minutes to hours for large models) but produces faster inference. vLLM's easier startup is a feature in development contexts; in production at fixed scale, compilation pays off.</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">vLLM runs models via PyTorch (with optional torch.compile). TensorRT-LLM compiles models ahead of time into optimised TensorRT engines - fusing operations, selecting optimal kernels per GPU. The compilation step takes time (minutes to hours for large models) but produces faster inference. vLLM's easier startup is a feature in development contexts; in production at fixed scale, compilation pays off.</div>
         </div>
 
         <div style="background:#FFF3E0; border-radius:10px; padding:16px; border-left:3px solid #E65100;">
@@ -370,7 +370,7 @@
 
         <div style="background:#E8F5E9; border-radius:10px; padding:16px; border-left:3px solid #2E7D32;">
           <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; margin-bottom:6px;">Where vLLM clearly wins: model breadth and iteration speed</div>
-          <div style="font-size:13.5px; line-height:1.8; color:#333;">vLLM supports almost every open-weight model within days of release (Llama, Mistral, Qwen, Gemma, Phi, DeepSeek, and hundreds more). TensorRT-LLM takes longer to add new models — each needs a TRT-optimised implementation. If a customer is experimenting with multiple models, switching frequently, or using a less common architecture, vLLM is the right choice. Speed to deployment beats peak throughput efficiency for most teams.</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">vLLM supports almost every open-weight model within days of release (Llama, Mistral, Qwen, Gemma, Phi, DeepSeek, and hundreds more). TensorRT-LLM takes longer to add new models - each needs a TRT-optimised implementation. If a customer is experimenting with multiple models, switching frequently, or using a less common architecture, vLLM is the right choice. Speed to deployment beats peak throughput efficiency for most teams.</div>
         </div>
 
       </div>
@@ -394,14 +394,14 @@
       <div class="key-item">
         <div class="key-num" style="color:#7B1FA2;">01</div>
         <div>
-          <div class="key-title">Paged Attention eliminates KV Cache fragmentation — from 20–40% utilisation to near 100%</div>
-          <div class="key-desc">By managing KV Cache in fixed 16-token blocks allocated on demand (like OS virtual memory), vLLM eliminated the 60–80% GPU memory waste of naive contiguous allocation. This directly increases concurrency — more active requests per GPU — which is the primary driver of throughput improvement.</div>
+          <div class="key-title">Paged Attention eliminates KV Cache fragmentation - from 20–40% utilisation to near 100%</div>
+          <div class="key-desc">By managing KV Cache in fixed 16-token blocks allocated on demand (like OS virtual memory), vLLM eliminated the 60–80% GPU memory waste of naive contiguous allocation. This directly increases concurrency - more active requests per GPU - which is the primary driver of throughput improvement.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#1565C0;">02</div>
         <div>
-          <div class="key-title">Continuous batching keeps the GPU busy at every decode step — GPU slots never idle between requests</div>
+          <div class="key-title">Continuous batching keeps the GPU busy at every decode step - GPU slots never idle between requests</div>
           <div class="key-desc">The scheduler checks every decode iteration whether a finished request's slot can be filled with a new request. A request that finishes after 20 tokens immediately makes room for a waiting request, rather than holding its slot until the full static batch completes. Combined with Paged Attention, this is the source of the 5–10&#215; throughput improvement.</div>
         </div>
       </div>
@@ -415,7 +415,7 @@
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">04</div>
         <div>
-          <div class="key-title">vLLM is the right default — TensorRT-LLM wins only at the intersection of fixed model, high scale, and tight SLAs</div>
+          <div class="key-title">vLLM is the right default - TensorRT-LLM wins only at the intersection of fixed model, high scale, and tight SLAs</div>
           <div class="key-desc">Python overhead and runtime (vs compiled) execution mean vLLM leaves 20–40% throughput on the table vs TensorRT-LLM at peak load. But vLLM's model support breadth, faster startup, and lower operational complexity make it the right choice for the vast majority of deployments. Recommend TRT-LLM when the customer has definitively chosen their model and needs to squeeze maximum performance from fixed hardware.</div>
         </div>
       </div>
@@ -424,7 +424,7 @@
 
   <!-- Cheat sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 4.2 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 4.2 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">vLLM</div>
@@ -440,7 +440,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">gpu-memory-utilisation</div>
-        <div class="cheat-def">Key config param. Default 0.90 (90% of HBM for vLLM). Lower to 0.85 if OOM under load. Never set to 1.0 — CUDA needs headroom.</div>
+        <div class="cheat-def">Key config param. Default 0.90 (90% of HBM for vLLM). Lower to 0.85 if OOM under load. Never set to 1.0 - CUDA needs headroom.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">max-num-seqs</div>
@@ -468,19 +468,19 @@
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        The A100 80GB cannot run a 13B model — they need to use a smaller model or a larger GPU.
+        The A100 80GB cannot run a 13B model - they need to use a smaller model or a larger GPU.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        The model weights use 26GB but vLLM pre-allocates 90% of the 80GB GPU (72GB) for its memory pool at startup — of which 26GB goes to weights and the remaining 46GB to KV Cache blocks. With 20 concurrent users sending medium-length requests, the KV Cache fills the 46GB pool. The fix is not to reduce --gpu-memory-utilisation but instead to first check whether prefix caching is enabled (it reduces KV Cache pressure significantly if they have a shared system prompt), then consider reducing --max-num-seqs to cap concurrent sequences, and finally ensure --max-model-len is set to a realistic value rather than the model's maximum context window, which inflates block pre-allocation.
+        The model weights use 26GB but vLLM pre-allocates 90% of the 80GB GPU (72GB) for its memory pool at startup - of which 26GB goes to weights and the remaining 46GB to KV Cache blocks. With 20 concurrent users sending medium-length requests, the KV Cache fills the 46GB pool. The fix is not to reduce --gpu-memory-utilisation but instead to first check whether prefix caching is enabled (it reduces KV Cache pressure significantly if they have a shared system prompt), then consider reducing --max-num-seqs to cap concurrent sequences, and finally ensure --max-model-len is set to a realistic value rather than the model's maximum context window, which inflates block pre-allocation.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        vLLM's continuous batching is causing too many requests to run simultaneously — disable continuous batching and switch to static batching with a fixed batch size of 16.
+        vLLM's continuous batching is causing too many requests to run simultaneously - disable continuous batching and switch to static batching with a fixed batch size of 16.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        The OOM is caused by CUDA driver version incompatibility — they need to update their CUDA installation.
+        The OOM is caused by CUDA driver version incompatibility - they need to update their CUDA installation.
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
@@ -489,7 +489,7 @@
 
   <a href="module4_3.html" class="next-module">
     <div>
-      <div class="next-label">Up Next — Module 4.3</div>
+      <div class="next-label">Up Next - Module 4.3</div>
       <div class="next-title">TensorRT-LLM</div>
       <div class="next-sub">How TensorRT-LLM differs from vLLM, when its compiled engine approach wins, and what the deployment trade-offs look like in practice</div>
     </div>
@@ -521,21 +521,21 @@
       for(var i=24;i<31;i++)blocks[i]={req:'B',used:false};
       for(var i=31;i<37;i++)blocks[i]={req:'C',used:true};
       for(var i=37;i<41&&i<40;i++)blocks[i]={req:'C',used:false};
-      // blocks 40 onwards free — already null
-      label='Naive allocation — 40 blocks total, 4 active requests';
+      // blocks 40 onwards free - already null
+      label='Naive allocation - 40 blocks total, 4 active requests';
       note='Each request reserves a contiguous block sized for its maximum possible output length upfront. Actual usage shown in solid colour; reserved-but-unused shown in light grey. Result: ~38% of GPU memory wasted as internal fragmentation. When block 31 fills up, new requests are rejected even though most "allocated" memory is unused.';
     } else {
       // Paged: only actual blocks used, scattered
       var assignments=[
         {req:'A',idx:[0,3,7,11,15,19,23,27,31,35]},
-        {req:'B',idx:[1,5,9,13,17,21,25,29,33,37]}, // fewer — shorter output
+        {req:'B',idx:[1,5,9,13,17,21,25,29,33,37]}, // fewer - shorter output
         {req:'C',idx:[2,6,10,14,18]},
         {req:'D',idx:[4,8,12,16,20,24]}
       ];
       assignments[1].idx=assignments[1].idx.slice(0,8); // B only used 8
       assignments.forEach(function(a){a.idx.forEach(function(i){blocks[i]={req:a.req,used:true};});});
-      label='Paged Attention — same 40 blocks, same 4 active requests';
-      note='Blocks are allocated on demand and scattered across GPU memory. Each request only holds the blocks it actually needs — no reservation, no waste. Free blocks (white) remain available for new requests or growing KV Caches. Memory utilisation approaches 100%. New requests can be admitted as long as any free blocks exist.';
+      label='Paged Attention - same 40 blocks, same 4 active requests';
+      note='Blocks are allocated on demand and scattered across GPU memory. Each request only holds the blocks it actually needs - no reservation, no waste. Free blocks (white) remain available for new requests or growing KV Caches. Memory utilisation approaches 100%. New requests can be admitted as long as any free blocks exist.';
     }
     var html='';
     for(var i=0;i<40;i++){
@@ -558,7 +558,7 @@
     var rows=[];
     var note='';
     if(mode==='static'){
-      // Batch 1: A,B,C,D — A finishes at step 4, but slots held until step 8 (batch end). Batch 2 starts step 9.
+      // Batch 1: A,B,C,D - A finishes at step 4, but slots held until step 8 (batch end). Batch 2 starts step 9.
       for(var step=1;step<=12;step++){
         var slots=[];
         if(step<=8){
@@ -616,14 +616,14 @@
         }
         rows.push({step:step,slots:slots});
       }
-      note='Continuous batching: when Request A finishes at step 4, its slot immediately admits Request E at step 5 — no waiting. Slots fill as soon as they open. GPU utilisation approaches 100% as long as there are queued requests. The scheduler checks every single decode step, not just at batch boundaries.';
+      note='Continuous batching: when Request A finishes at step 4, its slot immediately admits Request E at step 5 - no waiting. Slots fill as soon as they open. GPU utilisation approaches 100% as long as there are queued requests. The scheduler checks every single decode step, not just at batch boundaries.';
     }
 
     var html='';
     rows.forEach(function(row){
       html+='<div class="cb-row"><div class="cb-label">Step '+row.step+'</div><div class="cb-slots">';
       row.slots.forEach(function(slot){
-        if(slot.idle&&slot.held){html+='<div class="cb-slot" style="background:#CFD8DC;" title="Held idle — static batch waiting"></div>';}
+        if(slot.idle&&slot.held){html+='<div class="cb-slot" style="background:#CFD8DC;" title="Held idle - static batch waiting"></div>';}
         else if(slot.idle){html+='<div class="cb-slot" style="background:#ECEFF1; border:1px solid #CFD8DC;" title="Idle"></div>';}
         else{html+='<div class="cb-slot" style="background:'+reqColList[slot.req]+';" title="Req '+reqNames[slot.req]+'">'+reqNames[slot.req]+'</div>';}
       });
@@ -642,91 +642,91 @@
         {p:'--gpu-memory-utilisation',v:'0.90',w:'Default. Leaves headroom for CUDA allocations.'},
         {p:'--max-model-len',v:'4096',w:'Cap context to realistic chat length. Saves block pre-allocation memory.'},
         {p:'--max-num-seqs',v:'128',w:'Moderate concurrency cap. Keeps KV Cache pressure manageable.'},
-        {p:'--enable-prefix-caching',v:'(flag)',w:'Enable if system prompts are reused — drops TTFT dramatically for repeat users.'},
+        {p:'--enable-prefix-caching',v:'(flag)',w:'Enable if system prompts are reused - drops TTFT dramatically for repeat users.'},
         {p:'--dtype',v:'bfloat16',w:'BF16 on A100. FP8 requires H100+.'},
       ],
       h100:[
         {p:'--model',v:'meta-llama/Llama-3-8B-Instruct',w:'8B model. H100 headroom allows larger batch sizes.'},
         {p:'--gpu-memory-utilisation',v:'0.90',w:'Default. H100 HBM3 gives more absolute memory than A100.'},
         {p:'--max-model-len',v:'8192',w:'H100 bandwidth handles longer contexts at acceptable TPOT.'},
-        {p:'--max-num-seqs',v:'256',w:'Higher concurrency — H100 can sustain larger batches.'},
-        {p:'--enable-prefix-caching',v:'(flag)',w:'Always enable for chat — system prompt reuse is common.'},
+        {p:'--max-num-seqs',v:'256',w:'Higher concurrency - H100 can sustain larger batches.'},
+        {p:'--enable-prefix-caching',v:'(flag)',w:'Always enable for chat - system prompt reuse is common.'},
         {p:'--dtype',v:'float8_e4m3fn',w:'Native FP8 on H100 via Transformer Engine. Enable with --quantisation fp8.'},
       ],
       h200:[
         {p:'--model',v:'meta-llama/Llama-3-70B-Instruct',w:'141GB HBM allows 70B at BF16 (~140GB) on a single GPU.'},
-        {p:'--gpu-memory-utilisation',v:'0.92',w:'H200 has more total HBM — can push slightly higher.'},
+        {p:'--gpu-memory-utilisation',v:'0.92',w:'H200 has more total HBM - can push slightly higher.'},
         {p:'--max-model-len',v:'8192',w:'70B model; balance context length against KV Cache per request.'},
-        {p:'--max-num-seqs',v:'128',w:'70B needs more KV Cache per request — lower concurrency cap.'},
-        {p:'--enable-prefix-caching',v:'(flag)',w:'Critical for 70B — shared system prompts save disproportionately large KV blocks.'},
+        {p:'--max-num-seqs',v:'128',w:'70B needs more KV Cache per request - lower concurrency cap.'},
+        {p:'--enable-prefix-caching',v:'(flag)',w:'Critical for 70B - shared system prompts save disproportionately large KV blocks.'},
         {p:'--dtype',v:'float8_e4m3fn',w:'FP8 on H200 (same Hopper architecture as H100).'},
       ],
     },
     rag:{
       a100:[
         {p:'--model',v:'meta-llama/Llama-3-13B-Instruct',w:'13B balances quality and memory on A100 80GB.'},
-        {p:'--gpu-memory-utilisation',v:'0.88',w:'Lower slightly — RAG requests carry large KV Caches from long prompts.'},
-        {p:'--max-model-len',v:'8192',w:'RAG prompts include retrieved docs — need longer context window.'},
-        {p:'--max-num-seqs',v:'64',w:'Lower concurrency — each request holds more KV blocks (long prompts).'},
-        {p:'--enable-prefix-caching',v:'(flag — critical)',w:'If retrieved docs share any prefix, caching dramatically reduces KV pressure.'},
+        {p:'--gpu-memory-utilisation',v:'0.88',w:'Lower slightly - RAG requests carry large KV Caches from long prompts.'},
+        {p:'--max-model-len',v:'8192',w:'RAG prompts include retrieved docs - need longer context window.'},
+        {p:'--max-num-seqs',v:'64',w:'Lower concurrency - each request holds more KV blocks (long prompts).'},
+        {p:'--enable-prefix-caching',v:'(flag - critical)',w:'If retrieved docs share any prefix, caching dramatically reduces KV pressure.'},
         {p:'--dtype',v:'bfloat16',w:'BF16 on A100.'},
       ],
       h100:[
-        {p:'--model',v:'meta-llama/Llama-3-70B-Instruct',w:'RAG quality scales with model size — 70B on 2&#215; H100 with TP=2.'},
-        {p:'--tensor-parallel-size',v:'2',w:'70B at BF16 = ~140GB — split across 2&#215; H100 80GB with TP=2.'},
+        {p:'--model',v:'meta-llama/Llama-3-70B-Instruct',w:'RAG quality scales with model size - 70B on 2&#215; H100 with TP=2.'},
+        {p:'--tensor-parallel-size',v:'2',w:'70B at BF16 = ~140GB - split across 2&#215; H100 80GB with TP=2.'},
         {p:'--gpu-memory-utilisation',v:'0.88',w:'Long RAG prompts = large KV per request. Give slightly more headroom.'},
         {p:'--max-model-len',v:'16384',w:'H100 handles 16k context for RAG with multi-document retrieval.'},
         {p:'--max-num-seqs',v:'32',w:'Long prompts + TP=2 = more memory pressure per request.'},
-        {p:'--enable-prefix-caching',v:'(flag — critical)',w:'Enable for RAG. Retrieved document caching cuts TTFT by 70–90% for repeat queries.'},
+        {p:'--enable-prefix-caching',v:'(flag - critical)',w:'Enable for RAG. Retrieved document caching cuts TTFT by 70–90% for repeat queries.'},
       ],
       h200:[
-        {p:'--model',v:'meta-llama/Llama-3-70B-Instruct',w:'70B fits on single H200 (141GB). No TP needed — simplifies deployment.'},
+        {p:'--model',v:'meta-llama/Llama-3-70B-Instruct',w:'70B fits on single H200 (141GB). No TP needed - simplifies deployment.'},
         {p:'--gpu-memory-utilisation',v:'0.90',w:'Single GPU deployment. 141GB gives ample KV Cache capacity.'},
         {p:'--max-model-len',v:'32768',w:'H200 bandwidth handles 32k context for large document RAG.'},
         {p:'--max-num-seqs',v:'64',w:'Single-GPU 70B can sustain more concurrent RAG requests than TP=2.'},
         {p:'--enable-prefix-caching',v:'(flag)',w:'Enable. H200 single-GPU prefix cache is more efficient than split-GPU.'},
-        {p:'--dtype',v:'float8_e4m3fn',w:'FP8 on H200. 70B at FP8 ~= 70GB — leaves ~65GB for KV Cache.'},
+        {p:'--dtype',v:'float8_e4m3fn',w:'FP8 on H200. 70B at FP8 ~= 70GB - leaves ~65GB for KV Cache.'},
       ],
     },
     code:{
       a100:[
         {p:'--model',v:'deepseek-ai/DeepSeek-Coder-33B-Instruct',w:'33B code model. Fits on A100 80GB at INT8 (~33GB) or BF16 requires 2&#215; GPU.'},
-        {p:'--gpu-memory-utilisation',v:'0.85',w:'Code generation produces long outputs — KV Cache grows large per request.'},
+        {p:'--gpu-memory-utilisation',v:'0.85',w:'Code generation produces long outputs - KV Cache grows large per request.'},
         {p:'--max-model-len',v:'16384',w:'Code context windows are often long (repo-level code, long functions).'},
         {p:'--max-num-seqs',v:'32',w:'Long outputs mean KV Cache stays allocated for longer per request.'},
-        {p:'--enable-prefix-caching',v:'(flag)',w:'Enable for code — repeated file headers or boilerplate prompts cache well.'},
-        {p:'--dtype',v:'bfloat16',w:'Code generation is quality-sensitive — BF16 over INT8 unless memory forces it.'},
+        {p:'--enable-prefix-caching',v:'(flag)',w:'Enable for code - repeated file headers or boilerplate prompts cache well.'},
+        {p:'--dtype',v:'bfloat16',w:'Code generation is quality-sensitive - BF16 over INT8 unless memory forces it.'},
       ],
       h100:[
-        {p:'--model',v:'deepseek-ai/DeepSeek-Coder-V2-Instruct',w:'MoE architecture — 236B total params, ~21B active. H100 handles this well.'},
+        {p:'--model',v:'deepseek-ai/DeepSeek-Coder-V2-Instruct',w:'MoE architecture - 236B total params, ~21B active. H100 handles this well.'},
         {p:'--gpu-memory-utilisation',v:'0.88',w:'MoE models have large weight footprint but lower active memory per token.'},
         {p:'--max-model-len',v:'32768',w:'Code generation benefits from large context for repo-level understanding.'},
-        {p:'--max-num-seqs',v:'32',w:'Long code outputs — keep concurrency moderate to avoid KV OOM.'},
-        {p:'--enable-prefix-caching',v:'(flag)',w:'Enable for code — system prompts with repo context cache effectively.'},
+        {p:'--max-num-seqs',v:'32',w:'Long code outputs - keep concurrency moderate to avoid KV OOM.'},
+        {p:'--enable-prefix-caching',v:'(flag)',w:'Enable for code - system prompts with repo context cache effectively.'},
         {p:'--tensor-parallel-size',v:'4',w:'Large MoE model benefits from TP=4 on H100 NVLink cluster.'},
       ],
       h200:[
-        {p:'--model',v:'deepseek-ai/DeepSeek-Coder-V2-Instruct',w:'MoE model fits more comfortably on H200 — more KV Cache headroom.'},
+        {p:'--model',v:'deepseek-ai/DeepSeek-Coder-V2-Instruct',w:'MoE model fits more comfortably on H200 - more KV Cache headroom.'},
         {p:'--gpu-memory-utilisation',v:'0.90',w:'H200 141GB per GPU gives generous KV Cache budget.'},
-        {p:'--max-model-len',v:'65536',w:'H200 enables 64k context — full repository-level code understanding.'},
-        {p:'--max-num-seqs',v:'48',w:'More KV Cache budget per request on H200 — can sustain more concurrent users.'},
+        {p:'--max-model-len',v:'65536',w:'H200 enables 64k context - full repository-level code understanding.'},
+        {p:'--max-num-seqs',v:'48',w:'More KV Cache budget per request on H200 - can sustain more concurrent users.'},
         {p:'--enable-prefix-caching',v:'(flag)',w:'Enable. Large code contexts with shared repo prefixes benefit greatly.'},
-        {p:'--dtype',v:'float8_e4m3fn',w:'FP8 on H200 for throughput. MoE active weight set is smaller — quality impact minimal.'},
+        {p:'--dtype',v:'float8_e4m3fn',w:'FP8 on H200 for throughput. MoE active weight set is smaller - quality impact minimal.'},
       ],
     },
     batch:{
       a100:[
-        {p:'--model',v:'meta-llama/Llama-3-70B-Instruct',w:'Batch jobs prioritise quality — use largest model that fits.'},
+        {p:'--model',v:'meta-llama/Llama-3-70B-Instruct',w:'Batch jobs prioritise quality - use largest model that fits.'},
         {p:'--tensor-parallel-size',v:'2',w:'70B at BF16 across 2&#215; A100 80GB.'},
-        {p:'--gpu-memory-utilisation',v:'0.92',w:'Batch jobs can push memory harder — no real-time users to protect.'},
+        {p:'--gpu-memory-utilisation',v:'0.92',w:'Batch jobs can push memory harder - no real-time users to protect.'},
         {p:'--max-model-len',v:'4096',w:'Batch documents are typically bounded. Set a realistic cap.'},
         {p:'--max-num-seqs',v:'512',w:'Batch: maximise concurrency for throughput. Memory limits will bind first.'},
-        {p:'Note',v:'Consider offline inference API',w:'vllm.LLM() with generate() — bypasses HTTP overhead for pure batch workloads.'},
+        {p:'Note',v:'Consider offline inference API',w:'vllm.LLM() with generate() - bypasses HTTP overhead for pure batch workloads.'},
       ],
       h100:[
         {p:'--model',v:'meta-llama/Llama-3-70B-Instruct',w:'70B on 2&#215; H100 with TP=2. H100 throughput makes batch economical.'},
         {p:'--tensor-parallel-size',v:'2',w:'TP=2 for 70B on H100 80GB pair.'},
-        {p:'--gpu-memory-utilisation',v:'0.93',w:'Batch can push higher — consistent load, no latency SLA.'},
+        {p:'--gpu-memory-utilisation',v:'0.93',w:'Batch can push higher - consistent load, no latency SLA.'},
         {p:'--max-num-seqs',v:'1024',w:'Maximise batch size. Let memory limits be the binding constraint.'},
         {p:'--enable-chunked-prefill',v:'(flag)',w:'Enable for long-context batch jobs. Breaks large Prefills into chunks to prevent head-of-line blocking within a batch.'},
         {p:'Note',v:'Consider TensorRT-LLM instead',w:'For pure batch at H100 scale, TRT-LLM compiled engine delivers 20–40% more throughput.'},
@@ -734,8 +734,8 @@
       h200:[
         {p:'--model',v:'meta-llama/Llama-3-405B-Instruct',w:'405B at FP8 (~405GB) fits on 4&#215; H200 (4&#215;141GB = 564GB) with TP=4.'},
         {p:'--tensor-parallel-size',v:'4',w:'405B at FP8 across 4&#215; H200.'},
-        {p:'--gpu-memory-utilisation',v:'0.92',w:'Large model — balance memory between weights and KV Cache.'},
-        {p:'--max-num-seqs',v:'256',w:'405B model needs more memory per request — lower absolute concurrency.'},
+        {p:'--gpu-memory-utilisation',v:'0.92',w:'Large model - balance memory between weights and KV Cache.'},
+        {p:'--max-num-seqs',v:'256',w:'405B model needs more memory per request - lower absolute concurrency.'},
         {p:'--dtype',v:'float8_e4m3fn',w:'FP8 mandatory at this scale. 405B at BF16 = ~810GB, exceeds 4&#215; H200 capacity.'},
         {p:'Note',v:'Consider TensorRT-LLM instead',w:'405B batch at H200 scale: TRT-LLM compiled engine is the production recommendation for maximum throughput.'},
       ],
@@ -773,10 +773,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct — this is one of the most common vLLM support questions.</strong> The confusion arises because people look at model weight memory (26GB) and available GPU memory (80GB) and see 54GB of apparent headroom. But vLLM pre-allocates its entire memory pool at startup. With the default <code>--gpu-memory-utilisation 0.90</code>, vLLM claims 72GB total. After weights (26GB), 46GB goes into the KV Cache block pool. With 20 concurrent users sending medium-length requests, each KV Cache can easily consume 2–3GB — 20 users at 2.5GB each = 50GB, which exceeds the 46GB pool. The right sequence of fixes: (1) enable prefix caching if there is a shared system prompt — this often cuts KV pressure by 50–90%; (2) set <code>--max-model-len</code> to a realistic value (e.g. 4096 instead of the model max of 32768) — this reduces how many blocks vLLM pre-allocates per potential sequence; (3) reduce <code>--max-num-seqs</code> from 256 (default) to something like 32 to explicitly cap concurrent sequences. Reducing <code>--gpu-memory-utilisation</code> would make the problem worse, not better — it would shrink the KV Cache pool further. Option A is wrong — 13B at BF16 is ~26GB, well within 80GB. Option C is wrong — continuous batching improves memory utilisation, removing it would hurt throughput without fixing OOM. Option D is a possible cause but not the most likely given the symptom is load-dependent OOM rather than startup failure.';
+      r.innerHTML='<strong>Correct - this is one of the most common vLLM support questions.</strong> The confusion arises because people look at model weight memory (26GB) and available GPU memory (80GB) and see 54GB of apparent headroom. But vLLM pre-allocates its entire memory pool at startup. With the default <code>--gpu-memory-utilisation 0.90</code>, vLLM claims 72GB total. After weights (26GB), 46GB goes into the KV Cache block pool. With 20 concurrent users sending medium-length requests, each KV Cache can easily consume 2–3GB - 20 users at 2.5GB each = 50GB, which exceeds the 46GB pool. The right sequence of fixes: (1) enable prefix caching if there is a shared system prompt - this often cuts KV pressure by 50–90%; (2) set <code>--max-model-len</code> to a realistic value (e.g. 4096 instead of the model max of 32768) - this reduces how many blocks vLLM pre-allocates per potential sequence; (3) reduce <code>--max-num-seqs</code> from 256 (default) to something like 32 to explicitly cap concurrent sequences. Reducing <code>--gpu-memory-utilisation</code> would make the problem worse, not better - it would shrink the KV Cache pool further. Option A is wrong - 13B at BF16 is ~26GB, well within 80GB. Option C is wrong - continuous batching improves memory utilisation, removing it would hurt throughput without fixing OOM. Option D is a possible cause but not the most likely given the symptom is load-dependent OOM rather than startup failure.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The key insight is that vLLM pre-allocates 90% of GPU memory at startup (72GB of 80GB). After weights (26GB), only 46GB remains for KV Cache blocks. With 20 concurrent users, KV Cache fills this pool — even though the GPU has 54GB of apparent "free" memory from the model weight perspective. Option A is wrong (13B fits in 80GB). Option C is wrong (disabling continuous batching makes things worse). Option D is a red herring — CUDA incompatibility causes startup failures, not load-dependent OOM.';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The key insight is that vLLM pre-allocates 90% of GPU memory at startup (72GB of 80GB). After weights (26GB), only 46GB remains for KV Cache blocks. With 20 concurrent users, KV Cache fills this pool - even though the GPU has 54GB of apparent "free" memory from the model weight perspective. Option A is wrong (13B fits in 80GB). Option C is wrong (disabling continuous batching makes things worse). Option D is a red herring - CUDA incompatibility causes startup failures, not load-dependent OOM.';
     }
     document.getElementById('check-btn').style.display='none';
   }

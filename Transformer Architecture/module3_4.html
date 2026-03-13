@@ -169,7 +169,7 @@
   <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 3 · MODULE 3.4</div>
     <h1>Tensor &amp; Pipeline Parallelism</h1>
-    <p>How to split a model that is too large — or too slow — for a single GPU across multiple GPUs, and the distinct trade-offs of cutting along different dimensions.</p>
+    <p>How to split a model that is too large - or too slow - for a single GPU across multiple GPUs, and the distinct trade-offs of cutting along different dimensions.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -179,17 +179,17 @@
   <div class="nav-bar">
     <a href="module3_3.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">3.3 — Quantisation</div>
+      <div class="nav-title">3.3 - Quantisation</div>
     </a>
     <a href="module3_5.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">3.5 — Speculative Decoding</div>
+      <div class="nav-title">3.5 - Speculative Decoding</div>
     </a>
   </div>
 
   <div class="intro-card">
-    <p>A 405B parameter model in FP16 requires about 810GB of memory — far beyond any single GPU. Even a 70B model at FP16 needs 140GB, which requires two A100 80GB GPUs. Parallelism is how the inference stack spreads a model across multiple GPUs to make large models feasible — and to make smaller models faster by letting multiple GPUs work simultaneously.</p>
-    <p>There are two primary strategies. Tensor Parallelism splits the work <em>within</em> each layer — every GPU processes part of every forward pass together. Pipeline Parallelism splits the model <em>across</em> layers — each GPU owns a block of consecutive layers and passes activations to the next. Each has different communication costs, latency characteristics, and sweet spots. Most production deployments use both.</p>
+    <p>A 405B parameter model in FP16 requires about 810GB of memory - far beyond any single GPU. Even a 70B model at FP16 needs 140GB, which requires two A100 80GB GPUs. Parallelism is how the inference stack spreads a model across multiple GPUs to make large models feasible - and to make smaller models faster by letting multiple GPUs work simultaneously.</p>
+    <p>There are two primary strategies. Tensor Parallelism splits the work <em>within</em> each layer - every GPU processes part of every forward pass together. Pipeline Parallelism splits the model <em>across</em> layers - each GPU owns a block of consecutive layers and passes activations to the next. Each has different communication costs, latency characteristics, and sweet spots. Most production deployments use both.</p>
   </div>
 
   <!-- Section 1: Why parallelism -->
@@ -197,7 +197,7 @@
     <div class="section-header" id="hdr1" onclick="toggle(1)">
       <div class="section-title">
         <span class="section-num" style="background:#00796B;">1</span>
-        Why Parallelism — Two Reasons to Spread Across GPUs
+        Why Parallelism - Two Reasons to Spread Across GPUs
       </div>
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
@@ -206,14 +206,14 @@
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
         <div style="background:#FFEBEE; border-radius:10px; padding:18px; border-left:3px solid #C62828;">
-          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#C62828; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Reason 1 — Model does not fit</div>
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#C62828; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Reason 1 - Model does not fit</div>
           <div style="font-size:14px; line-height:1.8; color:#333; margin-bottom:10px;">The model weights alone exceed single-GPU memory. A 70B FP16 model (140GB) cannot fit on one A100 (80GB). You must distribute the weights.</div>
           <div style="font-size:12.5px; font-family:Arial,sans-serif; color:#555; background:rgba(198,40,40,0.08); border-radius:6px; padding:8px 10px; line-height:1.6;">
-            <strong>Primary solution:</strong> Tensor Parallelism — each GPU holds a shard of every weight matrix.
+            <strong>Primary solution:</strong> Tensor Parallelism - each GPU holds a shard of every weight matrix.
           </div>
         </div>
         <div style="background:#E8F5E9; border-radius:10px; padding:18px; border-left:3px solid #2E7D32;">
-          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Reason 2 — Model is too slow</div>
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Reason 2 - Model is too slow</div>
           <div style="font-size:14px; line-height:1.8; color:#333; margin-bottom:10px;">The model fits on one GPU but latency is too high. You want multiple GPUs to share the compute burden so each forward pass completes faster.</div>
           <div style="font-size:12.5px; font-family:Arial,sans-serif; color:#555; background:rgba(46,125,50,0.08); border-radius:6px; padding:8px 10px; line-height:1.6;">
             <strong>Primary solution:</strong> Tensor Parallelism within a node (fast interconnect required).
@@ -222,7 +222,7 @@
       </div>
 
       <div class="callout callout-teal">
-        <strong>The third reason — more throughput:</strong> Even when a model fits and latency is acceptable on one GPU, spreading across more GPUs multiplies throughput — more concurrent requests can be served. This is data parallelism: running multiple independent copies of the model on separate GPU groups, each serving different requests. This is how production clusters at scale work — many parallel model replicas behind a load balancer.
+        <strong>The third reason - more throughput:</strong> Even when a model fits and latency is acceptable on one GPU, spreading across more GPUs multiplies throughput - more concurrent requests can be served. This is data parallelism: running multiple independent copies of the model on separate GPU groups, each serving different requests. This is how production clusters at scale work - many parallel model replicas behind a load balancer.
       </div>
     </div>
   </div>
@@ -232,15 +232,15 @@
     <div class="section-header" id="hdr2" onclick="toggle(2)">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">2</span>
-        Tensor Parallelism — Splitting Within Each Layer
+        Tensor Parallelism - Splitting Within Each Layer
       </div>
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
     <div class="section-body" id="bdy2">
-      <p>Tensor Parallelism (TP) splits each weight matrix in a layer across multiple GPUs. During a forward pass, every GPU simultaneously computes its portion of the output, then they communicate their partial results to assemble the full answer. This happens at every single layer — the GPUs work together in lock-step on every token.</p>
+      <p>Tensor Parallelism (TP) splits each weight matrix in a layer across multiple GPUs. During a forward pass, every GPU simultaneously computes its portion of the output, then they communicate their partial results to assemble the full answer. This happens at every single layer - the GPUs work together in lock-step on every token.</p>
 
       <div class="tp-wrap">
-        <div class="tp-title">Tensor parallelism — attention layer split across 4 GPUs</div>
+        <div class="tp-title">Tensor parallelism - attention layer split across 4 GPUs</div>
 
         <div class="tp-row">
           <div class="tp-label" style="font-size:11px; opacity:0.5;">Input tokens</div>
@@ -264,39 +264,39 @@
           <div class="tp-gpu" style="background:#2E7D32;">GPU 2<br><span style="opacity:0.7; font-size:10px;">Cols 8192–12287</span></div>
           <div class="tp-gpu" style="background:#C62828;">GPU 3<br><span style="opacity:0.7; font-size:10px;">Cols 12288–16383</span></div>
         </div>
-        <div style="text-align:center; opacity:0.4; margin:6px 0; font-size:14px;">&#9660; AllReduce — all GPUs synchronise partial results &#9660;</div>
+        <div style="text-align:center; opacity:0.4; margin:6px 0; font-size:14px;">&#9660; AllReduce - all GPUs synchronise partial results &#9660;</div>
 
         <div class="tp-row">
           <div class="tp-label" style="font-size:11px; opacity:0.5;">Output</div>
           <div style="flex:1; background:rgba(255,255,255,0.08); border-radius:6px; padding:8px 10px; text-align:center; font-size:12px; font-weight:bold;">Full layer output (assembled from all GPU contributions)</div>
         </div>
 
-        <div class="tp-note">Every GPU participates in every forward pass. Communication (AllReduce) happens at the end of each layer — both attention and FFN. With 4 GPUs, each GPU holds 1/4 of each weight matrix. The memory requirement per GPU drops proportionally.</div>
+        <div class="tp-note">Every GPU participates in every forward pass. Communication (AllReduce) happens at the end of each layer - both attention and FFN. With 4 GPUs, each GPU holds 1/4 of each weight matrix. The memory requirement per GPU drops proportionally.</div>
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; font-family:Arial,sans-serif; font-size:13px;">
         <div style="background:#E3F2FD; border-radius:8px; padding:14px;">
           <div style="font-weight:bold; color:#1565C0; margin-bottom:8px;">TP Advantages</div>
           <div style="color:#333; line-height:1.8;">
-            Latency scales with GPU count — faster forward pass per token<br>
+            Latency scales with GPU count - faster forward pass per token<br>
             Memory distributed proportionally<br>
-            All GPUs busy every step — no idle time<br>
+            All GPUs busy every step - no idle time<br>
             Natural fit for NVLink-connected nodes
           </div>
         </div>
         <div style="background:#FFEBEE; border-radius:8px; padding:14px;">
           <div style="font-weight:bold; color:#C62828; margin-bottom:8px;">TP Limitations</div>
           <div style="color:#333; line-height:1.8;">
-            AllReduce every layer — requires very fast interconnect (NVLink)<br>
+            AllReduce every layer - requires very fast interconnect (NVLink)<br>
             Across nodes (PCIe/InfiniBand): communication overhead dominates<br>
             Diminishing returns above TP=8<br>
-            All GPUs must be synchronised — one slow GPU stalls all
+            All GPUs must be synchronised - one slow GPU stalls all
           </div>
         </div>
       </div>
 
       <div class="callout callout-blue">
-        <strong>The NVLink requirement:</strong> Tensor Parallelism only makes economic sense within a node where GPUs are connected via NVLink (~600 GB/s bidirectional). Across nodes via InfiniBand (~400 Gb/s = ~50 GB/s), the AllReduce communication overhead at every layer makes TP impractical — the network latency between layers adds up to hundreds of milliseconds per token. This is why TP degree is almost always equal to the number of GPUs per node (typically 8).
+        <strong>The NVLink requirement:</strong> Tensor Parallelism only makes economic sense within a node where GPUs are connected via NVLink (~600 GB/s bidirectional). Across nodes via InfiniBand (~400 Gb/s = ~50 GB/s), the AllReduce communication overhead at every layer makes TP impractical - the network latency between layers adds up to hundreds of milliseconds per token. This is why TP degree is almost always equal to the number of GPUs per node (typically 8).
       </div>
     </div>
   </div>
@@ -306,15 +306,15 @@
     <div class="section-header" id="hdr3" onclick="toggle(3)">
       <div class="section-title">
         <span class="section-num" style="background:#E65100;">3</span>
-        Pipeline Parallelism — Splitting Across Layers
+        Pipeline Parallelism - Splitting Across Layers
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>Pipeline Parallelism (PP) divides the model's layers into consecutive stages, with each stage running on a separate GPU or node. GPU 0 processes layers 1–20, GPU 1 processes layers 21–40, and so on. After GPU 0 finishes its layers, it passes the activations to GPU 1 and can immediately begin processing the next request's layers — like an assembly line.</p>
+      <p>Pipeline Parallelism (PP) divides the model's layers into consecutive stages, with each stage running on a separate GPU or node. GPU 0 processes layers 1–20, GPU 1 processes layers 21–40, and so on. After GPU 0 finishes its layers, it passes the activations to GPU 1 and can immediately begin processing the next request's layers - like an assembly line.</p>
 
       <div class="pp-wrap">
-        <div class="pp-title">Pipeline parallelism — 80-layer model split across 4 GPUs</div>
+        <div class="pp-title">Pipeline parallelism - 80-layer model split across 4 GPUs</div>
         <div class="pp-pipeline">
           <div class="pp-stage" style="background:#1565C0;">
             <div class="pp-gpu-label">GPU 0</div>
@@ -343,12 +343,12 @@
           <span>GPU 3 outputs token</span>
         </div>
         <div style="font-size:13px; color:#555; line-height:1.7; background:white; padding:10px 12px; border-radius:6px;">
-          Each GPU holds only its own layers — no weight matrix needs to span GPUs. Communication is only the activation tensor between stages (~small compared to weight matrices). This makes PP suitable for across-node deployments where interconnect is slower.
+          Each GPU holds only its own layers - no weight matrix needs to span GPUs. Communication is only the activation tensor between stages (~small compared to weight matrices). This makes PP suitable for across-node deployments where interconnect is slower.
         </div>
       </div>
 
       <div class="callout callout-orange">
-        <strong>The pipeline bubble — PP's key limitation:</strong> When processing a single request, only one GPU is active at any time — the others wait. GPU 1 cannot start until GPU 0 finishes. GPU 2 cannot start until GPU 1 finishes. This idle time is called the pipeline bubble. With 4 GPUs and one request, 75% of GPU time is wasted. The bubble shrinks as batch size grows (more microbatches keep all stages busy), but for low-latency single-request scenarios, PP adds significant latency overhead.
+        <strong>The pipeline bubble - PP's key limitation:</strong> When processing a single request, only one GPU is active at any time - the others wait. GPU 1 cannot start until GPU 0 finishes. GPU 2 cannot start until GPU 1 finishes. This idle time is called the pipeline bubble. With 4 GPUs and one request, 75% of GPU time is wasted. The bubble shrinks as batch size grows (more microbatches keep all stages busy), but for low-latency single-request scenarios, PP adds significant latency overhead.
       </div>
     </div>
   </div>
@@ -358,7 +358,7 @@
     <div class="section-header" id="hdr4" onclick="toggle(4)">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">4</span>
-        The Pipeline Bubble — Interactive Visualisation
+        The Pipeline Bubble - Interactive Visualisation
       </div>
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
@@ -366,7 +366,7 @@
       <p>The pipeline bubble is the idle time each GPU experiences while waiting for its upstream stage to complete. Click between batch sizes to see how microbatching fills the bubble and improves GPU utilisation:</p>
 
       <div class="bubble-wrap">
-        <div class="bubble-title">Pipeline bubble — 4 GPUs, time flows right</div>
+        <div class="bubble-title">Pipeline bubble - 4 GPUs, time flows right</div>
         <div class="bubble-controls">
           <button class="bubble-btn" style="background:#C62828; color:white;" onclick="showBubble(1)">Batch size 1</button>
           <button class="bubble-btn" style="background:#E65100; color:white;" onclick="showBubble(2)">Batch size 2</button>
@@ -384,7 +384,7 @@
       </div>
 
       <div class="callout callout-purple">
-        <strong>Micro-batching — the standard mitigation:</strong> Instead of waiting for one request to flow through the entire pipeline before starting the next, micro-batching splits a batch into smaller chunks. GPU 0 processes micro-batch 2 while GPU 1 processes micro-batch 1 — keeping all stages busy most of the time. With enough micro-batches, the bubble becomes a small fraction of total time. This is how GPipe and Megatron-LM handle pipeline parallelism in practice.
+        <strong>Micro-batching - the standard mitigation:</strong> Instead of waiting for one request to flow through the entire pipeline before starting the next, micro-batching splits a batch into smaller chunks. GPU 0 processes micro-batch 2 while GPU 1 processes micro-batch 1 - keeping all stages busy most of the time. With enough micro-batches, the bubble becomes a small fraction of total time. This is how GPipe and Megatron-LM handle pipeline parallelism in practice.
       </div>
     </div>
   </div>
@@ -394,7 +394,7 @@
     <div class="section-header" id="hdr5" onclick="toggle(5)">
       <div class="section-title">
         <span class="section-num" style="background:#2E7D32;">5</span>
-        Combining Strategies — TP + PP + Data Parallelism
+        Combining Strategies - TP + PP + Data Parallelism
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
@@ -475,7 +475,7 @@
             <tr>
               <td class="dec-name">Tensor Parallelism</td>
               <td>Within each layer</td>
-              <td>AllReduce every layer — needs NVLink</td>
+              <td>AllReduce every layer - needs NVLink</td>
               <td>Latency reduction, memory distribution</td>
               <td class="dec-good">Improves</td>
               <td>Neutral per replica</td>
@@ -483,7 +483,7 @@
             <tr>
               <td class="dec-name">Pipeline Parallelism</td>
               <td>Across layer groups</td>
-              <td>Activations between stages — InfiniBand OK</td>
+              <td>Activations between stages - InfiniBand OK</td>
               <td>Very large models spanning nodes</td>
               <td class="dec-bad">Adds bubble latency</td>
               <td>Enables scale</td>
@@ -523,15 +523,15 @@
       <div class="key-item">
         <div class="key-num" style="color:#00796B;">01</div>
         <div>
-          <div class="key-title">Tensor Parallelism reduces latency and fits large models — within a node</div>
-          <div class="key-desc">TP splits weight matrices across GPUs that work in lock-step. Every forward pass is faster because each GPU does less work. But AllReduce communication at every layer requires NVLink bandwidth — across nodes with InfiniBand, the overhead is too high. TP degree is almost always equal to GPUs per node (typically 8).</div>
+          <div class="key-title">Tensor Parallelism reduces latency and fits large models - within a node</div>
+          <div class="key-desc">TP splits weight matrices across GPUs that work in lock-step. Every forward pass is faster because each GPU does less work. But AllReduce communication at every layer requires NVLink bandwidth - across nodes with InfiniBand, the overhead is too high. TP degree is almost always equal to GPUs per node (typically 8).</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">02</div>
         <div>
-          <div class="key-title">Pipeline Parallelism scales to very large models across nodes — at a latency cost</div>
-          <div class="key-desc">PP assigns consecutive layer groups to different GPUs/nodes. Communication is only activations between stages — small enough for InfiniBand. The cost is the pipeline bubble: with a small batch and many PP stages, most GPUs sit idle most of the time. Micro-batching mitigates this but adds complexity.</div>
+          <div class="key-title">Pipeline Parallelism scales to very large models across nodes - at a latency cost</div>
+          <div class="key-desc">PP assigns consecutive layer groups to different GPUs/nodes. Communication is only activations between stages - small enough for InfiniBand. The cost is the pipeline bubble: with a small batch and many PP stages, most GPUs sit idle most of the time. Micro-batching mitigates this but adds complexity.</div>
         </div>
       </div>
       <div class="key-item">
@@ -544,7 +544,7 @@
       <div class="key-item">
         <div class="key-num" style="color:#1565C0;">04</div>
         <div>
-          <div class="key-title">Real deployments combine TP + PP + DP — and the split follows the interconnect</div>
+          <div class="key-title">Real deployments combine TP + PP + DP - and the split follows the interconnect</div>
           <div class="key-desc">The standard pattern: TP within each node (NVLink handles the AllReduce), PP across nodes (InfiniBand handles activation passing), DP for throughput by replicating the whole setup. The parallelism degree at each axis is chosen to match hardware topology. vLLM and TensorRT-LLM both configure all three through simple parameters.</div>
         </div>
       </div>
@@ -553,7 +553,7 @@
 
   <!-- Cheat sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 3.4 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 3.4 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Tensor Parallelism (TP)</div>
@@ -577,7 +577,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">NVLink vs InfiniBand</div>
-        <div class="cheat-def">NVLink: ~600 GB/s within a node — fast enough for TP AllReduce. InfiniBand: ~50 GB/s across nodes — sufficient for PP activation passing, too slow for TP.</div>
+        <div class="cheat-def">NVLink: ~600 GB/s within a node - fast enough for TP AllReduce. InfiniBand: ~50 GB/s across nodes - sufficient for PP activation passing, too slow for TP.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">3D Parallelism</div>
@@ -597,7 +597,7 @@
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        Use Pipeline Parallelism = 32 across all GPUs — this gives the maximum layer distribution and lowest memory per GPU.
+        Use Pipeline Parallelism = 32 across all GPUs - this gives the maximum layer distribution and lowest memory per GPU.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
@@ -605,11 +605,11 @@
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Use Data Parallelism = 32 — run 32 independent model replicas for maximum throughput.
+        Use Data Parallelism = 32 - run 32 independent model replicas for maximum throughput.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        Use Tensor Parallelism = 32 across all GPUs — more TP means faster forward passes.
+        Use Tensor Parallelism = 32 across all GPUs - more TP means faster forward passes.
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
@@ -618,9 +618,9 @@
 
   <a href="module3_5.html" class="next-module">
     <div>
-      <div class="next-label">Up Next — Module 3.5</div>
+      <div class="next-label">Up Next - Module 3.5</div>
       <div class="next-title">Speculative Decoding</div>
-      <div class="next-sub">Using a small draft model to generate candidate tokens that a large model verifies in parallel — cutting TPOT without changing output quality</div>
+      <div class="next-sub">Using a small draft model to generate candidate tokens that a large model verifies in parallel - cutting TPOT without changing output quality</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -690,7 +690,7 @@
         tags=['Data Parallelism','1 GPU per replica','Linear throughput scaling'];
       } else {
         rec='TP=1, single GPU per replica';
-        why='Minimum cost — 1 GPU per model instance. Use INT4 or INT8 to maximise GPU utilisation. Scale replicas only when demand requires it.';
+        why='Minimum cost - 1 GPU per model instance. Use INT4 or INT8 to maximise GPU utilisation. Scale replicas only when demand requires it.';
         tags=['1 GPU','INT4 or INT8','On-demand scaling'];
       }
     } else if(model==='70'){
@@ -712,7 +712,7 @@
     } else { // 405B
       if(hw==='single_node'){
         rec='Not feasible on a single node';
-        why='405B at FP16 requires ~810GB — exceeding even 8×H100 (640GB). Use INT8 (~405GB) and TP=8 on a single node, or add nodes with PP.';
+        why='405B at FP16 requires ~810GB - exceeding even 8×H100 (640GB). Use INT8 (~405GB) and TP=8 on a single node, or add nodes with PP.';
         tags=['INT8 required','TP=8 minimum','Multi-node recommended'];
       } else {
         if(goal==='latency'){
@@ -724,8 +724,8 @@
           why='Two complete TP×PP replicas double throughput. Each replica handles separate request streams with no inter-replica communication.';
           tags=['TP=8','PP=4','DP=2','64× H100'];
         } else {
-          rec='TP=8, PP=4 — INT8 to reduce GPU count';
-          why='INT8 quantisation cuts weight memory to ~405GB — fitting on 8 H100s (1 node) at TP=8, or 2 nodes at TP=8+PP=2. Minimum viable configuration.';
+          rec='TP=8, PP=4 - INT8 to reduce GPU count';
+          why='INT8 quantisation cuts weight memory to ~405GB - fitting on 8 H100s (1 node) at TP=8, or 2 nodes at TP=8+PP=2. Minimum viable configuration.';
           tags=['INT8','TP=8','PP=2','16× H100 minimum'];
         }
       }
@@ -758,10 +758,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct — and this is exactly the reasoning that demonstrates parallelism expertise.</strong> The key decisions: (1) TP=8 within each node because NVLink (~600 GB/s) easily handles the AllReduce at every layer — this is fast enough to be net-positive for latency. (2) PP=4 across the 4 nodes because InfiniBand (~50 GB/s) can only efficiently transfer activations between pipeline stages, not the full AllReduce that TP requires. (3) PP degree of 4 rather than higher — for a latency-sensitive application, you want the bubble as small as possible, so keep PP stages to the minimum needed to fit the model. At FP16, 405B (~810GB) across 32 GPUs means ~25GB per GPU — well within the 80GB H100 capacity. Option A (PP=32) would create a massive bubble. Option C (DP=32) requires each of 32 replicas to individually hold the full 405B model — impossible on one GPU. Option D (TP=32) would require AllReduce across all 32 GPUs including across InfiniBand nodes — the communication overhead would dominate forward pass time.';
+      r.innerHTML='<strong>Correct - and this is exactly the reasoning that demonstrates parallelism expertise.</strong> The key decisions: (1) TP=8 within each node because NVLink (~600 GB/s) easily handles the AllReduce at every layer - this is fast enough to be net-positive for latency. (2) PP=4 across the 4 nodes because InfiniBand (~50 GB/s) can only efficiently transfer activations between pipeline stages, not the full AllReduce that TP requires. (3) PP degree of 4 rather than higher - for a latency-sensitive application, you want the bubble as small as possible, so keep PP stages to the minimum needed to fit the model. At FP16, 405B (~810GB) across 32 GPUs means ~25GB per GPU - well within the 80GB H100 capacity. Option A (PP=32) would create a massive bubble. Option C (DP=32) requires each of 32 replicas to individually hold the full 405B model - impossible on one GPU. Option D (TP=32) would require AllReduce across all 32 GPUs including across InfiniBand nodes - the communication overhead would dominate forward pass time.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The reasoning hinges on matching parallelism type to interconnect speed. TP requires AllReduce at every layer — it needs NVLink speed. PP only needs to pass activations between stages — InfiniBand is sufficient. PP=32 (Option A) creates an extreme pipeline bubble. DP=32 (Option C) requires a full 405B model per GPU — impossible. TP=32 (Option D) across slow InfiniBand would make communication the bottleneck, not computation.';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The reasoning hinges on matching parallelism type to interconnect speed. TP requires AllReduce at every layer - it needs NVLink speed. PP only needs to pass activations between stages - InfiniBand is sufficient. PP=32 (Option A) creates an extreme pipeline bubble. DP=32 (Option C) requires a full 405B model per GPU - impossible. TP=32 (Option D) across slow InfiniBand would make communication the bottleneck, not computation.';
     }
     document.getElementById('check-btn').style.display='none';
   }

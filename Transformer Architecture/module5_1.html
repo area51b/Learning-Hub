@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 5.1 - Why the Current Stack Has Limits</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #37474F 0%, #455A64 50%, #546E7A 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+  .home-icon { position:absolute; top:16px; right:16px; font-size:24px; color:white; text-decoration:none; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #CFD8DC; background:white; font-family:Arial,sans-serif; font-size:13px; text-decoration:none; display:block; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #1A237E; }
+  .nav-btn.next { text-align:right; border-right:4px solid #37474F; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout          { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-slate    { background:#ECEFF1; border-left:4px solid #546E7A; }
+  .callout-blue     { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange   { background:#FFF3E0; border-left:4px solid #E65100; }
+  .callout-green    { background:#E8F5E9; border-left:4px solid #2E7D32; }
+  .callout-purple   { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-red      { background:#FFEBEE; border-left:4px solid #C62828; }
+  .callout-teal     { background:#E0F7FA; border-left:4px solid #006064; }
+
+  /* ── Scaling wall visualiser ── */
+  .wall-wrap { background:#0F172A; border-radius:14px; padding:24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .wall-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:16px; }
+  .wall-controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .wall-btn { border:none; border-radius:6px; padding:6px 14px; font-size:12px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; }
+  .wall-chart { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .wall-row  { display:flex; align-items:center; gap:10px; }
+  .wall-label { font-size:11px; opacity:0.6; min-width:100px; text-align:right; font-family:Arial,sans-serif; }
+  .wall-bar-bg { flex:1; background:rgba(255,255,255,0.08); border-radius:4px; height:22px; overflow:hidden; }
+  .wall-bar-fill { height:22px; border-radius:4px; display:flex; align-items:center; padding-left:8px; font-size:11px; font-weight:bold; color:white; transition:width 0.4s; }
+  .wall-note { font-size:12px; opacity:0.5; line-height:1.7; margin-top:6px; }
+
+  /* ── Problem cards ── */
+  .prob-card { border-radius:12px; padding:18px 20px; margin-bottom:10px; border-left:4px solid; }
+  .prob-title { font-size:14px; font-weight:bold; font-family:Arial,sans-serif; margin-bottom:6px; }
+  .prob-body  { font-size:13.5px; line-height:1.8; color:#333; }
+  .prob-impact { font-size:12.5px; font-family:Arial,sans-serif; margin-top:8px; font-weight:bold; }
+
+  /* ── KV locality visual ── */
+  .kv-wrap { background:#F3E8FD; border:1px solid #CE93D8; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .kv-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#4A148C; margin-bottom:14px; font-weight:bold; }
+  .kv-controls { display:flex; gap:10px; margin-bottom:14px; }
+  .kv-btn { border:none; border-radius:6px; padding:7px 14px; font-size:13px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; }
+  .kv-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
+  .kv-node { border-radius:8px; padding:12px 10px; text-align:center; }
+  .kv-node-title { font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; opacity:0.8; color:white; }
+  .kv-node-body  { font-size:11px; color:white; opacity:0.65; line-height:1.6; }
+  .kv-node-cache { font-size:12px; font-weight:bold; color:white; margin-top:6px; font-family:monospace; }
+  .kv-note { font-size:12.5px; color:#444; line-height:1.7; background:white; border-radius:6px; padding:10px 12px; }
+
+  /* ── Gap analysis table ── */
+  .gap-table { width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:13px; margin:16px 0; }
+  .gap-table th { background:#37474F; color:white; padding:10px 12px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .gap-table td { padding:11px 12px; border-bottom:1px solid #F0F0F0; vertical-align:top; line-height:1.6; }
+  .gap-table tr:nth-child(even) td { background:#F8F8F8; }
+  .gap-table tr:last-child td { border-bottom:none; }
+  .gap-prob   { font-weight:bold; color:#37474F; }
+  .gap-limit  { color:#C62828; }
+  .gap-need   { color:#2E7D32; font-weight:bold; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#37474F; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.09); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#B0BEC5; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.88; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#546E7A; background:#ECEFF1; }
+  .quiz-option.selected { border-color:#546E7A; background:#ECEFF1; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#546E7A; }
+  .quiz-btn  { margin-top:14px; background:#37474F; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#455A64; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#ECEFF1,#E3F2FD); border:1px solid #CFD8DC; display:flex; justify-content:space-between; align-items:center; text-decoration:none; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; color:#1a1a1a; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .cheat-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+    .kv-grid { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <a href="index.html" class="home-icon" title="Home">🏠</a>
+    <div class="header-eyebrow">PART 5 · MODULE 5.1</div>
+    <h1>Why the Current Stack Has Limits</h1>
+    <p>vLLM, TRT-LLM, and Triton are excellent tools - but at fleet scale they hit a ceiling. Understanding exactly where and why sets up everything in Part 5.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module4_5.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">4.5 - How It All Fits Together</div>
+    </a>
+    <a href="module5_2.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">5.2 - NVIDIA Dynamo</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>Part 4 ended with a production stack that works well for most teams: vLLM or TRT-LLM on a DGX node, Triton in front, quantisation applied, parallelism configured. For a team serving thousands of requests per day on a handful of GPUs, this stack is close to optimal. The problems begin when the scale jumps by two orders of magnitude.</p>
+    <p>At the scale of hyperscaler inference deployments - hundreds of GPUs, millions of requests per day, dozens of model variants, mixed workloads with vastly different prompt and output lengths - the current stack exposes four structural limits that no amount of configuration tuning can fully overcome. These limits are not bugs in vLLM or TRT-LLM. They are architectural gaps between what single-node inference servers were designed to do and what fleet-scale inference actually requires. NVIDIA Dynamo and LLM-d exist specifically to close these gaps.</p>
+  </div>
+
+  <!-- Section 1: The scale at which limits appear -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#546E7A;">1</span>
+        The Scale Where Problems Emerge
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>The problems in this module are not visible at small deployments. They are emergent - they appear as a deployment grows from one node to many, from one model to several, from a few dozen concurrent users to thousands. Understanding the threshold at which each problem becomes significant helps you apply this knowledge correctly: a customer with 4 GPUs does not need Dynamo; a customer with 128 GPUs almost certainly does.</p>
+
+      <div class="wall-wrap">
+        <div class="wall-title">Problem severity by deployment scale - click a problem to see where it bites</div>
+        <div class="wall-controls">
+          <button class="wall-btn" style="background:#546E7A; color:white;" onclick="showWall('routing')">Request routing inefficiency</button>
+          <button class="wall-btn" style="background:#C62828; color:white;" onclick="showWall('kv')">KV Cache locality loss</button>
+          <button class="wall-btn" style="background:#7B1FA2; color:white;" onclick="showWall('disagg')">Disaggregation coordination</button>
+          <button class="wall-btn" style="background:#E65100; color:white;" onclick="showWall('hetero')">Heterogeneous workloads</button>
+        </div>
+        <div class="wall-chart" id="wallChart"></div>
+        <div class="wall-note" id="wallNote"></div>
+      </div>
+
+      <div class="callout callout-slate">
+        <strong>The important framing for customer conversations:</strong> When a customer with a large deployment complains that vLLM "isn't scaling well" or that their P99 TTFT is unpredictable despite having plenty of GPU capacity, the root cause is almost always one of these four structural problems - not a misconfiguration of their existing stack. Knowing these problems by name and mechanism is what lets you move the conversation from "have you tried tuning --max-num-seqs" to "you have a KV Cache locality problem and you need a smarter router."
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Problem 1 - Routing blindness -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#C62828;">2</span>
+        Problem 1 - Routing Blindness: Load Balancers Don't Know About KV Cache
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>When a deployment grows beyond a single inference server instance, requests must be routed across multiple servers. The standard approach is a load balancer using round-robin or least-connections routing. This works well for stateless services. LLM inference is not stateless - it has KV Cache.</p>
+
+      <p>Consider a deployment with four vLLM replicas, all serving the same model with prefix caching enabled. A customer application has a 4,000-token system prompt that is identical for every user. With prefix caching, the first request that arrives on each replica pays the full Prefill cost for that system prompt (~400ms). Subsequent requests to the same replica find the KV Cache already built and skip it entirely (~20ms TTFT). With round-robin routing, each of the four replicas handles roughly 25% of requests - and each replica's prefix cache only covers the requests it receives. If a new replica spins up, it starts cold.</p>
+
+      <div class="prob-card" style="background:#FFEBEE; border-left-color:#C62828;">
+        <div class="prob-title" style="color:#C62828;">The routing blindness problem</div>
+        <div class="prob-body">A load balancer routing by least-connections has no visibility into which replica has which KV Cache blocks already built. It might route a request with a cached 4,000-token system prompt to the one replica that just restarted and has an empty cache - paying full Prefill cost unnecessarily. Meanwhile, the three replicas that have the cache sit idle or handle unrelated requests.<br><br>At scale with thousands of distinct system prompts across hundreds of replicas, the fraction of requests that hit a warm prefix cache drops dramatically. The latency benefit of prefix caching - one of the highest-ROI optimisations from Part 3 - is almost entirely negated by cache-unaware routing.</div>
+        <div class="prob-impact" style="color:#C62828;">Impact at scale: prefix cache hit rate drops from ~80% (single node) to ~20% (round-robin across 16 replicas). TTFT increases 4–5x for requests that should be cache hits.</div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>What is actually needed:</strong> A router that is KV Cache-aware - one that knows which replicas have which prefix hashes cached and routes requests to the replica most likely to have a cache hit. This requires the router to track cache state across the fleet in real time, not just queue depth or connection count. This is one of the core capabilities that Dynamo's smart router provides (Module 5.2).
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Problem 2 - KV Cache locality -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">3</span>
+        Problem 2 - KV Cache Locality: Cache Lives on the GPU That Built It
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Even with a smarter router, KV Cache locality creates a deeper problem. In a disaggregated system (Module 3.6), Prefill workers build KV Cache and transfer it to Decode workers. But in a multi-replica deployment without disaggregation, the KV Cache built by Prefill on one GPU stays on that GPU. If Decode needs to continue on a different GPU - because the first GPU became overloaded, or because a different replica picked up the next turn in a multi-turn conversation - the KV Cache must be rebuilt from scratch or transferred at significant cost.</p>
+
+      <div class="kv-wrap">
+        <div class="kv-title">KV Cache locality - request routing across 4 replicas</div>
+        <div class="kv-controls">
+          <button class="kv-btn" style="background:#546E7A; color:white;" onclick="showKV('blind')">Blind round-robin routing</button>
+          <button class="kv-btn" style="background:#7B1FA2; color:white;" onclick="showKV('aware')">KV Cache-aware routing</button>
+        </div>
+        <div class="kv-grid" id="kvGrid"></div>
+        <div class="kv-note" id="kvNote"></div>
+      </div>
+
+      <p>Multi-turn conversations make this worse. In a chatbot deployment, a user's conversation history grows with each turn. Turn 1 builds a 200-token KV Cache on replica A. Turn 2 ideally hits replica A and extends that cache. But if the router sends turn 2 to replica B, replica B must rebuild the entire 200-token history from scratch before generating the response - paying full Prefill cost every turn. In a long conversation with 10 turns, this can mean 10 full Prefills instead of 1, for what should have been incremental cache extensions.</p>
+
+      <div class="callout callout-purple">
+        <strong>The locality-load balance tension:</strong> KV Cache locality argues for sticky routing - always send a user's requests to the same replica. Load balancing argues for spreading requests evenly. These objectives directly conflict. A replica that is "sticky" for many active long-context users will accumulate KV Cache pressure while other replicas sit underutilised. Resolving this tension requires a router that simultaneously tracks cache state, load, and memory pressure across all replicas - something a conventional load balancer cannot do.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Problem 3 - Disaggregation coordination overhead -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">4</span>
+        Problem 3 - Disaggregation Is Hard to Operate at Fleet Scale
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>Module 3.6 covered disaggregation - splitting Prefill and Decode onto dedicated GPU pools. The concept is sound and the performance gains are real. The operational problem is that disaggregation as implemented today (manually configured static P/D ratios, custom KV transfer scripts) does not scale gracefully to large fleets.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
+        <div style="background:#FFF3E0; border-radius:10px; padding:16px; border-left:3px solid #E65100;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#E65100; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Static disaggregation (today)</div>
+          <div style="font-size:13.5px; line-height:1.9; color:#333;">
+            P:D ratio set manually at deployment<br>
+            Ratio fixed until operator intervenes<br>
+            KV transfer via ad-hoc scripts<br>
+            No awareness of individual request sizes<br>
+            Prefill queue backs up during traffic spikes<br>
+            Decode pool idles during light traffic
+          </div>
+        </div>
+        <div style="background:#E8F5E9; border-radius:10px; padding:16px; border-left:3px solid #2E7D32;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">What fleet scale needs</div>
+          <div style="font-size:13.5px; line-height:1.9; color:#333;">
+            Dynamic P:D ratio adjustment in real time<br>
+            Per-request routing to least-loaded Prefill worker<br>
+            Standardised KV transfer protocol<br>
+            KV transfer aware of destination cache state<br>
+            Automatic failover if Prefill worker dies<br>
+            Unified observability across P and D pools
+          </div>
+        </div>
+      </div>
+
+      <p>The coordination problem compounds at scale. With 4 Prefill workers and 12 Decode workers, the routing decision for each request involves: which Prefill worker has capacity, which Decode worker has a matching prefix cache, whether the KV transfer path between those two workers is healthy, and whether the Decode worker has enough free KV Cache blocks to accept the transfer. No single component in the current stack - not vLLM, not TRT-LLM, not Triton - owns this coordination logic. Teams building large disaggregated deployments today write bespoke orchestration code to fill this gap.</p>
+
+      <div class="callout callout-orange">
+        <strong>The hidden cost of bespoke orchestration:</strong> Every large-scale LLM inference team that has implemented disaggregation has written their own version of this coordination layer. It is custom, poorly documented, tightly coupled to their specific hardware, and breaks in non-obvious ways when GPU topology or traffic patterns change. NVIDIA Dynamo and LLM-d are both, in part, attempts to standardise this coordination layer so teams do not have to rebuild it from scratch.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Problem 4 - Heterogeneous workloads -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">5</span>
+        Problem 4 - Heterogeneous Workloads: One Configuration Cannot Serve All Request Types
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>Real production deployments do not receive uniform traffic. A single customer-facing LLM service might simultaneously handle: short interactive chat (100-token prompt, 50-token output), long-context document analysis (8,000-token prompt, 200-token output), code generation (500-token prompt, 2,000-token output), and batch summarisation (2,000-token prompt, 300-token output). Each of these has a completely different optimal configuration.</p>
+
+      <div style="overflow-x:auto; margin:16px 0;">
+        <table class="gap-table">
+          <thead>
+            <tr><th>Request type</th><th>Optimal Prefill config</th><th>Optimal Decode config</th><th>P:D ratio</th><th>Single-server compromise</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="gap-prob">Interactive chat</td>
+              <td>Small batch, fast dispatch</td>
+              <td>Many concurrent streams, low TPOT</td>
+              <td>1:4</td>
+              <td class="gap-limit">Over-allocates Prefill capacity; Decode pool too small</td>
+            </tr>
+            <tr>
+              <td class="gap-prob">Long-context RAG</td>
+              <td>Large batch, Flash Attention critical</td>
+              <td>Short outputs, fast turnaround</td>
+              <td>3:1</td>
+              <td class="gap-limit">Under-allocates Prefill; long prompts cause head-of-line blocking</td>
+            </tr>
+            <tr>
+              <td class="gap-prob">Code generation</td>
+              <td>Medium batch size</td>
+              <td>Long outputs, sustained decode throughput</td>
+              <td>1:3</td>
+              <td class="gap-limit">Decode pool saturates; code requests queue behind chat</td>
+            </tr>
+            <tr>
+              <td class="gap-prob">Batch summarisation</td>
+              <td>Maximum batch, latency flexible</td>
+              <td>Medium outputs, throughput-first</td>
+              <td>1:2</td>
+              <td class="gap-limit">Competes with interactive traffic; unpredictable latency</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>A single vLLM or TRT-LLM instance with one configuration must serve all of these simultaneously. The configuration is necessarily a compromise that under-serves every request type. At small scale this is acceptable. At large scale - where each request type represents thousands of requests per minute - the inefficiency compounds into significant wasted GPU capacity and missed SLAs.</p>
+
+      <div class="callout callout-teal">
+        <strong>What fleet-scale inference actually needs here:</strong> A routing layer that classifies incoming requests by type and directs them to specialised worker pools - a pool optimised for long-context Prefill, a pool optimised for high-concurrency Decode, a pool for batch workloads. This is the concept of heterogeneous worker pools, and it requires a global scheduler with visibility across the entire fleet, not a single per-instance scheduler inside vLLM or TRT-LLM.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: The gap summary and what comes next -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">6</span>
+        The Gap: What the Current Stack Is Missing
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>The four problems above point to a single missing layer in the current stack - a fleet-level coordination and scheduling layer that sits above the individual inference servers and provides:</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0;">
+        <div style="background:#ECEFF1; border-radius:10px; padding:16px; border-left:3px solid #546E7A;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#37474F; margin-bottom:8px;">What exists today (per-instance)</div>
+          <div style="font-size:13px; line-height:1.9; color:#555;">
+            KV Cache management (Paged Attention)<br>
+            Continuous batching (per server)<br>
+            Quantisation (per engine)<br>
+            TP/PP parallelism (per node)<br>
+            Health checks (per Triton instance)<br>
+            Metrics (per server, not fleet-wide)
+          </div>
+        </div>
+        <div style="background:#E8EAF6; border-radius:10px; padding:16px; border-left:3px solid #3949AB;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#283593; margin-bottom:8px;">What is missing (fleet-level)</div>
+          <div style="font-size:13px; line-height:1.9; color:#333;">
+            KV Cache-aware routing across replicas<br>
+            Dynamic P:D ratio adjustment<br>
+            Standardised KV transfer protocol<br>
+            Request classification and pool routing<br>
+            Global scheduler with fleet-wide visibility<br>
+            Unified observability across all workers
+          </div>
+        </div>
+      </div>
+
+      <p>NVIDIA Dynamo addresses this gap with a purpose-built disaggregated inference framework. LLM-d addresses it through Kubernetes-native scheduler extensions and Gateway API. Both are covered in the following modules. The conceptual through-line from this module to those: everything Dynamo and LLM-d do is, at its core, a solution to one of these four specific problems.</p>
+
+      <div class="callout callout-green">
+        <strong>Why this matters right now:</strong> As of 2025, most enterprise LLM deployments are still in the single-node or small multi-node stage where these problems are manageable. But as models get larger, context windows extend to 128k+, and usage scales, these problems will surface in every significant deployment. Understanding them now positions you to recognise them early in a customer's growth curve - before they are deep in bespoke orchestration code - and recommend the right framework at the right time.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr7" onclick="toggle(7)">
+      <div class="section-title">
+        <span class="section-num" style="background:#37474F;">7</span>
+        4 Key Ideas to Carry into Module 5.2
+      </div>
+      <span class="chevron" id="chv7">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy7">
+      <div class="key-item">
+        <div class="key-num" style="color:#546E7A;">01</div>
+        <div>
+          <div class="key-title">Routing blindness destroys prefix cache hit rates at scale - a KV Cache-aware router is not a nice-to-have, it is a prerequisite for prefix caching to work across a fleet</div>
+          <div class="key-desc">Prefix caching (Module 3.2) delivers its TTFT savings only when the request reaches the replica that already built the cache. Round-robin routing negates this entirely. At 16+ replicas with diverse system prompts, cache hit rates under blind routing drop to near zero - eliminating the single highest-ROI optimisation from Part 3.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#C62828;">02</div>
+        <div>
+          <div class="key-title">KV Cache locality and load balancing are in direct tension - resolving it requires global fleet-state visibility, not local per-instance decisions</div>
+          <div class="key-desc">Sticky routing maximises cache hits but creates load imbalance. Round-robin routing balances load but destroys cache locality. The only way to serve both objectives simultaneously is a central scheduler that sees cache state, load, and memory pressure across every replica simultaneously - something no component in the current stack provides.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">03</div>
+        <div>
+          <div class="key-title">Disaggregation at fleet scale requires a coordination layer that today's teams build by hand - every large deployment reinvents the same bespoke orchestration</div>
+          <div class="key-desc">The P/D split concept works. The operational problem is that dynamic ratio adjustment, KV transfer routing, and Prefill-to-Decode handoff coordination are not provided by any standard component. Teams with large disaggregated deployments have all written custom versions of this logic. Dynamo and LLM-d exist to standardise it.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">04</div>
+        <div>
+          <div class="key-title">Heterogeneous workloads need specialised worker pools routed by request type - a single configuration serving all request types always under-serves each one</div>
+          <div class="key-desc">Interactive chat, long-context RAG, code generation, and batch summarisation have fundamentally different optimal P:D ratios, batch sizes, and memory configurations. A global scheduler that classifies requests and routes to specialised pools can serve each type at its optimum simultaneously - something a single vLLM or TRT-LLM instance with one configuration cannot do.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 5.1 - CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Routing blindness</div>
+        <div class="cheat-def">Standard load balancers route by connection count or round-robin, with no knowledge of which replica has which KV Cache blocks. Negates prefix caching benefits at fleet scale. Fix: KV Cache-aware routing.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">KV Cache locality</div>
+        <div class="cheat-def">KV Cache built by Prefill on one GPU stays on that GPU. Multi-turn conversations pay full Prefill cost on each turn if routed to a different replica. Sticky routing conflicts with load balancing - needs global state to resolve.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Disaggregation coordination gap</div>
+        <div class="cheat-def">Static P:D ratios, ad-hoc KV transfer scripts, and no standard protocol for Prefill-Decode handoff. At fleet scale, teams build bespoke orchestration. Dynamo and LLM-d standardise this layer.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Heterogeneous workloads</div>
+        <div class="cheat-def">Chat, RAG, code gen, and batch have different optimal P:D ratios. One server config cannot serve all optimally. Fleet-level solution: request classification + specialised worker pools routed by a global scheduler.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">What the current stack covers</div>
+        <div class="cheat-def">Per-instance: KV Cache management, continuous batching, quantisation, TP/PP, per-server health + metrics. Everything works well at single-node or small multi-node scale.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">What the current stack is missing</div>
+        <div class="cheat-def">Fleet-level: KV Cache-aware routing, dynamic P:D adjustment, standardised KV transfer, request classification, global scheduler, unified cross-fleet observability.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Scale threshold</div>
+        <div class="cheat-def">Problems become significant at ~16+ GPU replicas, high prefix cache reuse, disaggregated deployments, or mixed workload types. Below this threshold, the Part 4 stack is sufficient and adding a coordination layer adds complexity without benefit.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">What comes next</div>
+        <div class="cheat-def">NVIDIA Dynamo (5.2): disaggregated inference framework with smart KV-aware router and dynamic worker coordination. LLM-d (5.3): Kubernetes-native scheduling extensions for fleet-scale LLM inference.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer runs 16 vLLM replicas behind a standard round-robin load balancer, all serving Llama 3 70B with a shared 3,000-token system prompt. They have prefix caching enabled on each replica. They report that TTFT is averaging 1.6 seconds - nearly as high as before they enabled prefix caching, which should theoretically bring it to under 100ms. What is the most precise diagnosis?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Prefix caching is not working correctly - the 70B model is too large for vLLM's Paged Attention block manager to cache efficiently.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        The round-robin load balancer distributes requests evenly across all 16 replicas regardless of cache state. Each replica only receives approximately 1/16th of total traffic. Most requests arrive at a replica that has not yet built the 3,000-token system prompt cache - or built it recently and has since evicted it under KV pressure from other requests. The prefix cache hit rate across the fleet is near zero even though prefix caching is correctly configured on each individual replica. The fix is a KV Cache-aware router that tracks which replicas have which prefix hashes cached and routes accordingly - not a change to any per-replica configuration.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        16 replicas is too many - prefix caching is only effective on a single replica. They should consolidate to fewer, larger instances.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        The system prompt is too long for prefix caching - 3,000 tokens exceeds the default block size in vLLM and prevents cache reuse.
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <a href="module5_2.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next - Module 5.2</div>
+      <div class="next-title">NVIDIA Dynamo</div>
+      <div class="next-sub">How Dynamo's smart router, disaggregated worker pools, and KV Cache transfer protocol solve the four problems identified in this module</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var sColors={1:'#546E7A',2:'#C62828',3:'#7B1FA2',4:'#E65100',5:'#1565C0',6:'#283593',7:'#37474F'};
+  var sBgs   ={1:'#ECEFF1',2:'#FFEBEE',3:'#F3E8FD',4:'#FFF3E0',5:'#E3F2FD',6:'#E8EAF6',7:'#ECEFF1'};
+  function toggle(n){
+    var b=document.getElementById('bdy'+n),c=document.getElementById('chv'+n),h=document.getElementById('hdr'+n);
+    var open=b.classList.contains('open');
+    b.classList.toggle('open'); c.classList.toggle('open');
+    h.style.borderLeftColor=open?'#E8E8E8':sColors[n];
+    h.style.background=open?'white':sBgs[n];
+  }
+
+  /* ── Scaling wall ── */
+  var wallData={
+    routing:{
+      label:'Request routing inefficiency (prefix cache blindness)',
+      rows:[
+        {scale:'1–4 GPUs / 1 replica',val:5,  color:'#2E7D32', note:'Single replica - all requests hit the same cache. Not a problem.'},
+        {scale:'8–16 GPUs / 2–4 replicas', val:35, color:'#F57F17', note:'Cache spread across replicas. Hit rate degrading.'},
+        {scale:'32–64 GPUs / 8–16 replicas',val:75, color:'#E65100', note:'Round-robin distributes requests randomly. Cache hit rate near zero.'},
+        {scale:'128+ GPUs / 32+ replicas',  val:95, color:'#C62828', note:'Effectively no prefix caching benefit. TTFT = full Prefill cost for almost every request.'},
+      ],
+      note:'Routing blindness is benign at single-node scale and catastrophic at fleet scale. The problem is not prefix caching configuration - it is that the load balancer has no cache state visibility.'
+    },
+    kv:{
+      label:'KV Cache locality loss (multi-turn / sticky routing conflict)',
+      rows:[
+        {scale:'Short single-turn conversations',val:10, color:'#2E7D32', note:'No multi-turn history - locality is irrelevant for single-turn requests.'},
+        {scale:'2–5 turn conversations',         val:40, color:'#F57F17', note:'Moderate penalty. Each new turn rebuilds some history if routed to different replica.'},
+        {scale:'10+ turn conversations',          val:80, color:'#E65100', note:'Severe. A 10-turn conversation routed randomly rebuilds up to 10x the KV Cache work needed.'},
+        {scale:'Long-context agents (50+ turns)', val:98, color:'#C62828', note:'Practically all KV Cache work is wasted rebuild. Agents effectively cannot scale under blind routing.'},
+      ],
+      note:'KV locality loss scales with conversation length and turn count. Agentic workloads - which are the fastest-growing LLM use case - are the most affected.'
+    },
+    disagg:{
+      label:'Disaggregation coordination overhead',
+      rows:[
+        {scale:'Single P/D pair (1:2 ratio, static)',val:15, color:'#2E7D32', note:'Simple configuration. Manual ratio setting works at this scale.'},
+        {scale:'4 Prefill + 8 Decode workers',     val:45, color:'#F57F17', note:'Coordination complexity grows. Traffic spikes cause Prefill queue backup. Manual rebalancing needed.'},
+        {scale:'16 Prefill + 48 Decode workers',   val:78, color:'#E65100', note:'Ad-hoc scripts fail under dynamic load. Bespoke orchestration required. High operational burden.'},
+        {scale:'100+ worker fleet',                  val:97, color:'#C62828', note:'Impossible to manage manually. Requires a purpose-built coordination layer - which does not exist in vLLM or TRT-LLM.'},
+      ],
+      note:'Static disaggregation configuration does not scale. The coordination problem is non-linear - it grows faster than the fleet.'
+    },
+    hetero:{
+      label:'Heterogeneous workload inefficiency',
+      rows:[
+        {scale:'Single workload type',             val:5,  color:'#2E7D32', note:'One request type, one optimal config. Single-instance server handles this well.'},
+        {scale:'2 workload types (chat + RAG)',    val:30, color:'#F57F17', note:'Config compromise between two optima. Meaningful but manageable inefficiency.'},
+        {scale:'3–4 workload types mixed',         val:65, color:'#E65100', note:'Config satisfies none fully. Chat latency spikes when long RAG prompts queue. Batch steals capacity from interactive.'},
+        {scale:'5+ types at high volume each',     val:90, color:'#C62828', note:'Consistent SLA violations across most workload types. GPU utilisation high but effective throughput low due to contention.'},
+      ],
+      note:'Heterogeneous workload problems compound with variety and volume. They are the primary driver of GPU underutilisation at large AI platform deployments.'
+    }
+  };
+  function showWall(key){
+    var d=wallData[key];
+    var html='<div style="font-size:11px; opacity:0.5; margin-bottom:8px; font-family:Arial,sans-serif; letter-spacing:1px; text-transform:uppercase;">'+d.label+'</div>';
+    d.rows.forEach(function(r){
+      html+='<div class="wall-row">'+
+        '<div class="wall-label">'+r.scale+'</div>'+
+        '<div class="wall-bar-bg"><div class="wall-bar-fill" style="width:'+r.val+'%; background:'+r.color+';">'+r.val+'%</div></div>'+
+      '</div>';
+    });
+    document.getElementById('wallChart').innerHTML=html;
+    document.getElementById('wallNote').textContent=d.note;
+  }
+  showWall('routing');
+
+  /* ── KV locality ── */
+  var kvData={
+    blind:{
+      nodes:[
+        {color:'rgba(21,101,192,0.8)',title:'Replica 1',body:'~25% of traffic\nRandom request mix',cache:'Cache: 3 of 20 prefixes warm'},
+        {color:'rgba(123,31,162,0.8)',title:'Replica 2',body:'~25% of traffic\nRandom request mix',cache:'Cache: 2 of 20 prefixes warm'},
+        {color:'rgba(46,125,50,0.8)', title:'Replica 3',body:'~25% of traffic\nRandom request mix',cache:'Cache: 4 of 20 prefixes warm'},
+        {color:'rgba(230,81,0,0.8)',  title:'Replica 4',body:'~25% of traffic\nRandom request mix',cache:'Cache: 1 of 20 prefixes warm'},
+      ],
+      note:'Round-robin routing: each replica receives 25% of requests. With 20 distinct system prompts in use, each replica builds only a fraction of the possible prefix caches. A request for prefix A is equally likely to land on a replica where A is not cached. Fleet-wide cache hit rate: ~15%. TTFT savings from prefix caching: near zero.'
+    },
+    aware:{
+      nodes:[
+        {color:'rgba(21,101,192,0.8)',title:'Replica 1',body:'Prefixes 1–5\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
+        {color:'rgba(123,31,162,0.8)',title:'Replica 2',body:'Prefixes 6–10\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
+        {color:'rgba(46,125,50,0.8)', title:'Replica 3',body:'Prefixes 11–15\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
+        {color:'rgba(230,81,0,0.8)',  title:'Replica 4',body:'Prefixes 16–20\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
+      ],
+      note:'KV Cache-aware routing: requests are routed to the replica that has the matching prefix cached. Each replica owns a subset of prefixes and serves them at near-zero TTFT after the first request. Fleet-wide cache hit rate: ~95%+ after warm-up. TTFT drops from 1.6s to <100ms for cached prefixes. Requires a router with real-time visibility into each replica\'s cache state.'
+    }
+  };
+  function showKV(mode){
+    var d=kvData[mode];
+    var html=d.nodes.map(function(n){
+      return '<div class="kv-node" style="background:'+n.color+';"><div class="kv-node-title">'+n.title+'</div>'+
+             '<div class="kv-node-body">'+n.body.replace('\n','<br>')+'</div>'+
+             '<div class="kv-node-cache">'+n.cache+'</div></div>';
+    }).join('');
+    document.getElementById('kvGrid').innerHTML=html;
+    document.getElementById('kvNote').textContent=d.note;
+  }
+  showKV('blind');
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    document.querySelectorAll('.quiz-option').forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      var l=['a','b','c','d'][i];
+      if(l==='b')o.classList.add('correct');
+      else if(l===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct - and this is exactly the kind of diagnosis that distinguishes a real SME from someone who just knows the per-instance concepts.</strong><br><br>The customer\'s prefix caching configuration is not wrong. Each individual replica is correctly configured and each one does cache the 3,000-token system prompt after its first request. The problem is entirely at the routing layer.<br><br>With 16 replicas and round-robin routing, each replica receives approximately 1/16th (6.25%) of total traffic. The 3,000-token system prompt cache on replica 3 does nothing for a request that lands on replica 7. Unless traffic volume is high enough that every replica independently sees enough requests to keep the cache warm - and is never evicted by KV pressure from other requests - most requests will land on a cold replica and pay full Prefill cost.<br><br>The quantitative impact: a 3,000-token Prefill on a 70B H100 takes roughly 400–600ms. With a warm prefix cache on the right replica, TTFT drops to under 100ms (just the new tokens since the cached prefix). The 1.6s average TTFT the customer sees is consistent with ~5–10% cache hit rate - most requests landing on a cold replica and paying full cost, with the occasional hit pulling the average down slightly from the theoretical maximum.<br><br>The fix is not a vLLM configuration change. It is a routing infrastructure change: a KV Cache-aware router (as described in this module and provided by Dynamo in Module 5.2) that hashes the system prompt, tracks which replicas have which prefix hashes cached, and routes accordingly. Option A is wrong - prefix caching works correctly with Paged Attention regardless of model size. Option C is wrong - consolidating replicas would reduce throughput capacity. Option D is wrong - vLLM\'s block size (16 tokens) is irrelevant to prefix cache reuse; a 3,000-token prefix spans many blocks but is fully cacheable.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The customer\'s prefix caching is correctly configured - the problem is that round-robin routing distributes requests across 16 replicas regardless of cache state. Each replica only holds the prefix cache for requests it has previously served, which is roughly 1/16th of total traffic. Most requests land on replicas with cold caches and pay full Prefill cost. The fix is a KV Cache-aware router, not a per-replica configuration change. Option A is wrong (prefix caching works correctly with Paged Attention at any model size). Option C is wrong (fewer replicas would hurt throughput). Option D is wrong (block size does not prevent prefix cache reuse for large prefixes).';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>

@@ -161,8 +161,8 @@
   <div class="header">
     <a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 3 · MODULE 3.6</div>
-    <h1>Disaggregation — Prefill/Decode Split</h1>
-    <p>Separating the Prefill and Decode phases onto dedicated hardware pools — the frontier technique for simultaneously optimising TTFT and TPOT at scale.</p>
+    <h1>Disaggregation - Prefill/Decode Split</h1>
+    <p>Separating the Prefill and Decode phases onto dedicated hardware pools - the frontier technique for simultaneously optimising TTFT and TPOT at scale.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -172,17 +172,17 @@
   <div class="nav-bar">
     <a href="module3_5.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">3.5 — Speculative Decoding</div>
+      <div class="nav-title">3.5 - Speculative Decoding</div>
     </a>
     <a href="module4_1.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">4.1 — vLLM Architecture</div>
+      <div class="nav-title">4.1 - vLLM Architecture</div>
     </a>
   </div>
 
   <div class="intro-card">
-    <p>Every serving system covered so far runs Prefill and Decode on the same GPU. A user's prompt is processed (Prefill) and then tokens are generated (Decode) on the same hardware, back to back. This seems natural — but it creates a fundamental tension: Prefill is compute-bound and wants large batches of long prompts, while Decode is memory-bandwidth-bound and wants many small ongoing generations. These two workloads have opposite resource profiles, and running them together forces constant compromise.</p>
-    <p>Disaggregation — sometimes called Prefill/Decode (P/D) separation — solves this by splitting the phases onto separate GPU pools, each tuned for its workload. Prefill GPUs handle only prompt processing; Decode GPUs handle only generation. After Prefill, the computed KV Cache is transferred to a Decode GPU over high-speed interconnect. This is the approach behind DistServe, Mooncake, and the direction NVIDIA's TRT-LLM and vLLM are both moving. It is the current frontier of production inference optimisation.</p>
+    <p>Every serving system covered so far runs Prefill and Decode on the same GPU. A user's prompt is processed (Prefill) and then tokens are generated (Decode) on the same hardware, back to back. This seems natural - but it creates a fundamental tension: Prefill is compute-bound and wants large batches of long prompts, while Decode is memory-bandwidth-bound and wants many small ongoing generations. These two workloads have opposite resource profiles, and running them together forces constant compromise.</p>
+    <p>Disaggregation - sometimes called Prefill/Decode (P/D) separation - solves this by splitting the phases onto separate GPU pools, each tuned for its workload. Prefill GPUs handle only prompt processing; Decode GPUs handle only generation. After Prefill, the computed KV Cache is transferred to a Decode GPU over high-speed interconnect. This is the approach behind DistServe, Mooncake, and the direction NVIDIA's TRT-LLM and vLLM are both moving. It is the current frontier of production inference optimisation.</p>
   </div>
 
   <!-- Section 1: The fundamental tension -->
@@ -190,12 +190,12 @@
     <div class="section-header" id="hdr1" onclick="toggle(1)">
       <div class="section-title">
         <span class="section-num" style="background:#3949AB;">1</span>
-        The Fundamental Tension — Why Coupled Serving Is a Compromise
+        The Fundamental Tension - Why Coupled Serving Is a Compromise
       </div>
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>Recall from Module 1.7 that Prefill and Decode have different bottlenecks. Prefill processes all prompt tokens in parallel — it is compute-bound and runs fast. Decode generates one token at a time — it is memory-bandwidth-bound and runs slowly, reading the entire model weight set on every step.</p>
+      <p>Recall from Module 1.7 that Prefill and Decode have different bottlenecks. Prefill processes all prompt tokens in parallel - it is compute-bound and runs fast. Decode generates one token at a time - it is memory-bandwidth-bound and runs slowly, reading the entire model weight set on every step.</p>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
         <div style="background:#E3F2FD; border-radius:10px; padding:18px; border-left:3px solid #1565C0;">
@@ -203,9 +203,9 @@
           <div style="font-size:13.5px; line-height:1.9; color:#333;">
             Large prompt batches (many tokens at once)<br>
             High compute utilisation (GPU cores busy)<br>
-            Short bursts — runs once per request<br>
+            Short bursts - runs once per request<br>
             Optimised for throughput per batch<br>
-            <div style="margin-top:8px; font-size:12px; font-family:Arial,sans-serif; background:rgba(21,101,192,0.08); border-radius:5px; padding:6px 8px; color:#555;">Bottleneck: FLOPS — matrix multiply throughput</div>
+            <div style="margin-top:8px; font-size:12px; font-family:Arial,sans-serif; background:rgba(21,101,192,0.08); border-radius:5px; padding:6px 8px; color:#555;">Bottleneck: FLOPS - matrix multiply throughput</div>
           </div>
         </div>
         <div style="background:#FFF3E0; border-radius:10px; padding:18px; border-left:3px solid #E65100;">
@@ -215,7 +215,7 @@
             Large KV Cache resident in HBM<br>
             Sustained, steady throughput<br>
             Optimised for tokens/sec/GPU<br>
-            <div style="margin-top:8px; font-size:12px; font-family:Arial,sans-serif; background:rgba(230,81,0,0.08); border-radius:5px; padding:6px 8px; color:#555;">Bottleneck: HBM bandwidth — reading weights and KV</div>
+            <div style="margin-top:8px; font-size:12px; font-family:Arial,sans-serif; background:rgba(230,81,0,0.08); border-radius:5px; padding:6px 8px; color:#555;">Bottleneck: HBM bandwidth - reading weights and KV</div>
           </div>
         </div>
       </div>
@@ -223,7 +223,7 @@
       <p>When both phases share the same GPU, every scheduling decision is a trade-off. A long Prefill job blocks the GPU from running Decode steps, causing TPOT to spike for in-flight requests. Batching many Decode requests together improves GPU utilisation for Decode but leaves the GPU under-utilised during Prefill. There is no single configuration that satisfies both phases simultaneously.</p>
 
       <div class="callout callout-indigo">
-        <strong>The "head-of-line blocking" problem:</strong> In a coupled system, a large Prefill (e.g. a 10,000-token document) monopolises the GPU for hundreds of milliseconds. All Decode requests that arrived during that time experience a TPOT spike — tokens stop arriving mid-stream. Users perceive this as the model "pausing." Disaggregation eliminates this entirely by isolating Prefill from Decode.
+        <strong>The "head-of-line blocking" problem:</strong> In a coupled system, a large Prefill (e.g. a 10,000-token document) monopolises the GPU for hundreds of milliseconds. All Decode requests that arrived during that time experience a TPOT spike - tokens stop arriving mid-stream. Users perceive this as the model "pausing." Disaggregation eliminates this entirely by isolating Prefill from Decode.
       </div>
     </div>
   </div>
@@ -233,7 +233,7 @@
     <div class="section-header" id="hdr2" onclick="toggle(2)">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">2</span>
-        How Disaggregation Works — The Architecture
+        How Disaggregation Works - The Architecture
       </div>
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
@@ -241,7 +241,7 @@
       <p>In a disaggregated system, the serving cluster is divided into two pools. Prefill workers receive incoming requests, run the full forward pass over the prompt, build the KV Cache, and then ship the KV Cache to a Decode worker via high-speed interconnect. The Decode worker takes over and generates tokens, streaming them back to the user.</p>
 
       <div class="arch-wrap">
-        <div class="arch-title">Coupled vs disaggregated serving — request lifecycle</div>
+        <div class="arch-title">Coupled vs disaggregated serving - request lifecycle</div>
 
         <div style="font-size:11px; opacity:0.5; margin-bottom:10px; font-family:Arial,sans-serif; letter-spacing:1px; text-transform:uppercase;">Coupled (standard today)</div>
         <div class="arch-row">
@@ -253,7 +253,7 @@
           <div class="arch-arrow">&#8594;</div>
           <div class="arch-gpu" style="background:rgba(46,125,50,0.25);">
             <div class="arch-gpu-title">Response</div>
-            <div class="arch-gpu-body">Tokens stream out. TPOT variable — depends on what else is running.</div>
+            <div class="arch-gpu-body">Tokens stream out. TPOT variable - depends on what else is running.</div>
           </div>
         </div>
         <div class="arch-note" style="margin-bottom:16px;">Problem: Prefill and Decode compete for the same GPU. Long Prefills block in-flight Decode requests.</div>
@@ -276,14 +276,14 @@
           <div class="arch-arrow">&#8594;</div>
           <div class="arch-gpu" style="background:rgba(46,125,50,0.25);">
             <div class="arch-gpu-title">Response</div>
-            <div class="arch-gpu-body">Consistent TPOT — Decode pool never interrupted by Prefill.</div>
+            <div class="arch-gpu-body">Consistent TPOT - Decode pool never interrupted by Prefill.</div>
           </div>
         </div>
         <div class="arch-note">Benefit: Each pool runs at its own optimal batch size and hardware configuration. No interference between phases.</div>
       </div>
 
       <div class="callout callout-blue">
-        <strong>The KV Cache transfer is the critical link:</strong> After Prefill computes the KV Cache, it must be shipped to the Decode worker before generation can begin. This transfer adds latency to TTFT — the KV Cache for a 2,000-token prompt with a 70B model at FP16 is roughly 1–2GB. Over NVLink (~600 GB/s) this takes ~2–3ms. Over InfiniBand (~50 GB/s) it takes ~20–40ms. The transfer latency therefore constrains how far apart Prefill and Decode workers can be placed, and whether the overall TTFT improvement outweighs the transfer cost.
+        <strong>The KV Cache transfer is the critical link:</strong> After Prefill computes the KV Cache, it must be shipped to the Decode worker before generation can begin. This transfer adds latency to TTFT - the KV Cache for a 2,000-token prompt with a 70B model at FP16 is roughly 1–2GB. Over NVLink (~600 GB/s) this takes ~2–3ms. Over InfiniBand (~50 GB/s) it takes ~20–40ms. The transfer latency therefore constrains how far apart Prefill and Decode workers can be placed, and whether the overall TTFT improvement outweighs the transfer cost.
       </div>
     </div>
   </div>
@@ -293,15 +293,15 @@
     <div class="section-header" id="hdr3" onclick="toggle(3)">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">3</span>
-        Interactive — The Coupled System Conflict
+        Interactive - The Coupled System Conflict
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>Select a scenario to see how Prefill and Decode conflict in a coupled system — and what disaggregation fixes:</p>
+      <p>Select a scenario to see how Prefill and Decode conflict in a coupled system - and what disaggregation fixes:</p>
 
       <div class="conflict-wrap">
-        <div class="conflict-title">Coupled vs disaggregated — metric comparison</div>
+        <div class="conflict-title">Coupled vs disaggregated - metric comparison</div>
         <div class="conflict-controls">
           <button class="conflict-btn" style="background:#1565C0; color:white;" onclick="showConflict('chat')">Interactive chat</button>
           <button class="conflict-btn" style="background:#7B1FA2; color:white;" onclick="showConflict('rag')">RAG / long context</button>
@@ -312,7 +312,7 @@
       </div>
 
       <div class="callout callout-purple">
-        <strong>Why RAG benefits most:</strong> RAG workloads have long prompts (retrieved documents + question) but short outputs (a direct answer). The Prefill phase dominates request time, and it directly competes with the Decode phase of other concurrent requests. Disaggregation lets the Prefill pool handle large document batches while the Decode pool maintains steady token streams for all active users — TTFT and TPOT improve simultaneously.
+        <strong>Why RAG benefits most:</strong> RAG workloads have long prompts (retrieved documents + question) but short outputs (a direct answer). The Prefill phase dominates request time, and it directly competes with the Decode phase of other concurrent requests. Disaggregation lets the Prefill pool handle large document batches while the Decode pool maintains steady token streams for all active users - TTFT and TPOT improve simultaneously.
       </div>
     </div>
   </div>
@@ -322,15 +322,15 @@
     <div class="section-header" id="hdr4" onclick="toggle(4)">
       <div class="section-title">
         <span class="section-num" style="background:#00796B;">4</span>
-        KV Cache Transfer — The Mechanics and the Constraint
+        KV Cache Transfer - The Mechanics and the Constraint
       </div>
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
     <div class="section-body" id="bdy4">
-      <p>The KV Cache transfer is what makes disaggregation work — and also what limits it. After Prefill computes the KV tensors, they must reach the Decode worker before a single generation token can be produced. The transfer size and network speed determine whether disaggregation adds or subtracts from TTFT.</p>
+      <p>The KV Cache transfer is what makes disaggregation work - and also what limits it. After Prefill computes the KV tensors, they must reach the Decode worker before a single generation token can be produced. The transfer size and network speed determine whether disaggregation adds or subtracts from TTFT.</p>
 
       <div class="kv-wrap">
-        <div class="kv-title">KV Cache transfer — size and timing</div>
+        <div class="kv-title">KV Cache transfer - size and timing</div>
         <div class="kv-flow">
           <div class="kv-box" style="background:#3949AB; flex:1;">
             <div class="kv-box-title">Prefill worker</div>
@@ -359,11 +359,11 @@
       </div>
 
       <div class="callout callout-teal">
-        <strong>Prefix caching synergy:</strong> Disaggregated systems benefit even more from prefix caching (introduced in Module 2.2). If a system prompt or RAG context is already cached on a Decode worker from a previous request, the Prefill worker only needs to process the new portion — and the transfer is only the delta KV Cache, not the full context. This can reduce both Prefill time and KV transfer size by 70–90% for common system prompts.
+        <strong>Prefix caching synergy:</strong> Disaggregated systems benefit even more from prefix caching (introduced in Module 2.2). If a system prompt or RAG context is already cached on a Decode worker from a previous request, the Prefill worker only needs to process the new portion - and the transfer is only the delta KV Cache, not the full context. This can reduce both Prefill time and KV transfer size by 70–90% for common system prompts.
       </div>
 
       <div class="callout callout-orange">
-        <strong>The placement constraint:</strong> Disaggregation works well within a single node (NVLink KV transfer: ~2–5ms) and between nodes connected by high-bandwidth InfiniBand (HDR/NDR: ~20–40ms for 1–2GB). It does not work across commodity Ethernet — transfer times of hundreds of milliseconds would negate any TTFT benefit. This is why disaggregation is a data-centre architecture pattern, not something deployable on general cloud VMs without specialised networking.
+        <strong>The placement constraint:</strong> Disaggregation works well within a single node (NVLink KV transfer: ~2–5ms) and between nodes connected by high-bandwidth InfiniBand (HDR/NDR: ~20–40ms for 1–2GB). It does not work across commodity Ethernet - transfer times of hundreds of milliseconds would negate any TTFT benefit. This is why disaggregation is a data-centre architecture pattern, not something deployable on general cloud VMs without specialised networking.
       </div>
     </div>
   </div>
@@ -373,7 +373,7 @@
     <div class="section-header" id="hdr5" onclick="toggle(5)">
       <div class="section-title">
         <span class="section-num" style="background:#E65100;">5</span>
-        The Prefill:Decode Ratio — Tuning the Fleet
+        The Prefill:Decode Ratio - Tuning the Fleet
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
@@ -385,17 +385,17 @@
         <div class="plan-row">
           <span class="plan-label">Typical prompt length</span>
           <select class="plan-select" id="planPrompt" onchange="updateRatio()">
-            <option value="short">Short (100–500 tokens) — chat, simple Q&A</option>
-            <option value="medium" selected>Medium (1k–4k tokens) — RAG, summarisation</option>
-            <option value="long">Long (8k–32k tokens) — doc analysis, code review</option>
+            <option value="short">Short (100–500 tokens) - chat, simple Q&A</option>
+            <option value="medium" selected>Medium (1k–4k tokens) - RAG, summarisation</option>
+            <option value="long">Long (8k–32k tokens) - doc analysis, code review</option>
           </select>
         </div>
         <div class="plan-row">
           <span class="plan-label">Typical output length</span>
           <select class="plan-select" id="planOutput" onchange="updateRatio()">
-            <option value="short">Short (50–200 tokens) — direct answers</option>
-            <option value="medium" selected>Medium (200–500 tokens) — explanations</option>
-            <option value="long">Long (500–2k tokens) — documents, code</option>
+            <option value="short">Short (50–200 tokens) - direct answers</option>
+            <option value="medium" selected>Medium (200–500 tokens) - explanations</option>
+            <option value="long">Long (500–2k tokens) - documents, code</option>
           </select>
         </div>
         <div class="plan-result" id="ratioResult"></div>
@@ -412,7 +412,7 @@
     <div class="section-header" id="hdr6" onclick="toggle(6)">
       <div class="section-title">
         <span class="section-num" style="background:#2E7D32;">6</span>
-        Disaggregation vs Coupled — When Each Makes Sense
+        Disaggregation vs Coupled - When Each Makes Sense
       </div>
       <span class="chevron" id="chv6">&#9662;</span>
     </div>
@@ -426,27 +426,27 @@
           <tbody>
             <tr>
               <td class="cmp-name">TTFT</td>
-              <td>Variable — depends on Decode load</td>
-              <td class="cmp-good">Consistent — Prefill pool dedicated</td>
+              <td>Variable - depends on Decode load</td>
+              <td class="cmp-good">Consistent - Prefill pool dedicated</td>
             </tr>
             <tr>
               <td class="cmp-name">TPOT</td>
               <td>Spikes when Prefill interrupts Decode</td>
-              <td class="cmp-good">Steady — Decode pool never interrupted</td>
+              <td class="cmp-good">Steady - Decode pool never interrupted</td>
             </tr>
             <tr>
               <td class="cmp-name">GPU utilisation</td>
-              <td>Moderate — each GPU runs both phases suboptimally</td>
-              <td class="cmp-good">High — each pool optimised for its workload</td>
+              <td>Moderate - each GPU runs both phases suboptimally</td>
+              <td class="cmp-good">High - each pool optimised for its workload</td>
             </tr>
             <tr>
               <td class="cmp-name">Operational complexity</td>
-              <td class="cmp-good">Low — one pool, one config</td>
-              <td>High — two pools, ratio tuning, KV transfer infra</td>
+              <td class="cmp-good">Low - one pool, one config</td>
+              <td>High - two pools, ratio tuning, KV transfer infra</td>
             </tr>
             <tr>
               <td class="cmp-name">Hardware requirement</td>
-              <td class="cmp-good">Standard — any GPU cluster</td>
+              <td class="cmp-good">Standard - any GPU cluster</td>
               <td>NVLink or high-BW InfiniBand between pools</td>
             </tr>
             <tr>
@@ -457,19 +457,19 @@
             <tr>
               <td class="cmp-name">Prefix caching</td>
               <td>Works, per-GPU scope</td>
-              <td class="cmp-good">More effective — Decode pool maintains larger shared cache</td>
+              <td class="cmp-good">More effective - Decode pool maintains larger shared cache</td>
             </tr>
             <tr>
               <td class="cmp-name">Cost</td>
               <td class="cmp-good">Lower (fewer moving parts)</td>
-              <td>Higher upfront — requires fleet-level coordination</td>
+              <td>Higher upfront - requires fleet-level coordination</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="callout callout-green">
-        <strong>The scale threshold:</strong> Disaggregation's complexity overhead is fixed — you pay it once regardless of scale. At small scale (1–4 GPUs), coupled serving is almost always the right choice. At large scale (16+ GPUs serving thousands of requests per minute with mixed workloads), disaggregation's throughput and latency gains compound, and the operational cost amortises quickly. The crossover point is roughly where head-of-line blocking starts appearing regularly in your P95 TTFT metrics.
+        <strong>The scale threshold:</strong> Disaggregation's complexity overhead is fixed - you pay it once regardless of scale. At small scale (1–4 GPUs), coupled serving is almost always the right choice. At large scale (16+ GPUs serving thousands of requests per minute with mixed workloads), disaggregation's throughput and latency gains compound, and the operational cost amortises quickly. The crossover point is roughly where head-of-line blocking starts appearing regularly in your P95 TTFT metrics.
       </div>
     </div>
   </div>
@@ -487,29 +487,29 @@
       <div class="key-item">
         <div class="key-num" style="color:#3949AB;">01</div>
         <div>
-          <div class="key-title">Prefill and Decode have opposing resource profiles — coupling them means perpetual compromise</div>
+          <div class="key-title">Prefill and Decode have opposing resource profiles - coupling them means perpetual compromise</div>
           <div class="key-desc">Prefill is compute-bound and wants large batches. Decode is memory-bandwidth-bound and wants many steady streams. On shared hardware, every scheduling decision helps one phase and hurts the other. Disaggregation ends this conflict by giving each phase its own hardware.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#1565C0;">02</div>
         <div>
-          <div class="key-title">The KV Cache transfer is the enabling mechanism — and the key constraint</div>
-          <div class="key-desc">After Prefill, the computed KV Cache is sent to a Decode worker via NVLink or InfiniBand. Transfer latency adds to TTFT — 2–5ms over NVLink, 20–40ms over InfiniBand. This constrains deployment topology: Prefill and Decode workers must be on the same node or connected by high-bandwidth fabric.</div>
+          <div class="key-title">The KV Cache transfer is the enabling mechanism - and the key constraint</div>
+          <div class="key-desc">After Prefill, the computed KV Cache is sent to a Decode worker via NVLink or InfiniBand. Transfer latency adds to TTFT - 2–5ms over NVLink, 20–40ms over InfiniBand. This constrains deployment topology: Prefill and Decode workers must be on the same node or connected by high-bandwidth fabric.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#7B1FA2;">03</div>
         <div>
-          <div class="key-title">The Prefill:Decode ratio is the primary tuning lever — match it to your workload</div>
+          <div class="key-title">The Prefill:Decode ratio is the primary tuning lever - match it to your workload</div>
           <div class="key-desc">Long prompts, short outputs (RAG, document Q&A) need more Prefill GPUs. Short prompts, long outputs (code generation, creative writing) need more Decode GPUs. Systems like Mooncake adjust this ratio dynamically in response to real-time queue depths, achieving further efficiency gains over static allocation.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#2E7D32;">04</div>
         <div>
-          <div class="key-title">Disaggregation is a fleet-scale pattern — complexity must be justified by scale</div>
-          <div class="key-desc">At small scale, coupled serving is simpler and sufficient. At large scale — thousands of requests per minute, mixed workloads, SLA-sensitive applications — disaggregation's throughput improvement (often 1.5–2.5&#215;) and latency consistency (P99 TTFT and TPOT both improve) justify the operational investment. It is the current frontier of production LLM serving.</div>
+          <div class="key-title">Disaggregation is a fleet-scale pattern - complexity must be justified by scale</div>
+          <div class="key-desc">At small scale, coupled serving is simpler and sufficient. At large scale - thousands of requests per minute, mixed workloads, SLA-sensitive applications - disaggregation's throughput improvement (often 1.5–2.5&#215;) and latency consistency (P99 TTFT and TPOT both improve) justify the operational investment. It is the current frontier of production LLM serving.</div>
         </div>
       </div>
     </div>
@@ -517,7 +517,7 @@
 
   <!-- Cheat sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 3.6 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 3.6 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Disaggregation (P/D split)</div>
@@ -525,7 +525,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Head-of-line blocking</div>
-        <div class="cheat-def">In coupled serving, a long Prefill job monopolises the GPU and stalls all in-flight Decode requests. Users see TPOT spikes — tokens stop arriving mid-stream.</div>
+        <div class="cheat-def">In coupled serving, a long Prefill job monopolises the GPU and stalls all in-flight Decode requests. Users see TPOT spikes - tokens stop arriving mid-stream.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">KV Cache transfer</div>
@@ -561,19 +561,19 @@
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        The TPOT spikes are caused by insufficient KV Cache memory — enable INT8 KV quantisation to fit more concurrent requests.
+        The TPOT spikes are caused by insufficient KV Cache memory - enable INT8 KV quantisation to fit more concurrent requests.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        This is a classic head-of-line blocking pattern from coupled Prefill/Decode serving. The 3,000-token Prefill jobs are intermittently monopolising GPUs that are also serving Decode streams. Recommendation: implement P/D disaggregation — allocate 4 GPUs (one node) as a dedicated Prefill pool and 12 GPUs (1.5 nodes) as Decode. The Prefill pool handles the long RAG prompts in large batches; the Decode pool maintains steady token streams uninterrupted. KV Cache transfer over InfiniBand (~28ms for ~2GB at 3k tokens) adds to TTFT but eliminates the variance. Also enable prefix caching on the Decode pool — the retrieved documents often share segments, reducing both transfer size and Prefill time.
+        This is a classic head-of-line blocking pattern from coupled Prefill/Decode serving. The 3,000-token Prefill jobs are intermittently monopolising GPUs that are also serving Decode streams. Recommendation: implement P/D disaggregation - allocate 4 GPUs (one node) as a dedicated Prefill pool and 12 GPUs (1.5 nodes) as Decode. The Prefill pool handles the long RAG prompts in large batches; the Decode pool maintains steady token streams uninterrupted. KV Cache transfer over InfiniBand (~28ms for ~2GB at 3k tokens) adds to TTFT but eliminates the variance. Also enable prefix caching on the Decode pool - the retrieved documents often share segments, reducing both transfer size and Prefill time.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Use speculative decoding — the short 150-token outputs are ideal for it and will fix the TPOT spikes.
+        Use speculative decoding - the short 150-token outputs are ideal for it and will fix the TPOT spikes.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        The inconsistent TTFT is caused by network latency to the retrieval system — optimise the vector database response time.
+        The inconsistent TTFT is caused by network latency to the retrieval system - optimise the vector database response time.
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
@@ -582,9 +582,9 @@
 
   <a href="module4_1.html" class="next-module">
     <div>
-      <div class="next-label">Up Next — Part 4, Module 4.1</div>
+      <div class="next-label">Up Next - Part 4, Module 4.1</div>
       <div class="next-title">vLLM Architecture</div>
-      <div class="next-sub">How vLLM implements Paged Attention, continuous batching, and the full inference serving stack — and how to configure it</div>
+      <div class="next-sub">How vLLM implements Paged Attention, continuous batching, and the full inference serving stack - and how to configure it</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -605,7 +605,7 @@
   var conflictData={
     chat:{
       label:'Interactive chat (short prompts, medium outputs)',
-      coupled:  {ttft:180, tpot:22, util:52, note:'Short prompts mean Prefill is fast — less head-of-line blocking. Coupled serving works adequately here. TTFT variance is low.'},
+      coupled:  {ttft:180, tpot:22, util:52, note:'Short prompts mean Prefill is fast - less head-of-line blocking. Coupled serving works adequately here. TTFT variance is low.'},
       disagg:   {ttft:140, tpot:18, util:71, note:'Modest improvement. For pure chat with short prompts, disaggregation adds KV transfer overhead that partially offsets the gains. Only worth it at very high scale.'}
     },
     rag:{
@@ -656,11 +656,11 @@
 
     if(prompt==='short' && output==='short'){
       rec='Coupled serving recommended';
-      why='Short prompts mean fast Prefill — head-of-line blocking is minimal. Disaggregation adds KV transfer overhead that outweighs gains at this scale. Use continuous batching and prefix caching instead.';
+      why='Short prompts mean fast Prefill - head-of-line blocking is minimal. Disaggregation adds KV transfer overhead that outweighs gains at this scale. Use continuous batching and prefix caching instead.';
       tags=['No disaggregation','Continuous batching','Prefix caching'];
     } else if(prompt==='short' && output==='long'){
       rec='P:D ratio ~1:4 (1 Prefill GPU : 4 Decode GPUs)';
-      why='Short prompts complete Prefill quickly. Decode is the bottleneck — long outputs keep Decode GPUs busy. Heavily weight allocation toward Decode. Disaggregation is worthwhile to isolate the long Decode streams.';
+      why='Short prompts complete Prefill quickly. Decode is the bottleneck - long outputs keep Decode GPUs busy. Heavily weight allocation toward Decode. Disaggregation is worthwhile to isolate the long Decode streams.';
       tags=['Decode-heavy','1:4 ratio','Decode pool needs large KV Cache'];
     } else if(prompt==='medium' && output==='short'){
       rec='P:D ratio ~1:2 (1 Prefill GPU : 2 Decode GPUs)';
@@ -711,10 +711,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct — this is a textbook disaggregation diagnosis.</strong> The two symptoms tell the whole story: (1) <strong>Inconsistent TTFT (200ms–2,000ms variance)</strong> — classic head-of-line blocking. When a 3,000-token Prefill runs, it monopolises the GPU for ~200–400ms, making every other request wait. The 2,000ms outlier is likely a batch of long Prefills stacking up. (2) <strong>TPOT spikes mid-response</strong> — the Decode stream for an active user is interrupted when the GPU switches to Prefill. The recommendation correctly identifies the 4:12 GPU split for this workload: 3k-token prompts producing 150-token outputs is strongly Prefill-heavy in wall-clock time, but the Decode pool needs to sustain many concurrent 150-token streams, so 12 Decode GPUs handle the throughput. The InfiniBand KV transfer note is important — at ~2GB per request over InfiniBand, the transfer adds ~28ms to TTFT, but this is deterministic and far better than the 200ms–2s variance in the coupled system. Option A (KV quantisation) addresses a different problem entirely — memory capacity, not head-of-line blocking. Option C (speculative decoding) would improve TPOT but not fix TTFT variance or TPOT spikes caused by Prefill interference. Option D misattributes the problem to retrieval latency.';
+      r.innerHTML='<strong>Correct - this is a textbook disaggregation diagnosis.</strong> The two symptoms tell the whole story: (1) <strong>Inconsistent TTFT (200ms–2,000ms variance)</strong> - classic head-of-line blocking. When a 3,000-token Prefill runs, it monopolises the GPU for ~200–400ms, making every other request wait. The 2,000ms outlier is likely a batch of long Prefills stacking up. (2) <strong>TPOT spikes mid-response</strong> - the Decode stream for an active user is interrupted when the GPU switches to Prefill. The recommendation correctly identifies the 4:12 GPU split for this workload: 3k-token prompts producing 150-token outputs is strongly Prefill-heavy in wall-clock time, but the Decode pool needs to sustain many concurrent 150-token streams, so 12 Decode GPUs handle the throughput. The InfiniBand KV transfer note is important - at ~2GB per request over InfiniBand, the transfer adds ~28ms to TTFT, but this is deterministic and far better than the 200ms–2s variance in the coupled system. Option A (KV quantisation) addresses a different problem entirely - memory capacity, not head-of-line blocking. Option C (speculative decoding) would improve TPOT but not fix TTFT variance or TPOT spikes caused by Prefill interference. Option D misattributes the problem to retrieval latency.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The symptoms — high TTFT variance and mid-stream TPOT spikes — are the signature pattern of head-of-line blocking in a coupled Prefill/Decode system. Long Prefill jobs (3k tokens) intermittently monopolise GPUs that are also responsible for active Decode streams. Disaggregation separates the phases so each runs undisturbed. Option A addresses memory capacity, not scheduling interference. Option C (speculative decoding) improves average TPOT but does not prevent the spikes caused by Prefill competition. Option D is a plausible red herring but the described variance pattern is internal to the serving system, not the retrieval system — retrieval latency would show up in TTFT consistently, not as TPOT spikes mid-generation.';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The symptoms - high TTFT variance and mid-stream TPOT spikes - are the signature pattern of head-of-line blocking in a coupled Prefill/Decode system. Long Prefill jobs (3k tokens) intermittently monopolise GPUs that are also responsible for active Decode streams. Disaggregation separates the phases so each runs undisturbed. Option A addresses memory capacity, not scheduling interference. Option C (speculative decoding) improves average TPOT but does not prevent the spikes caused by Prefill competition. Option D is a plausible red herring but the described variance pattern is internal to the serving system, not the retrieval system - retrieval latency would show up in TTFT consistently, not as TPOT spikes mid-generation.';
     }
     document.getElementById('check-btn').style.display='none';
   }

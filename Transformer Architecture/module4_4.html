@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 4.4 - Triton Inference Server</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #006064 0%, #00838F 50%, #00ACC1 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+  .home-icon { position:absolute; top:16px; right:16px; font-size:24px; color:white; text-decoration:none; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #B2EBF2; background:white; font-family:Arial,sans-serif; font-size:13px; text-decoration:none; display:block; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #BF360C; }
+  .nav-btn.next { text-align:right; border-right:4px solid #006064; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout        { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-teal   { background:#E0F7FA; border-left:4px solid #00838F; }
+  .callout-blue   { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-orange { background:#FFF3E0; border-left:4px solid #E65100; }
+  .callout-green  { background:#E8F5E9; border-left:4px solid #2E7D32; }
+  .callout-purple { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-slate  { background:#ECEFF1; border-left:4px solid #546E7A; }
+
+  /* ── Architecture diagram ── */
+  .arch-wrap { background:#0F172A; border-radius:14px; padding:24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .arch-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:18px; }
+  .arch-row   { display:flex; gap:10px; margin-bottom:8px; align-items:stretch; }
+  .arch-box   { border-radius:8px; padding:12px 14px; flex:1; }
+  .arch-box-title { font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; opacity:0.85; margin-bottom:5px; }
+  .arch-box-body  { font-size:11.5px; opacity:0.6; line-height:1.6; }
+  .arch-arrow-col { display:flex; align-items:center; justify-content:center; font-size:18px; opacity:0.3; padding:0 4px; }
+  .arch-arrow-row { text-align:center; font-size:14px; opacity:0.3; margin:4px 0; }
+  .arch-note  { font-size:11.5px; opacity:0.4; margin-top:12px; line-height:1.6; }
+
+  /* ── Model repository explorer ── */
+  .repo-wrap { background:#E0F7FA; border:1px solid #80DEEA; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .repo-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#006064; margin-bottom:14px; font-weight:bold; }
+  .repo-controls { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  .repo-btn { border:none; border-radius:6px; padding:7px 14px; font-size:13px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; }
+  .repo-tree { background:#0F172A; border-radius:8px; padding:16px; font-family:monospace; font-size:12.5px; line-height:2; color:#80CBC4; margin-bottom:10px; }
+  .repo-tree .dir  { color:#FFD54F; }
+  .repo-tree .file { color:#80CBC4; }
+  .repo-tree .hl   { color:#A5D6A7; font-weight:bold; }
+  .repo-tree .dim  { opacity:0.45; }
+  .repo-note { font-size:12.5px; color:#444; line-height:1.7; background:white; border-radius:6px; padding:10px 12px; }
+
+  /* ── Batching strategy explorer ── */
+  .batch-wrap { background:#F3E8FD; border:1px solid #CE93D8; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .batch-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#4A148C; margin-bottom:14px; font-weight:bold; }
+  .batch-controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  .batch-btn { border:none; border-radius:6px; padding:7px 14px; font-size:13px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; }
+  .batch-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .batch-metric { background:white; border-radius:8px; padding:12px 14px; }
+  .batch-metric-label { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#888; margin-bottom:6px; }
+  .batch-metric-val   { font-size:20px; font-weight:bold; font-family:monospace; }
+  .batch-metric-sub   { font-size:11px; color:#888; margin-top:3px; line-height:1.5; }
+  .batch-note { font-size:12.5px; color:#444; line-height:1.7; background:white; border-radius:6px; padding:10px 12px; }
+
+  /* ── Pipeline ensemble ── */
+  .pipe-wrap { background:#E8F5E9; border:1px solid #A5D6A7; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .pipe-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#1B5E20; margin-bottom:14px; font-weight:bold; }
+  .pipe-steps { display:flex; align-items:center; gap:0; overflow-x:auto; }
+  .pipe-step  { border-radius:10px; padding:14px 16px; text-align:center; min-width:130px; flex-shrink:0; }
+  .pipe-step-title { font-size:12px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:white; margin-bottom:6px; opacity:0.9; }
+  .pipe-step-body  { font-size:11.5px; color:white; opacity:0.7; line-height:1.5; }
+  .pipe-arrow2 { font-size:20px; color:#888; padding:0 6px; flex-shrink:0; }
+
+  /* ── Comparison table ── */
+  .cmp-table { width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:13px; margin:16px 0; }
+  .cmp-table th { background:#006064; color:white; padding:10px 12px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .cmp-table td { padding:11px 12px; border-bottom:1px solid #F0F0F0; vertical-align:top; line-height:1.6; }
+  .cmp-table tr:nth-child(even) td { background:#F5FDFD; }
+  .cmp-table tr:last-child td { border-bottom:none; }
+  .cmp-dim  { font-weight:bold; color:#006064; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:#006064; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.09); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#80DEEA; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.88; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#00838F; background:#E0F7FA; }
+  .quiz-option.selected { border-color:#00838F; background:#E0F7FA; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#00838F; }
+  .quiz-btn  { margin-top:14px; background:#006064; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#00838F; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#E0F7FA,#E8EAF6); border:1px solid #B2EBF2; display:flex; justify-content:space-between; align-items:center; text-decoration:none; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; color:#1a1a1a; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .cheat-grid,.batch-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+    .arch-row { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <a href="index.html" class="home-icon" title="Home">🏠</a>
+    <div class="header-eyebrow">PART 4 · MODULE 4.4</div>
+    <h1>Triton Inference Server - The Serving Layer on Top</h1>
+    <p>What Triton actually does, why TensorRT-LLM needs it, how the model repository and batching configuration work, and when Triton adds value beyond just TRT-LLM deployments.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module4_3.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">4.3 - TensorRT-LLM</div>
+    </a>
+    <a href="module4_5.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">4.5 - How It All Fits Together</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>In Module 4.3 the TensorRT-LLM deployment workflow ended with a step labelled "serve via Triton Inference Server" - and then moved on. This module fills that gap. Triton is the production serving layer that sits in front of TRT-LLM (and other backends), handling everything the inference engine itself does not: HTTP and gRPC endpoints, dynamic batching, request queuing, health checks, metrics, and multi-model routing.</p>
+    <p>Triton is frequently misunderstood in customer conversations. Some teams think it is just an API wrapper. Others think it is only relevant for TRT-LLM. Neither is accurate - Triton is a full inference serving platform that can front multiple backends simultaneously, orchestrate multi-step pipelines, and expose a standardised interface regardless of what runs underneath. Understanding it well lets you place it correctly in architecture discussions and recognise when it is the right layer to add.</p>
+  </div>
+
+  <!-- Section 1: What Triton is -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#00838F;">1</span>
+        What Triton Is - The Serving Layer vs the Inference Engine
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>The distinction that matters most: TensorRT-LLM is an inference engine - it executes model computations on GPUs as fast as possible. Triton Inference Server is a serving layer - it handles everything else required to make that engine accessible to production applications at scale. The two are designed to work together, but they solve different problems.</p>
+
+      <div class="arch-wrap">
+        <div class="arch-title">Triton in the full serving stack</div>
+
+        <div class="arch-row">
+          <div class="arch-box" style="background:rgba(0,131,143,0.25);">
+            <div class="arch-box-title" style="color:#80DEEA;">Client applications</div>
+            <div class="arch-box-body">Python apps, REST clients, LangChain, any HTTP/gRPC client. Send requests to Triton's endpoint.</div>
+          </div>
+        </div>
+        <div class="arch-arrow-row">&#9660;</div>
+        <div class="arch-row">
+          <div class="arch-box" style="background:rgba(0,96,100,0.35);">
+            <div class="arch-box-title" style="color:#80DEEA;">Triton Inference Server</div>
+            <div class="arch-box-body">
+              HTTP/gRPC endpoints &nbsp;|&nbsp; Dynamic batching &nbsp;|&nbsp; Request queuing<br>
+              Model repository management &nbsp;|&nbsp; Health checks &nbsp;|&nbsp; Prometheus metrics<br>
+              Multi-model routing &nbsp;|&nbsp; Pipeline ensemble orchestration<br>
+              Concurrent model instances &nbsp;|&nbsp; Priority scheduling
+            </div>
+          </div>
+        </div>
+        <div class="arch-arrow-row">&#9660;</div>
+        <div class="arch-row">
+          <div class="arch-box" style="background:rgba(230,81,0,0.25); flex:1.2;">
+            <div class="arch-box-title" style="color:#FFAB91;">TRT-LLM backend</div>
+            <div class="arch-box-body">Compiled .engine files. Executes GPU forward pass. In-flight batching (continuous batching). KV Cache management.</div>
+          </div>
+          <div class="arch-arrow-col">|</div>
+          <div class="arch-box" style="background:rgba(123,31,162,0.25); flex:1;">
+            <div class="arch-box-title" style="color:#CE93D8;">vLLM backend</div>
+            <div class="arch-box-body">Triton can also front a vLLM process via custom backend or proxy.</div>
+          </div>
+          <div class="arch-arrow-col">|</div>
+          <div class="arch-box" style="background:rgba(46,125,50,0.25); flex:1;">
+            <div class="arch-box-title" style="color:#A5D6A7;">Other backends</div>
+            <div class="arch-box-body">PyTorch, ONNX Runtime, OpenVINO, Python custom backends.</div>
+          </div>
+        </div>
+        <div class="arch-arrow-row">&#9660;</div>
+        <div class="arch-row">
+          <div class="arch-box" style="background:rgba(55,71,79,0.35);">
+            <div class="arch-box-title" style="color:#B0BEC5;">GPU hardware (CUDA)</div>
+            <div class="arch-box-body">NVIDIA GPUs executing the compiled inference kernels.</div>
+          </div>
+        </div>
+        <div class="arch-note">Triton is backend-agnostic. The same Triton server can simultaneously serve a TRT-LLM engine on GPU, an ONNX model for a smaller classification task, and a Python-based pre/post-processing step - all addressable through a single endpoint with unified metrics.</div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>Why TRT-LLM cannot serve itself:</strong> A compiled TRT-LLM engine is a GPU binary that accepts tensor inputs and returns tensor outputs. It has no concept of HTTP, JSON, streaming, request queuing, or health checks. Triton provides all of that - it translates incoming API requests into the tensor format TRT-LLM expects, manages the request queue, and streams token outputs back to the client. Without Triton (or an equivalent serving layer), TRT-LLM engines are not directly usable by production applications.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Model repository -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">2</span>
+        The Model Repository - How Triton Knows What to Serve
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>Triton loads models from a directory structure called the model repository. Each subdirectory is one model, containing a <code>config.pbtxt</code> configuration file and versioned model artifacts. Triton watches this directory at runtime - adding a new model subdirectory hot-loads it without restarting the server. This is how teams manage model versioning and A/B deployments in Triton.</p>
+
+      <div class="repo-wrap">
+        <div class="repo-title">Model repository structure - click a scenario to explore</div>
+        <div class="repo-controls">
+          <button class="repo-btn" style="background:#006064; color:white;" onclick="showRepo('basic')">Basic LLM deployment</button>
+          <button class="repo-btn" style="background:#1565C0; color:white;" onclick="showRepo('ensemble')">Pipeline ensemble</button>
+          <button class="repo-btn" style="background:#7B1FA2; color:white;" onclick="showRepo('multi')">Multi-model serving</button>
+        </div>
+        <div class="repo-tree" id="repoTree"></div>
+        <div class="repo-note" id="repoNote"></div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>config.pbtxt is the critical file:</strong> Every Triton model requires a <code>config.pbtxt</code> that declares the model's name, backend type, input tensor shapes and dtypes, output tensor shapes and dtypes, batching configuration, and instance count. Misconfigured shapes are the most common Triton deployment error - if the config declares a different input shape than the model expects, requests will fail with cryptic tensor dimension errors. Always validate config against the actual model's expected input format.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Batching in Triton -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">3</span>
+        Batching in Triton - Dynamic Batching and Sequence Batching
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Triton implements its own batching layer on top of whatever backend it fronts. For LLM serving with TRT-LLM, the relevant batching mode is sequence batching with in-flight batching - Triton manages the queue of incoming requests and feeds them to TRT-LLM's in-flight batching engine. For other model types, Triton's dynamic batching groups requests from different clients into batches automatically.</p>
+
+      <div class="batch-wrap">
+        <div class="batch-title">Triton batching modes - click to explore</div>
+        <div class="batch-controls">
+          <button class="batch-btn" style="background:#006064; color:white;" onclick="showBatch('dynamic')">Dynamic batching</button>
+          <button class="batch-btn" style="background:#7B1FA2; color:white;" onclick="showBatch('sequence')">Sequence batching (LLMs)</button>
+          <button class="batch-btn" style="background:#1565C0; color:white;" onclick="showBatch('ragged')">Ragged batching</button>
+        </div>
+        <div class="batch-grid" id="batchGrid"></div>
+        <div class="batch-note" id="batchNote"></div>
+      </div>
+
+      <div class="callout callout-purple">
+        <strong>The queue_delay_microseconds parameter:</strong> In dynamic batching mode, Triton waits up to <code>queue_delay_microseconds</code> for additional requests before dispatching a batch. Setting this to 0 dispatches immediately (lowest latency, smaller batches, lower throughput). Setting it to 1000&#956;s (1ms) allows more requests to accumulate (slightly higher latency, larger batches, higher throughput). This is the Triton-level equivalent of the batch_timeout parameter discussed in Module 2.3 - it is the primary latency-throughput dial for non-LLM models served through Triton.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Ensemble pipelines -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">4</span>
+        Ensemble Pipelines - Chaining Models in Triton
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>One of Triton's most powerful features for production LLM deployments is ensemble scheduling - the ability to define multi-step pipelines where the output of one model feeds into the next, all managed by Triton without returning to the client between steps. This is particularly valuable for RAG and agentic workloads where preprocessing, embedding, retrieval, and generation all need to happen in sequence.</p>
+
+      <div class="pipe-wrap">
+        <div class="pipe-title">Example ensemble - RAG pipeline in Triton</div>
+        <div class="pipe-steps">
+          <div class="pipe-step" style="background:#006064;">
+            <div class="pipe-step-title">Preprocessing</div>
+            <div class="pipe-step-body">Tokenise input<br>Python backend<br>CPU</div>
+          </div>
+          <div class="pipe-arrow2">&#8594;</div>
+          <div class="pipe-step" style="background:#7B1FA2;">
+            <div class="pipe-step-title">Embedding model</div>
+            <div class="pipe-step-body">ONNX backend<br>GPU (small)<br>e.g. BGE-M3</div>
+          </div>
+          <div class="pipe-arrow2">&#8594;</div>
+          <div class="pipe-step" style="background:#1565C0;">
+            <div class="pipe-step-title">Vector retrieval</div>
+            <div class="pipe-step-body">Python backend<br>CPU + network<br>e.g. Milvus call</div>
+          </div>
+          <div class="pipe-arrow2">&#8594;</div>
+          <div class="pipe-step" style="background:#BF360C;">
+            <div class="pipe-step-title">LLM generation</div>
+            <div class="pipe-step-body">TRT-LLM backend<br>GPU (large)<br>e.g. Llama 3 70B</div>
+          </div>
+          <div class="pipe-arrow2">&#8594;</div>
+          <div class="pipe-step" style="background:#2E7D32;">
+            <div class="pipe-step-title">Postprocessing</div>
+            <div class="pipe-step-body">Detokenise output<br>Python backend<br>CPU</div>
+          </div>
+        </div>
+      </div>
+
+      <p>In this configuration, a single client request to the ensemble endpoint triggers all five steps automatically. Triton manages the tensor passing between steps, handles errors at any stage, and streams the final output back to the client. Each component step can be independently scaled - the embedding model might run 4 concurrent instances while the LLM runs 1, because embedding is much faster and can handle more simultaneous requests per GPU.</p>
+
+      <div class="callout callout-green">
+        <strong>Why this matters for agentic workloads:</strong> As customers move toward multi-step agentic workflows (plan &#8594; retrieve &#8594; generate &#8594; verify &#8594; refine), Triton's ensemble capability provides a structured way to orchestrate those steps with proper error handling, metrics per stage, and independent scaling. The alternative - orchestrating each step in application code - is harder to monitor, harder to scale, and introduces more network round-trips. Triton ensembles keep the heavy tensor data on-server between steps.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Metrics and observability -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">5</span>
+        Metrics and Observability - What Triton Exposes Out of the Box
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>Triton exposes a Prometheus-compatible metrics endpoint at <code>/metrics</code> out of the box. For production LLM deployments, these metrics are the primary source of truth for capacity planning, SLA monitoring, and debugging throughput issues. Knowing what Triton reports - and which metrics map to the concepts from Parts 1–3 - is essential for customer conversations about observability.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0;">
+        <div style="background:#E0F7FA; border-radius:10px; padding:16px; border-left:3px solid #006064;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#006064; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Request-level metrics</div>
+          <div style="font-size:13px; line-height:2; color:#333; font-family:monospace;">
+            nv_inference_request_success<br>
+            nv_inference_request_failure<br>
+            nv_inference_queue_duration_us<br>
+            nv_inference_compute_input_duration_us<br>
+            nv_inference_compute_infer_duration_us<br>
+            nv_inference_compute_output_duration_us
+          </div>
+        </div>
+        <div style="background:#E8F5E9; border-radius:10px; padding:16px; border-left:3px solid #2E7D32;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">LLM-specific metrics (TRT-LLM backend)</div>
+          <div style="font-size:13px; line-height:2; color:#333; font-family:monospace;">
+            nv_trt_llm_request_active_count<br>
+            nv_trt_llm_kv_cache_utilization<br>
+            nv_trt_llm_inflight_batcher_requests<br>
+            nv_trt_llm_generation_requests_gen_tput<br>
+            nv_trt_llm_context_requests_ctx_tput<br>
+            nv_trt_llm_num_ctx_tokens
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>The metrics that matter most for LLM SLA monitoring:</strong> <code>nv_inference_queue_duration_us</code> maps to queueing latency - if this spikes, requests are waiting in Triton's queue before even reaching TRT-LLM, which means the serving layer is under-provisioned. <code>nv_trt_llm_kv_cache_utilization</code> is the KV Cache fill percentage - sustained values above 90% indicate you are approaching the OOM boundary described in Module 2.5. <code>nv_trt_llm_generation_requests_gen_tput</code> is your actual tokens/second throughput, the primary capacity metric.
+      </div>
+
+      <div class="callout callout-slate">
+        <strong>Triton's health endpoint for load balancers:</strong> Triton exposes <code>/v2/health/ready</code> and <code>/v2/health/live</code> endpoints that return HTTP 200 when the server is ready to accept requests. These are what load balancers and orchestration systems (Kubernetes readiness probes) should poll - not custom health checks. A common deployment mistake is configuring Kubernetes to check a non-existent endpoint, causing the pod to be marked unhealthy immediately after startup and triggering an infinite restart loop.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Triton vs vLLM's built-in API -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#546E7A;">6</span>
+        Triton vs vLLM's Built-in API - When Does Triton Add Value?
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>vLLM has its own built-in OpenAI-compatible HTTP server - so a natural question in customer conversations is: if we use vLLM, do we also need Triton? The answer depends on the deployment's complexity.</p>
+
+      <div style="overflow-x:auto;">
+        <table class="cmp-table">
+          <thead>
+            <tr><th>Capability</th><th>vLLM built-in server</th><th>Triton in front of vLLM or TRT-LLM</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="cmp-dim">HTTP/gRPC API</td>
+              <td>OpenAI-compatible HTTP only</td>
+              <td>HTTP + gRPC + KServe v2 protocol</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Multiple models</td>
+              <td>One model per vLLM process</td>
+              <td>Many models in one Triton server, unified endpoint</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Pipeline / ensemble</td>
+              <td>Not supported - orchestrate in application code</td>
+              <td>Native ensemble scheduling, on-server tensor passing</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Prometheus metrics</td>
+              <td>Basic vLLM metrics</td>
+              <td>Rich Triton + TRT-LLM backend metrics, per-model</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">A/B model routing</td>
+              <td>Requires external load balancer</td>
+              <td>Native - route by model version or name within Triton</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">TRT-LLM backend</td>
+              <td>Not applicable</td>
+              <td>Required - TRT-LLM has no standalone serving layer</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Operational complexity</td>
+              <td>Low - one process, one config</td>
+              <td>Medium - model repository, config.pbtxt per model</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Best for</td>
+              <td>Single model, simple deployment, OpenAI drop-in</td>
+              <td>TRT-LLM deployments, multi-model, RAG pipelines, enterprise observability</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>The honest answer for most vLLM customers:</strong> If a team is running vLLM with one model and needs an OpenAI-compatible endpoint, vLLM's built-in server is sufficient and adding Triton adds complexity without benefit. Triton becomes valuable when: (1) they move to TRT-LLM and need a serving layer, (2) they need to serve multiple models from one endpoint, (3) they need pipeline orchestration for RAG or agentic workloads, or (4) their organisation requires gRPC or KServe v2 protocol for integration with existing infrastructure.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr7" onclick="toggle(7)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">7</span>
+        4 Key Ideas to Remember
+      </div>
+      <span class="chevron" id="chv7">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy7">
+      <div class="key-item">
+        <div class="key-num" style="color:#00838F;">01</div>
+        <div>
+          <div class="key-title">Triton is the serving layer - TRT-LLM is the inference engine. They solve different problems and both are required for a TRT-LLM production deployment.</div>
+          <div class="key-desc">TRT-LLM executes GPU computation as fast as possible. Triton handles HTTP/gRPC endpoints, request queuing, batching, health checks, and metrics. A TRT-LLM engine without Triton is a GPU binary with no way to receive production traffic. Triton without TRT-LLM is a serving platform with no model to execute.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">02</div>
+        <div>
+          <div class="key-title">The model repository is directory-based and hot-reloadable - model versioning and A/B deployments are managed by dropping files into the right directories</div>
+          <div class="key-desc">Each subdirectory in the model repository is a model. Numbered subdirectories inside are versions (1/, 2/, 3/). Triton loads all versions and can route traffic to specific ones. Adding a new version directory hot-loads it without restarting. This is how production teams do zero-downtime model updates with Triton.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#7B1FA2;">03</div>
+        <div>
+          <div class="key-title">Ensemble pipelines keep tensor data on-server between steps - critical for RAG and agentic workflows where network round-trips between steps would add latency</div>
+          <div class="key-desc">A Triton ensemble defines the full pipeline (tokenise &#8594; embed &#8594; retrieve &#8594; generate &#8594; detokenise) in a config file. Triton executes all steps server-side, passing tensors directly between steps without serialisation or network overhead. Each step can be independently scaled. This is the production-grade alternative to orchestrating multi-step workflows in application code.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#2E7D32;">04</div>
+        <div>
+          <div class="key-title">Triton adds value for TRT-LLM, multi-model, and pipeline workloads - for simple vLLM deployments its built-in server is sufficient</div>
+          <div class="key-desc">Adding Triton to a simple vLLM deployment is adding complexity without benefit. Triton earns its place when TRT-LLM is in the stack (mandatory), when multiple models need a unified endpoint, when pipelines need on-server orchestration, or when the organisation needs gRPC or KServe v2 protocol. Match the tool to the actual requirement.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 4.4 - CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Triton Inference Server</div>
+        <div class="cheat-def">NVIDIA's production serving layer. Handles HTTP/gRPC, batching, queuing, health checks, metrics, multi-model routing, ensemble pipelines. Backend-agnostic - works with TRT-LLM, ONNX, PyTorch, Python.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Model repository</div>
+        <div class="cheat-def">Directory structure Triton loads models from. Each subdirectory = one model. Versioned with numbered subdirs (1/, 2/). Hot-reloadable - add a directory to deploy a new model without restart.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">config.pbtxt</div>
+        <div class="cheat-def">Required config file per model. Declares backend type, input/output tensor shapes and dtypes, batching config, instance count. Misconfigured shapes = most common Triton deployment error.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Dynamic batching</div>
+        <div class="cheat-def">Triton groups requests from different clients into batches automatically. queue_delay_microseconds sets how long to wait for more requests before dispatching. Key latency-throughput dial for non-LLM models.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Sequence batching</div>
+        <div class="cheat-def">Batching mode for stateful models like LLMs - maintains state across steps of a generation. Used with TRT-LLM's in-flight batching. Triton manages the sequence queue; TRT-LLM manages the KV Cache.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Ensemble pipeline</div>
+        <div class="cheat-def">Chain of models executed server-side with tensor passing between steps. No client round-trips. Defined in a config.pbtxt with an ensemble scheduler. Critical for RAG and agentic pipeline deployments.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Key metrics</div>
+        <div class="cheat-def">nv_inference_queue_duration_us (queue wait time), nv_trt_llm_kv_cache_utilization (KV fill %), nv_trt_llm_generation_requests_gen_tput (tokens/sec). Exposed at /metrics (Prometheus format).</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Health endpoints</div>
+        <div class="cheat-def">/v2/health/ready and /v2/health/live. Use for Kubernetes readiness/liveness probes and load balancer health checks. Common mistake: checking wrong endpoint, causing infinite restart loops at deploy time.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer is planning a production RAG deployment: an embedding model (BGE-M3, ONNX) runs on one GPU to embed queries, results are retrieved from a vector database, and Llama 3 70B (TRT-LLM compiled engine) runs on four H100s to generate answers. Their engineering team wants to expose a single API endpoint to their application developers and get per-stage latency metrics. What is the right Triton configuration approach, and what is the key operational concern to flag?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Run two separate Triton servers - one for the embedding model and one for the LLM - and have the application orchestrate calls between them with the vector database lookup in between.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        Use a single Triton server with a model repository containing three models: the BGE-M3 ONNX model, a Python backend model for the vector database lookup, and the TRT-LLM engine for Llama 3 70B. Define a Triton ensemble that chains them in sequence - embedding output feeds the retrieval step, retrieval results feed the LLM prompt construction, LLM output streams back to the client through a postprocessing step. One endpoint, per-stage Prometheus metrics from Triton, independent instance scaling per step. The key operational concern: the Python backend step for vector database retrieval introduces a network call inside the Triton server's execution thread - if the vector database response is slow or times out, it blocks that ensemble slot. Set aggressive timeouts on the retrieval step and monitor queue_duration_us for the retrieval model separately to catch vector database latency before it cascades into LLM queue buildup.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        Use vLLM instead of TRT-LLM - vLLM's built-in OpenAI-compatible server can handle all three steps and does not require Triton configuration.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        Use Triton for the LLM only and handle the embedding and retrieval steps in the application layer - Triton ensemble pipelines are designed for GPU-to-GPU tensor passing and are not appropriate for steps that include external network calls.
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <a href="module4_5.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next - Module 4.5</div>
+      <div class="next-title">How It All Fits Together</div>
+      <div class="next-sub">A real customer architecture walkthrough - from API request to GPU token and back, with every component from Parts 1–4 in its place</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var sColors={1:'#00838F',2:'#1565C0',3:'#7B1FA2',4:'#E65100',5:'#2E7D32',6:'#546E7A',7:'#283593'};
+  var sBgs   ={1:'#E0F7FA',2:'#E3F2FD',3:'#F3E8FD',4:'#FFF3E0',5:'#E8F5E9',6:'#ECEFF1',7:'#E8EAF6'};
+  function toggle(n){
+    var b=document.getElementById('bdy'+n),c=document.getElementById('chv'+n),h=document.getElementById('hdr'+n);
+    var open=b.classList.contains('open');
+    b.classList.toggle('open'); c.classList.toggle('open');
+    h.style.borderLeftColor=open?'#E8E8E8':sColors[n];
+    h.style.background=open?'white':sBgs[n];
+  }
+
+  /* ── Model repository explorer ── */
+  function showRepo(mode){
+    var tree='', note='';
+    if(mode==='basic'){
+      tree='<span class="dir">model-repository/</span>\n'+
+           '  <span class="dir">llama3-70b/</span>\n'+
+           '    <span class="hl">config.pbtxt</span>          <span class="dim"># backend, shapes, batching config</span>\n'+
+           '    <span class="dir">1/</span>                    <span class="dim"># version 1</span>\n'+
+           '      <span class="file">model.plan</span>          <span class="dim"># compiled TRT-LLM engine (GPU 0)</span>\n'+
+           '      <span class="file">model_rank1.plan</span>    <span class="dim"># compiled TRT-LLM engine (GPU 1)</span>\n'+
+           '      <span class="file">model_rank2.plan</span>    <span class="dim"># compiled TRT-LLM engine (GPU 2)</span>\n'+
+           '      <span class="file">model_rank3.plan</span>    <span class="dim"># compiled TRT-LLM engine (GPU 3)</span>';
+      note='Basic TRT-LLM deployment: one model, one version, four engine files (one per GPU for TP=4). The config.pbtxt declares the tensorrtllm backend, input/output tensor names and shapes, sequence batching parameters, and the max queue delay. Adding a version 2/ directory hot-loads a new engine alongside version 1 - Triton serves both simultaneously, allowing gradual traffic migration.';
+    } else if(mode==='ensemble'){
+      tree='<span class="dir">model-repository/</span>\n'+
+           '  <span class="dir">preprocessing/</span>        <span class="dim"># tokenisation step</span>\n'+
+           '    <span class="hl">config.pbtxt</span>          <span class="dim"># backend: python</span>\n'+
+           '    <span class="dir">1/</span>\n'+
+           '      <span class="file">model.py</span>\n'+
+           '  <span class="dir">llama3-70b/</span>           <span class="dim"># TRT-LLM engine</span>\n'+
+           '    <span class="hl">config.pbtxt</span>\n'+
+           '    <span class="dir">1/</span>\n'+
+           '      <span class="file">model.plan</span>  <span class="file">model_rank1.plan</span>  <span class="dim">...</span>\n'+
+           '  <span class="dir">postprocessing/</span>       <span class="dim"># detokenisation step</span>\n'+
+           '    <span class="hl">config.pbtxt</span>          <span class="dim"># backend: python</span>\n'+
+           '    <span class="dir">1/</span>\n'+
+           '      <span class="file">model.py</span>\n'+
+           '  <span class="hl dir">ensemble/</span>             <span class="dim"># the pipeline definition</span>\n'+
+           '    <span class="hl">config.pbtxt</span>          <span class="dim"># scheduler: ensemble, step definitions</span>\n'+
+           '    <span class="dir">1/</span>                    <span class="dim"># empty - ensemble has no artifacts</span>';
+      note='Ensemble pipeline: four model directories plus an ensemble directory. The ensemble config.pbtxt defines the execution graph - preprocessing output feeds llama3-70b input, llama3-70b output feeds postprocessing. Client sends a single request to the ensemble endpoint; Triton executes all three steps internally and streams the detokenised text back. The ensemble directory itself has no model artifacts - it is purely a routing and orchestration config.';
+    } else {
+      tree='<span class="dir">model-repository/</span>\n'+
+           '  <span class="dir">llama3-70b-fp8/</span>       <span class="dim"># primary LLM, FP8</span>\n'+
+           '    <span class="hl">config.pbtxt</span>\n'+
+           '    <span class="dir">1/</span>\n'+
+           '      <span class="file">model.plan</span>  <span class="dim">...</span>\n'+
+           '  <span class="dir">llama3-8b-fp8/</span>        <span class="dim"># smaller model for simple queries</span>\n'+
+           '    <span class="hl">config.pbtxt</span>\n'+
+           '    <span class="dir">1/</span>\n'+
+           '      <span class="file">model.plan</span>\n'+
+           '  <span class="dir">bge-m3-embed/</span>         <span class="dim"># embedding model, ONNX</span>\n'+
+           '    <span class="hl">config.pbtxt</span>          <span class="dim"># backend: onnxruntime</span>\n'+
+           '    <span class="dir">1/</span>\n'+
+           '      <span class="file">model.onnx</span>\n'+
+           '  <span class="dir">reranker/</span>             <span class="dim"># reranking model, PyTorch</span>\n'+
+           '    <span class="hl">config.pbtxt</span>          <span class="dim"># backend: pytorch</span>\n'+
+           '    <span class="dir">1/</span>\n'+
+           '      <span class="file">model.pt</span>';
+      note='Multi-model serving: four different models on one Triton server, each with its own backend type. Clients call different endpoints (/v2/models/llama3-70b-fp8, /v2/models/bge-m3-embed, etc) on the same server. A load balancer or API gateway routes to the right model based on request type. Per-model metrics are tracked separately. This is the pattern for ML platform teams that want a single serving infrastructure for all inference workloads.';
+    }
+    document.getElementById('repoTree').innerHTML=tree;
+    document.getElementById('repoNote').textContent=note;
+  }
+  showRepo('basic');
+
+  /* ── Batching explorer ── */
+  function showBatch(mode){
+    var grid='', note='';
+    if(mode==='dynamic'){
+      grid=bm('Use case','Classification, embedding, small models - multiple clients, stateless requests')+
+           bm('How it works','Triton collects requests up to preferred_batch_size or queue_delay_microseconds, then dispatches one batched GPU call')+
+           bm('Key config','preferred_batch_size: [4,8,16] - Triton tries these sizes. max_queue_delay_microseconds: 1000 - max wait time')+
+           bm('LLM relevance','Not used directly for LLM generation (use sequence batching). Used for embedding models within a RAG pipeline');
+      note='Dynamic batching is Triton\'s general-purpose batching mode for stateless models. When multiple clients send requests at similar times, Triton combines them into a single larger GPU call - improving throughput without the client needing to do anything. The queue_delay_microseconds parameter is the primary tuning knob: 0 for lowest latency, 1000–5000 for highest throughput.';
+    } else if(mode==='sequence'){
+      grid=bm('Use case','LLMs, any stateful model where one request spans multiple forward passes (decode steps)')+
+           bm('How it works','Triton assigns each request a sequence slot. State (KV Cache) is maintained between steps. TRT-LLM\'s in-flight batching runs inside this.')+
+           bm('Key config','max_sequence_idle_microseconds: how long an idle slot is held. oldest_sequence_priority: preempt slowest sequences under load')+
+           bm('LLM relevance','Primary mode for LLM deployments with TRT-LLM. Triton manages request queuing; TRT-LLM manages in-flight batching within each iteration');
+      note='Sequence batching is what makes Triton appropriate for LLM deployments. Each generation request is a stateful sequence - it spans dozens to thousands of decode steps. Triton tracks these sequences, assigns them to TRT-LLM execution slots, and manages the queue of waiting new requests. When a sequence completes, its slot is immediately available for a new request - the same principle as continuous batching, operating at the Triton coordination layer.';
+    } else {
+      grid=bm('Use case','Variable-length inputs where different requests have different sequence lengths - common in LLM and NLP workloads')+
+           bm('How it works','Normally, all inputs in a batch must have the same shape. Ragged batching allows different sequence lengths by padding or using specialized kernels')+
+           bm('Key config','Enabled via dims: [-1] in config.pbtxt input shape declaration - the -1 indicates dynamic dimension')+
+           bm('LLM relevance','Critical for real-world LLM serving where prompts vary from 10 to 10,000 tokens - without ragged batching, every batch would need padding to the longest prompt');
+      note='Ragged batching (dynamic shape support) is essential for production LLM deployments because real user prompts are never the same length. Without it, Triton would need to pad every prompt in a batch to the length of the longest prompt, wasting compute proportional to the length variance. With ragged batching enabled, each prompt is processed at its actual length with no padding overhead.';
+    }
+    document.getElementById('batchGrid').innerHTML=grid;
+    document.getElementById('batchNote').textContent=note;
+  }
+  function bm(label,val){
+    return '<div class="batch-metric"><div class="batch-metric-label">'+label+'</div><div class="batch-metric-sub">'+val+'</div></div>';
+  }
+  showBatch('sequence');
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    document.querySelectorAll('.quiz-option').forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      var l=['a','b','c','d'][i];
+      if(l==='b')o.classList.add('correct');
+      else if(l===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct - and the vector database timeout concern is the detail that shows real production experience.</strong> The ensemble approach is exactly right for this architecture: one Triton server, three model backends (ONNX embedding, Python retrieval, TRT-LLM generation), one ensemble config stitching them together. The client gets a single endpoint, and Triton\'s per-model metrics give per-stage latency breakdown. The operational concern about the Python backend retrieval step is critical and easy to miss: unlike GPU-to-GPU tensor passing between two neural network steps, the vector database call is an external network request that happens inside Triton\'s execution thread. If the vector database is slow (high P99 latency), overloaded, or has a network hiccup, that retrieval step blocks its Triton slot - and because Triton has a finite number of slots per model, slow retrieval steps cascade into LLM queue buildup faster than you might expect. Mitigations: set tight timeouts on the retrieval Python backend, monitor nv_inference_queue_duration_us on the retrieval model independently, and consider whether retrieval should be async or pre-computed if latency variance is high. Option A (two separate Triton servers) works but defeats the single-endpoint and shared metrics requirements. Option C (vLLM for everything) is wrong - vLLM cannot serve an ONNX embedding model, cannot orchestrate multi-step pipelines server-side, and the requirement to use TRT-LLM means Triton is mandatory regardless. Option D is a common misconception - Triton ensembles absolutely support Python backend steps with external network calls; the concern is not unsupported functionality but operational latency risk.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. A single Triton server with an ensemble pipeline is the right approach: it delivers the single endpoint the team wants, per-stage Prometheus metrics, and on-server tensor passing between the embedding and generation steps. The key operational concern to flag is that the Python backend retrieval step introduces an external network call (to the vector database) inside Triton\'s execution thread - slow or timing-out vector database responses will block Triton slots and cascade into LLM queue buildup. Option A creates unnecessary complexity and breaks the single-endpoint requirement. Option C is not viable - vLLM cannot serve an ONNX embedding model or orchestrate multi-step pipelines. Option D misunderstands Triton ensembles - Python backends with external calls are fully supported; the risk is latency variance, not unsupported functionality.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>

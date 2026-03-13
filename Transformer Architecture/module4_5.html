@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 4.5 - How It All Fits Together</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #1A237E 0%, #283593 40%, #1B5E20 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+  .home-icon { position:absolute; top:16px; right:16px; font-size:24px; color:white; text-decoration:none; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #E8E8E8; background:white; font-family:Arial,sans-serif; font-size:13px; text-decoration:none; display:block; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #006064; }
+  .nav-btn.next { text-align:right; border-right:4px solid #1A237E; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout          { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-indigo   { background:#E8EAF6; border-left:4px solid #3949AB; }
+  .callout-blue     { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-green    { background:#E8F5E9; border-left:4px solid #2E7D32; }
+  .callout-orange   { background:#FFF3E0; border-left:4px solid #E65100; }
+  .callout-purple   { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-teal     { background:#E0F7FA; border-left:4px solid #006064; }
+  .callout-slate    { background:#ECEFF1; border-left:4px solid #546E7A; }
+
+  /* ── Full stack diagram ── */
+  .stack-wrap { background:#0F172A; border-radius:14px; padding:24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .stack-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:18px; }
+  .stack-section-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; opacity:0.35; margin:14px 0 6px 0; }
+  .stack-row  { display:flex; gap:8px; margin-bottom:6px; align-items:stretch; }
+  .stack-box  { border-radius:8px; padding:11px 14px; flex:1; }
+  .stack-box-title { font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+  .stack-box-body  { font-size:11px; opacity:0.6; line-height:1.6; }
+  .stack-arrow { text-align:center; font-size:13px; opacity:0.28; margin:3px 0; }
+  .stack-note  { font-size:11px; opacity:0.35; margin-top:12px; line-height:1.7; }
+
+  /* ── Request lifecycle walkthrough ── */
+  .lifecycle-wrap { background:#E8EAF6; border:1px solid #9FA8DA; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .lifecycle-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#1A237E; margin-bottom:14px; font-weight:bold; }
+  .lifecycle-controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .lifecycle-btn { border:2px solid transparent; border-radius:6px; padding:6px 14px; font-size:12px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; transition:all 0.15s; }
+  .lifecycle-btn.active { border-color:white; }
+  .lifecycle-step { background:white; border-radius:10px; padding:16px 18px; }
+  .lifecycle-step-num { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#888; margin-bottom:6px; font-family:Arial,sans-serif; }
+  .lifecycle-step-title { font-size:16px; font-weight:bold; margin-bottom:8px; }
+  .lifecycle-step-layer { display:inline-block; font-size:11px; font-family:Arial,sans-serif; font-weight:bold; letter-spacing:1px; text-transform:uppercase; padding:2px 10px; border-radius:20px; color:white; margin-bottom:10px; }
+  .lifecycle-step-body { font-size:14px; line-height:1.8; color:#333; }
+  .lifecycle-step-concept { font-size:12.5px; color:#666; margin-top:10px; font-family:Arial,sans-serif; padding:8px 12px; border-radius:6px; }
+  .lifecycle-nav { display:flex; justify-content:space-between; margin-top:14px; }
+  .lifecycle-nav-btn { border:1px solid #9FA8DA; background:white; border-radius:6px; padding:7px 16px; font-size:13px; font-family:Arial,sans-serif; cursor:pointer; color:#333; font-weight:bold; }
+  .lifecycle-nav-btn:disabled { opacity:0.35; cursor:default; }
+  .lifecycle-progress { display:flex; gap:6px; align-items:center; }
+  .lifecycle-dot { width:8px; height:8px; border-radius:50%; background:#C5CAE9; transition:background 0.2s; }
+  .lifecycle-dot.active { background:#3949AB; }
+
+  /* ── Architecture selector ── */
+  .arch-wrap { background:#E8F5E9; border:1px solid #A5D6A7; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .arch-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#1B5E20; margin-bottom:14px; font-weight:bold; }
+  .arch-controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .arch-btn { border:none; border-radius:6px; padding:7px 14px; font-size:13px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; }
+  .arch-result { background:#1B5E20; color:white; border-radius:10px; padding:18px 20px; }
+  .arch-result-name { font-size:17px; font-weight:bold; margin-bottom:10px; }
+  .arch-result-stack { display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
+  .arch-result-layer { border-radius:6px; padding:9px 14px; display:flex; justify-content:space-between; align-items:center; }
+  .arch-result-layer-name { font-size:13px; font-weight:bold; font-family:Arial,sans-serif; }
+  .arch-result-layer-detail { font-size:12px; opacity:0.7; font-family:Arial,sans-serif; }
+  .arch-result-why { font-size:13px; opacity:0.82; line-height:1.7; font-family:Arial,sans-serif; border-top:1px solid rgba(255,255,255,0.15); padding-top:12px; margin-top:4px; }
+  .arch-result-tags { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .arch-result-tag { background:rgba(255,255,255,0.12); border-radius:20px; padding:4px 12px; font-size:12px; font-family:Arial,sans-serif; }
+
+  /* ── Concept map ── */
+  .concept-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0; }
+  .concept-card { background:white; border-radius:10px; padding:14px 16px; border:1px solid #E8E8E8; }
+  .concept-card-layer { font-size:10px; letter-spacing:1px; text-transform:uppercase; font-family:Arial,sans-serif; font-weight:bold; margin-bottom:6px; }
+  .concept-card-title { font-size:14px; font-weight:bold; margin-bottom:5px; }
+  .concept-card-body  { font-size:13px; color:#555; line-height:1.6; }
+  .concept-card-modules { font-size:11px; font-family:Arial,sans-serif; color:#888; margin-top:8px; }
+
+  /* ── Troubleshooting guide ── */
+  .trouble-item { background:white; border-radius:10px; padding:16px 18px; margin-bottom:10px; border-left:4px solid #E8E8E8; }
+  .trouble-symptom { font-weight:bold; font-size:14.5px; margin-bottom:8px; }
+  .trouble-diagnosis { font-size:13.5px; line-height:1.8; color:#333; }
+  .trouble-fix { font-size:13px; color:#2E7D32; font-family:Arial,sans-serif; margin-top:8px; font-weight:bold; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:linear-gradient(135deg,#1A237E,#1B5E20); border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.09); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#C5CAE9; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.88; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#3949AB; background:#E8EAF6; }
+  .quiz-option.selected { border-color:#3949AB; background:#E8EAF6; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#3949AB; }
+  .quiz-btn  { margin-top:14px; background:#1A237E; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#283593; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#E8EAF6,#E8F5E9); border:1px solid #C5CAE9; display:flex; justify-content:space-between; align-items:center; text-decoration:none; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; color:#1a1a1a; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .cheat-grid,.concept-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+    .arch-controls { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <a href="index.html" class="home-icon" title="Home">🏠</a>
+    <div class="header-eyebrow">PART 4 · MODULE 4.5</div>
+    <h1>How It All Fits Together: A Real Customer Architecture Walkthrough</h1>
+    <p>Every concept from Parts 1–4 placed in its correct position in a production LLM serving stack - and three real customer architectures with the reasoning behind every choice.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module4_4.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">4.4 - Triton Inference Server</div>
+    </a>
+    <a href="module5_1.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">5.1 - SME Readiness</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>Parts 1 through 4 built each concept in isolation: Prefill and Decode, KV Cache, Paged Attention, continuous batching, quantisation, parallelism, Flash Attention, speculative decoding, disaggregation, NVIDIA hardware, vLLM, TensorRT-LLM, and Triton. This module puts all of them together in the context of real serving architectures.</p>
+    <p>You will walk through a production request from the moment an API call arrives to the moment the last token streams back - touching every component in sequence and seeing exactly where each concept applies. Then you will see three reference architectures for different customer scenarios and the reasoning behind every technology choice. By the end, you should be able to look at any customer's LLM serving setup and immediately map it to these concepts, identify what is missing, and explain why each component is there.</p>
+  </div>
+
+  <!-- Section 1: The complete stack -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#3949AB;">1</span>
+        The Complete Production Stack - Every Layer in One View
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>A production LLM serving system has five conceptual layers. Understanding which layer each component lives in - and why - is the foundation of every architecture conversation.</p>
+
+      <div class="stack-wrap">
+        <div class="stack-title">Production LLM serving stack - all components</div>
+
+        <div class="stack-section-label">Layer 1 - Client</div>
+        <div class="stack-row">
+          <div class="stack-box" style="background:rgba(55,71,79,0.35);">
+            <div class="stack-box-title" style="color:#B0BEC5;">Application / API gateway</div>
+            <div class="stack-box-body">User-facing app, LangChain agent, REST client. Sends HTTP/gRPC requests. Handles auth, rate limiting, routing to inference endpoint.</div>
+          </div>
+        </div>
+
+        <div class="stack-section-label">Layer 2 - Serving</div>
+        <div class="stack-row">
+          <div class="stack-box" style="background:rgba(0,96,100,0.35);">
+            <div class="stack-box-title" style="color:#80DEEA;">Triton Inference Server (or vLLM built-in API)</div>
+            <div class="stack-box-body">HTTP/gRPC endpoint. Request queuing. Dynamic/sequence batching. Ensemble pipeline orchestration. Prometheus metrics. Health checks. Model versioning.</div>
+          </div>
+        </div>
+
+        <div class="stack-section-label">Layer 3 - Inference engine</div>
+        <div class="stack-row">
+          <div class="stack-box" style="background:rgba(230,81,0,0.3); flex:1.3;">
+            <div class="stack-box-title" style="color:#FFAB91;">TensorRT-LLM engine</div>
+            <div class="stack-box-body">Compiled GPU kernels. Kernel fusion. FP8/INT8 execution. In-flight batching (continuous batching). KV Cache management. TP/PP execution.</div>
+          </div>
+          <div style="display:flex;align-items:center;padding:0 6px;font-size:13px;opacity:0.3;">or</div>
+          <div class="stack-box" style="background:rgba(123,31,162,0.3); flex:1;">
+            <div class="stack-box-title" style="color:#CE93D8;">vLLM engine</div>
+            <div class="stack-box-body">PyTorch + custom CUDA. Paged Attention. Continuous batching. KV Cache mgmt. OpenAI API built-in.</div>
+          </div>
+        </div>
+
+        <div class="stack-section-label">Layer 4 - Optimisation</div>
+        <div class="stack-row">
+          <div class="stack-box" style="background:rgba(21,101,192,0.25);">
+            <div class="stack-box-title" style="color:#90CAF9;">Flash Attention</div>
+            <div class="stack-box-body">Tiled SRAM attention. Fast Prefill. Enables long context. (Modules 1.3, 3.1)</div>
+          </div>
+          <div class="stack-box" style="background:rgba(46,125,50,0.25);">
+            <div class="stack-box-title" style="color:#A5D6A7;">Paged Attention</div>
+            <div class="stack-box-body">Block KV Cache. Near-zero fragmentation. Prefix caching. (Modules 2.2, 3.2)</div>
+          </div>
+          <div class="stack-box" style="background:rgba(123,31,162,0.25);">
+            <div class="stack-box-title" style="color:#CE93D8;">Quantisation</div>
+            <div class="stack-box-body">FP8/INT8/INT4. Smaller weights. More memory for KV Cache. Faster Decode. (Module 3.3)</div>
+          </div>
+          <div class="stack-box" style="background:rgba(0,121,107,0.25);">
+            <div class="stack-box-title" style="color:#80CBC4;">Spec decoding</div>
+            <div class="stack-box-body">Draft + verify. Fewer large-model passes. Best at low concurrency. (Module 3.5)</div>
+          </div>
+        </div>
+
+        <div class="stack-section-label">Layer 5 - Hardware</div>
+        <div class="stack-row">
+          <div class="stack-box" style="background:rgba(27,94,32,0.3);">
+            <div class="stack-box-title" style="color:#A5D6A7;">NVIDIA GPUs - HBM, Tensor Cores, NVLink</div>
+            <div class="stack-box-body">A100 / H100 / H200 / B200. HBM bandwidth sets TPOT floor. NVLink enables TP. Tensor Cores drive Prefill throughput. (Module 4.1)</div>
+          </div>
+        </div>
+
+        <div class="stack-note">Every component in this stack maps to at least one concept from Parts 1–4. A production architecture conversation is really a question of which choices to make at each layer - and the answer always depends on the customer's specific workload, scale, SLAs, and team.</div>
+      </div>
+
+      <div class="callout callout-indigo">
+        <strong>The two paths through the inference engine layer:</strong> vLLM and TRT-LLM are not hierarchical - they are alternatives at the same layer. The choice between them determines whether Triton is mandatory (TRT-LLM always needs Triton) or optional (vLLM can use its own built-in API for simple deployments). Everything above and below the inference engine layer is the same regardless of which engine you choose.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Request lifecycle -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">2</span>
+        A Request from API Call to Final Token - Step by Step
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>Walk through what actually happens to a single request - a user asking a 500-token RAG question, expecting a 200-token answer - on a production TRT-LLM + Triton + H100 stack:</p>
+
+      <div class="lifecycle-wrap">
+        <div class="lifecycle-title">Request lifecycle - click through each step</div>
+        <div class="lifecycle-controls" id="lifecycleControls"></div>
+        <div class="lifecycle-step" id="lifecycleStep"></div>
+        <div class="lifecycle-nav">
+          <button class="lifecycle-nav-btn" id="lcPrev" onclick="lcNav(-1)">&#8592; Previous</button>
+          <div class="lifecycle-progress" id="lcProgress"></div>
+          <button class="lifecycle-nav-btn" id="lcNext" onclick="lcNav(1)">Next &#8594;</button>
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>The two phases are invisible to the user but critical to the operator:</strong> From the user's perspective, they send a message and tokens appear. From the operator's perspective, the system runs Prefill (once, compute-bound, determines TTFT) and then Decode (one step per token, memory-bandwidth-bound, determines TPOT). Every optimisation in Parts 1–3 targets one or both of these phases. Knowing which phase a given symptom comes from is the first step in any performance diagnosis.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Three reference architectures -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">3</span>
+        Three Reference Architectures - Real Customer Scenarios
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Select a customer scenario to see the recommended architecture and the reasoning behind every layer choice:</p>
+
+      <div class="arch-wrap">
+        <div class="arch-title">Reference architectures by customer scenario</div>
+        <div class="arch-controls">
+          <button class="arch-btn" style="background:#1A237E; color:white;" onclick="showArch('startup')">Early-stage startup</button>
+          <button class="arch-btn" style="background:#BF360C; color:white;" onclick="showArch('enterprise')">Enterprise RAG at scale</button>
+          <button class="arch-btn" style="background:#4A148C; color:white;" onclick="showArch('batch')">High-volume batch processing</button>
+        </div>
+        <div class="arch-result" id="archResult"></div>
+      </div>
+
+      <div class="callout callout-green">
+        <strong>The pattern across all three:</strong> Every architecture starts with the right GPU for the model size, then selects an inference engine based on model stability and team maturity, then adds optimisations in order of ROI - quantisation first, parallelism when needed, advanced techniques (speculative decoding, disaggregation) only when justified by scale and SLA. The stack grows in complexity only as the workload demands it.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Concept-to-component map -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">4</span>
+        Concept-to-Component Map - Where Each Idea Lives in the Stack
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>When a customer mentions a symptom or asks about a feature, knowing which layer and component owns that concept is what lets you give a precise answer rather than a general one:</p>
+
+      <div class="concept-grid">
+        <div class="concept-card" style="border-top:3px solid #006064;">
+          <div class="concept-card-layer" style="color:#006064;">Triton (Serving layer)</div>
+          <div class="concept-card-title">Request queuing, batching config, health checks, multi-model routing, ensemble pipelines</div>
+          <div class="concept-card-body">When a customer asks about queue depth, batch timeout, gRPC vs HTTP, A/B model routing, or per-stage latency in a pipeline - this is a Triton conversation.</div>
+          <div class="concept-card-modules">Modules 4.4</div>
+        </div>
+        <div class="concept-card" style="border-top:3px solid #BF360C;">
+          <div class="concept-card-layer" style="color:#BF360C;">TRT-LLM / vLLM (Inference engine)</div>
+          <div class="concept-card-title">In-flight batching, KV Cache management, TP/PP execution, GPU memory allocation, quantisation execution</div>
+          <div class="concept-card-body">When a customer asks about max concurrent users, OOM errors under load, or throughput ceilings - this is an inference engine conversation.</div>
+          <div class="concept-card-modules">Modules 4.2, 4.3</div>
+        </div>
+        <div class="concept-card" style="border-top:3px solid #3949AB;">
+          <div class="concept-card-layer" style="color:#3949AB;">Paged Attention (KV Cache management)</div>
+          <div class="concept-card-title">KV Cache fragmentation, GPU memory utilisation, prefix caching, copy-on-write for beam search</div>
+          <div class="concept-card-body">When a customer asks why GPU memory is full but concurrency is low, or how prefix caching saves TTFT - this is a Paged Attention conversation.</div>
+          <div class="concept-card-modules">Modules 2.2, 3.2</div>
+        </div>
+        <div class="concept-card" style="border-top:3px solid #7B1FA2;">
+          <div class="concept-card-layer" style="color:#7B1FA2;">Quantisation</div>
+          <div class="concept-card-title">Model memory size, TPOT improvement, quality trade-off, FP8 vs INT8 vs INT4 selection</div>
+          <div class="concept-card-body">When a customer asks how to fit a larger model, reduce cost per token, or balance quality vs speed - this is a quantisation conversation.</div>
+          <div class="concept-card-modules">Module 3.3</div>
+        </div>
+        <div class="concept-card" style="border-top:3px solid #1565C0;">
+          <div class="concept-card-layer" style="color:#1565C0;">Tensor / Pipeline Parallelism</div>
+          <div class="concept-card-title">Multi-GPU model distribution, NVLink requirement, GPU count for large models, communication overhead</div>
+          <div class="concept-card-body">When a customer asks how to serve a model that doesn't fit on one GPU, or why adding GPUs didn't improve latency - this is a parallelism conversation.</div>
+          <div class="concept-card-modules">Modules 3.4, 4.1</div>
+        </div>
+        <div class="concept-card" style="border-top:3px solid #E65100;">
+          <div class="concept-card-layer" style="color:#E65100;">Hardware (GPU)</div>
+          <div class="concept-card-title">TPOT floor from HBM bandwidth, Prefill throughput from Tensor Cores, TP viability from NVLink, SXM vs PCIe distinction</div>
+          <div class="concept-card-body">When a customer asks which GPU to buy, why TPOT is what it is, or whether their interconnect supports their parallelism config - this is a hardware conversation.</div>
+          <div class="concept-card-modules">Module 4.1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Troubleshooting map -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">5</span>
+        Symptom-to-Root-Cause Map - Diagnosing Production Issues
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>In customer conversations, symptoms arrive before causes. Here are the most common production LLM serving symptoms and the root cause and fix that each one points to - drawing on every concept from Parts 1–4:</p>
+
+      <div class="trouble-item" style="border-left-color:#C62828;">
+        <div class="trouble-symptom">High TTFT that varies widely (200ms to 3s for similar prompts)</div>
+        <div class="trouble-diagnosis">This is head-of-line blocking from coupled Prefill/Decode serving. Long Prefill jobs intermittently monopolise the GPU. Other requests wait. The variance correlates with whether a long-prompt request is running when yours arrives.</div>
+        <div class="trouble-fix">Fix: Enable prefix caching for shared system prompts (drops TTFT for cached content). At scale: implement P/D disaggregation (Module 3.6). Intermediate: chunked Prefill in vLLM breaks long Prefills into steps.</div>
+      </div>
+
+      <div class="trouble-item" style="border-left-color:#E65100;">
+        <div class="trouble-symptom">TPOT spikes mid-stream - tokens arrive steadily then pause for 200–500ms</div>
+        <div class="trouble-diagnosis">Either (1) a large Prefill job interrupted the Decode phase on a shared GPU (coupled serving - same root cause as above, different symptom), or (2) KV Cache pressure forced preemption - the scheduler evicted an in-flight sequence to HBM (swapping) to free GPU memory for a new request.</div>
+        <div class="trouble-fix">Fix for (1): same as above. Fix for (2): reduce --max-num-seqs in vLLM, or increase --gpu-memory-utilisation, or quantise the KV Cache (Module 3.3) to fit more sequences before swapping occurs.</div>
+      </div>
+
+      <div class="trouble-item" style="border-left-color:#7B1FA2;">
+        <div class="trouble-symptom">OOM errors at 20–30 concurrent users despite GPU having apparent free memory</div>
+        <div class="trouble-diagnosis">vLLM pre-allocates its memory pool at startup (90% of GPU by default). Model weights consume part of that pool; the rest is KV Cache blocks. With 20+ concurrent long-context requests, the KV Cache pool fills before the raw GPU memory appears full. The "free memory" is outside vLLM's pool.</div>
+        <div class="trouble-fix">Fix: enable prefix caching (shared prefixes reduce per-request KV blocks), set --max-model-len to a realistic value (reduces block pre-allocation), reduce --max-num-seqs, or quantise KV Cache to FP8/INT8 (2x more sequences fit in same pool).</div>
+      </div>
+
+      <div class="trouble-item" style="border-left-color:#1565C0;">
+        <div class="trouble-symptom">TPOT is consistently slow regardless of concurrency - even single-user requests are slow</div>
+        <div class="trouble-diagnosis">This is the HBM bandwidth floor from Module 2.5. Decode reads all model weights every token. For a given model size and GPU, TPOT has a hard minimum set by (model size in bytes) / (HBM bandwidth). No software optimisation can go below this floor - only quantisation (smaller weights) or a faster GPU (more bandwidth) can.</div>
+        <div class="trouble-fix">Fix: quantise weights (FP16 → INT8 → FP8 → INT4, each roughly halving memory reads and TPOT floor), upgrade to higher-bandwidth GPU (A100 → H100 → H200 → B200), or use a smaller model.</div>
+      </div>
+
+      <div class="trouble-item" style="border-left-color:#2E7D32;">
+        <div class="trouble-symptom">Adding more GPUs with TP did not improve latency - sometimes made it worse</div>
+        <div class="trouble-diagnosis">The AllReduce communication between TP GPUs takes time proportional to data size and inversely proportional to interconnect bandwidth. On PCIe (64 GB/s), AllReduce for a 70B model's layer output takes ~20ms per layer - far exceeding the compute time. Adding more TP GPUs means more AllReduce operations at the same bandwidth, making it worse.</div>
+        <div class="trouble-fix">Fix: verify GPU interconnect - NVLink is required for TP to be net-positive. On PCIe, use Pipeline Parallelism instead if the model doesn't fit on one GPU. On NVLink, TP=4 or TP=8 is the sweet spot for 70B models.</div>
+      </div>
+
+      <div class="trouble-item" style="border-left-color:#546E7A;">
+        <div class="trouble-symptom">Triton returns 503 at deployment - pod restarts in Kubernetes infinite loop</div>
+        <div class="trouble-diagnosis">Almost certainly a Kubernetes readiness probe misconfiguration. The probe is checking a non-existent endpoint and marking the pod unhealthy before it has finished loading the model (model loading takes 30–120 seconds for large models on first start).</div>
+        <div class="trouble-fix">Fix: use /v2/health/ready as the readiness probe endpoint with initialDelaySeconds set to at least 120s for large models. Use /v2/health/live for the liveness probe with a longer failureThreshold. Never use a custom path - Triton only honours the standard health endpoints.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: The decisions in order -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#006064;">6</span>
+        The Decision Sequence - How to Architect from Scratch
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>When a customer says "we want to self-host an LLM," there is a specific sequence of decisions that leads to the right architecture. Each decision constrains and informs the next:</p>
+
+      <div style="display:flex; flex-direction:column; gap:8px; margin:16px 0;">
+        <div style="background:#E8EAF6; border-radius:10px; padding:16px; border-left:4px solid #3949AB;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#3949AB; margin-bottom:6px;">Decision 1 - Which model?</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">Model size determines GPU count. 7B fits on 1x GPU at FP16. 70B needs 1x H200 or 2x H100. 405B needs 4x H200 or 8x H100. Model architecture (GQA, MoE, context window) determines KV Cache size and memory requirements. Nail this before choosing anything else.</div>
+        </div>
+        <div style="background:#E3F2FD; border-radius:10px; padding:16px; border-left:4px solid #1565C0;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#1565C0; margin-bottom:6px;">Decision 2 - Which GPU?</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">HBM capacity must fit the model (+ KV Cache budget). HBM bandwidth determines TPOT floor. NVLink determines whether TP is viable. H100 SXM is the current default. H200 for 70B+ where memory is the constraint. Check SXM vs PCIe form factor - they are not equivalent.</div>
+        </div>
+        <div style="background:#E8F5E9; border-radius:10px; padding:16px; border-left:4px solid #2E7D32;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; margin-bottom:6px;">Decision 3 - Which inference engine?</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">vLLM by default - faster to deploy, broad model support, OpenAI-compatible. TRT-LLM when: model is fixed, concurrency exceeds 50, TPOT SLA is under 30ms, and there is a team to manage engine builds. This decision determines whether Triton is mandatory (TRT-LLM) or optional (vLLM).</div>
+        </div>
+        <div style="background:#F3E8FD; border-radius:10px; padding:16px; border-left:4px solid #7B1FA2;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#7B1FA2; margin-bottom:6px;">Decision 4 - Which quantisation?</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">FP8 on H100/H200 - native Transformer Engine, minimal quality impact, best default. INT8 + SmoothQuant on A100 - well-tested, solid quality. INT4 AWQ only when model must fit at all costs. Always validate quality on your workload after quantising - never assume the theoretical quality loss matches real-world quality loss.</div>
+        </div>
+        <div style="background:#FFF3E0; border-radius:10px; padding:16px; border-left:4px solid #E65100;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#E65100; margin-bottom:6px;">Decision 5 - Which parallelism?</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">If model fits on one GPU after quantisation: no parallelism needed. If not: TP within a node (NVLink required), PP across nodes (InfiniBand). For throughput at scale with a model that fits: Data Parallelism (replicate across GPU groups). Never recommend TP on PCIe-connected GPUs.</div>
+        </div>
+        <div style="background:#E0F7FA; border-radius:10px; padding:16px; border-left:4px solid #006064;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#006064; margin-bottom:6px;">Decision 6 - Advanced optimisations?</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">Prefix caching: always on if any system prompt is reused. Speculative decoding: only at low concurrency (&lt;20 users) with predictable outputs. Disaggregation: only at large scale (16+ GPUs) with mixed prompt lengths and SLA-sensitive workloads. Add complexity only when simpler optimisations have been exhausted.</div>
+        </div>
+      </div>
+
+      <div class="callout callout-slate">
+        <strong>The sequence matters:</strong> Teams that start at Decision 6 (trying speculative decoding before fixing their KV Cache configuration) waste weeks on optimisations that cannot move the needle while the real bottleneck sits untouched. Starting from hardware and working up ensures each decision is grounded in physical constraints before software tuning begins.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr7" onclick="toggle(7)">
+      <div class="section-title">
+        <span class="section-num" style="background:#283593;">7</span>
+        4 Key Ideas to Carry Into Part 5
+      </div>
+      <span class="chevron" id="chv7">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy7">
+      <div class="key-item">
+        <div class="key-num" style="color:#3949AB;">01</div>
+        <div>
+          <div class="key-title">Every symptom traces to one of three root causes: memory, bandwidth, or scheduling</div>
+          <div class="key-desc">OOM is a memory problem. Slow TPOT at low concurrency is a bandwidth problem (HBM floor). Slow TPOT at high concurrency or TTFT variance is a scheduling problem (head-of-line blocking, KV Cache pressure). Identifying the category first narrows the fix immediately.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">02</div>
+        <div>
+          <div class="key-title">The inference engine choice is the pivotal decision - it determines the rest of the stack</div>
+          <div class="key-desc">vLLM brings its own API and is self-contained. TRT-LLM requires Triton above it and a build pipeline below it. Choosing TRT-LLM without understanding this cascade is how teams end up with a half-built architecture. The engine choice is not just a performance decision - it is an operational architecture decision.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#2E7D32;">03</div>
+        <div>
+          <div class="key-title">Optimisations compound but must be applied in the right order - fix hardware and engine before tuning software</div>
+          <div class="key-desc">Quantisation on the wrong GPU yields nothing. Prefix caching with no repeated prompts yields nothing. Speculative decoding at high concurrency hurts throughput. Every technique from Parts 1–3 has a precondition - understanding those preconditions is what separates a recommendation that helps from one that adds complexity with no benefit.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#006064;">04</div>
+        <div>
+          <div class="key-title">The stack is not fixed - it should evolve as the workload evolves</div>
+          <div class="key-desc">Teams start with vLLM and one GPU. They grow to TRT-LLM and TP=4. They add prefix caching when system prompts standardise. They consider disaggregation when RAG prompts get long. Good architecture conversations are not about finding the perfect final stack - they are about identifying the right next step for where the customer is today.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 4.5 - PART 4 INTEGRATION CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Decision sequence</div>
+        <div class="cheat-def">Model &#8594; GPU &#8594; Inference engine &#8594; Quantisation &#8594; Parallelism &#8594; Advanced optimisations. Never skip ahead - each decision constrains the next.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">TTFT variance</div>
+        <div class="cheat-def">Root cause: head-of-line blocking (coupled P/D serving). Fix: prefix caching for shared prompts, chunked Prefill for short term, disaggregation for scale.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">TPOT slow at low concurrency</div>
+        <div class="cheat-def">Root cause: HBM bandwidth floor. Fix: quantise weights (reduces bytes read per token), upgrade GPU, or use smaller model. No scheduler change helps.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">OOM under load</div>
+        <div class="cheat-def">Root cause: KV Cache pool exhaustion (not raw GPU memory). Fix: prefix caching, lower --max-model-len, lower --max-num-seqs, KV Cache quantisation.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">TP not helping latency</div>
+        <div class="cheat-def">Root cause: PCIe interconnect (64 GB/s) makes AllReduce slower than compute. Fix: verify NVLink present, or switch to PP for cross-node distribution.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">vLLM vs TRT-LLM trigger</div>
+        <div class="cheat-def">TRT-LLM when: fixed model + &gt;50 concurrent + &lt;30ms TPOT SLA + experienced team. vLLM for everything else. TRT-LLM always requires Triton as serving layer.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Triton 503 loop</div>
+        <div class="cheat-def">Root cause: K8s readiness probe on wrong endpoint or too-short initialDelay. Fix: use /v2/health/ready, set initialDelaySeconds &#8805;120s for large models.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Stack evolution path</div>
+        <div class="cheat-def">1 GPU + vLLM &#8594; quantisation &#8594; multi-GPU TP &#8594; TRT-LLM + Triton &#8594; prefix caching &#8594; disaggregation. Add complexity only when simpler steps are exhausted.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK - PART 4 INTEGRATION</div>
+    <div class="quiz-q">A customer has the following setup: 8x H100 SXM GPUs, Llama 3 70B at BF16 with TP=4 and PP=2, vLLM, 60 concurrent users at peak. Symptoms: TTFT is acceptable (~400ms), but TPOT degrades from 18ms at 20 users to 45ms at 60 users - far above their 25ms SLA. GPU utilisation shows 85% on the Decode pool during peak. KV Cache utilisation is 88%. Which combination of changes most directly addresses the TPOT degradation?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Add 4 more H100s and increase TP to 8 - more GPUs will reduce TPOT by splitting the model across more devices.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        Enable speculative decoding with Llama 3 8B as the draft model - this reduces the number of large-model forward passes per token and will restore TPOT at high concurrency.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        Apply FP8 quantisation to weights and KV Cache. FP8 weights halve the bytes read per Decode step, directly lowering the TPOT floor. FP8 KV Cache reduces the 88% utilisation, giving more headroom before the scheduler is forced to preempt sequences or slow down to manage memory pressure - which is the likely cause of TPOT degrading from 18ms to 45ms as concurrency grows. Migrate to TRT-LLM compiled engine on H100 to capture the additional 20–30% throughput from kernel fusion and native FP8 Tensor Core usage.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        Reduce max concurrent users to 30 via rate limiting - this will bring TPOT back under 25ms by reducing load.
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <a href="module5_1.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next - Part 5</div>
+      <div class="next-title">SME Readiness</div>
+      <div class="next-sub">The final part - customer conversation frameworks, objection handling, and the questions that separate an SME from someone who just knows the concepts</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var sColors={1:'#3949AB',2:'#1565C0',3:'#2E7D32',4:'#7B1FA2',5:'#E65100',6:'#006064',7:'#283593'};
+  var sBgs   ={1:'#E8EAF6',2:'#E3F2FD',3:'#E8F5E9',4:'#F3E8FD',5:'#FFF3E0',6:'#E0F7FA',7:'#E8EAF6'};
+  function toggle(n){
+    var b=document.getElementById('bdy'+n),c=document.getElementById('chv'+n),h=document.getElementById('hdr'+n);
+    var open=b.classList.contains('open');
+    b.classList.toggle('open'); c.classList.toggle('open');
+    h.style.borderLeftColor=open?'#E8E8E8':sColors[n];
+    h.style.background=open?'white':sBgs[n];
+  }
+
+  /* ── Request lifecycle ── */
+  var lcSteps=[
+    {num:'Step 1 of 10', title:'API call arrives at the gateway', layer:'Client / API Gateway', layerColor:'#546E7A',
+     body:'A user sends a POST /v1/chat/completions with a 500-token prompt. The API gateway authenticates the request, checks rate limits, and forwards it to the Triton Inference Server endpoint. The raw JSON payload contains the prompt text - not yet tokenised.',
+     concept:'Nothing LLM-specific has happened yet. This is standard API infrastructure. The clock for TTFT starts ticking now.', conceptBg:'#ECEFF1'},
+    {num:'Step 2 of 10', title:'Triton receives and queues the request', layer:'Triton Inference Server', layerColor:'#006064',
+     body:'Triton receives the request, places it in the sequence batching queue for the TRT-LLM backend model. If GPU slots are available immediately, it proceeds. If all in-flight batching slots are occupied, the request waits. Triton increments nv_inference_queue_duration_us.',
+     concept:'This queue wait time is visible in Prometheus as nv_inference_queue_duration_us. Sustained queue wait = under-provisioned serving capacity. The request has not touched a GPU yet.', conceptBg:'#E0F7FA'},
+    {num:'Step 3 of 10', title:'Preprocessing - tokenisation', layer:'Triton preprocessing model (Python backend)', layerColor:'#7B1FA2',
+     body:'If an ensemble pipeline is configured, Triton first routes to a preprocessing step. The 500-token prompt is tokenised - split into subword tokens using the model\'s vocabulary (Module 1.2). The output is a tensor of integer token IDs. This runs on CPU.',
+     concept:'The tokeniser\'s vocabulary size and the model\'s context window define the hard limit on prompt length. A 500-token prompt with a 4096-token max-model-len leaves 3596 tokens for the output.', conceptBg:'#F3E8FD'},
+    {num:'Step 4 of 10', title:'Prefill - the prompt is processed', layer:'TRT-LLM engine (GPU - Prefill phase)', layerColor:'#BF360C',
+     body:'TRT-LLM receives the token IDs. All 500 tokens are processed in parallel - a single large matrix multiply across the full sequence. Each of the 80 transformer layers runs: LayerNorm + Q/K/V projection + Flash Attention + output projection + FFN. Key output: the KV Cache - K and V tensors for all 500 tokens across all 80 layers, stored in Paged Attention blocks on GPU HBM.',
+     concept:'This is the compute-bound phase. Flash Attention (Module 3.1) keeps intermediate attention matrices in SRAM. Paged Attention (Module 3.2) allocates only the blocks actually needed - no upfront reservation. The first token cannot be generated until Prefill completes. TTFT ends when this step finishes.', conceptBg:'#FBE9E7'},
+    {num:'Step 5 of 10', title:'First token generated - TTFT recorded', layer:'TRT-LLM engine (GPU - transition)', layerColor:'#1565C0',
+     body:'Prefill\'s output is a logit distribution over the vocabulary (~128k values). Sampling (greedy, top-p, or top-k) selects the first output token. This token is sent immediately to the streaming response - the user sees the first character. TTFT is recorded.',
+     concept:'From the user\'s perspective, the response has started. From the operator\'s perspective, the compute-bound phase is done and the memory-bandwidth-bound phase is about to begin. The system switches from running one large batch to running one token per decode step.', conceptBg:'#E3F2FD'},
+    {num:'Step 6 of 10', title:'Decode loop - generating tokens one by one', layer:'TRT-LLM engine (GPU - Decode phase)', layerColor:'#2E7D32',
+     body:'Each decode step: (1) read all model weights from HBM into Tensor Cores - this read dominates TPOT, (2) compute attention using the new token as Q against the cached K/V from Paged Attention blocks, (3) run FFN, (4) sample next token, (5) append new K/V to the KV Cache. Repeat 200 times for a 200-token output.',
+     concept:'This is the memory-bandwidth-bound phase. The TPOT floor is set by (model bytes) / (HBM bandwidth). For 70B FP8 on H100: 70GB / 3350 GB/s ≈ 21ms minimum per token. The TRT-LLM in-flight batching engine processes other requests\' decode steps in the same GPU pass.', conceptBg:'#E8F5E9'},
+    {num:'Step 7 of 10', title:'KV Cache management throughout Decode', layer:'Paged Attention block manager', layerColor:'#3949AB',
+     body:'As each new token is generated, its K and V vectors are appended to the request\'s Paged Attention block sequence. When a block fills (16 tokens), a new block is allocated from the free pool. The block table maps the logical sequence of token positions to scattered physical GPU memory blocks. No contiguous reservation, no fragmentation.',
+     concept:'If prefix caching is enabled and this request shares a system prompt with previous requests, those KV blocks are already allocated and shared - no recomputation needed. This is why prefix caching can drop TTFT by 70–90% for repeat prompts (Module 3.2).', conceptBg:'#E8EAF6'},
+    {num:'Step 8 of 10', title:'Continuous batching - other requests share the GPU', layer:'TRT-LLM in-flight batching', layerColor:'#006064',
+     body:'While this request is in its Decode loop, TRT-LLM is also running decode steps for 30–50 other concurrent requests in the same GPU iteration. Each iteration processes one decode step for every in-flight sequence simultaneously. If a different request finished during this time, its Paged Attention blocks were freed and its GPU slot was immediately assigned to a waiting request from Triton\'s queue.',
+     concept:'This is continuous batching / in-flight batching in action (Module 2.3). The GPU never idles between requests. The total throughput is the sum of all concurrent decode steps per second - which is why GPU utilisation at 85% translates to much higher tokens/sec than a single-request benchmark would suggest.', conceptBg:'#E0F7FA'},
+    {num:'Step 9 of 10', title:'Final token - EOS or max length reached', layer:'TRT-LLM engine', layerColor:'#546E7A',
+     body:'After 200 tokens, the model either generates an end-of-sequence token or hits max_new_tokens. TRT-LLM signals completion to Triton. All Paged Attention blocks for this request are freed immediately and returned to the block pool for reuse. The GPU slot opens for the next queued request.',
+     concept:'The immediate block release is the payoff of Paged Attention - no memory sits reserved for a completed request. The free blocks are available for the next request within the same decode iteration. This is why Paged Attention improves concurrency so dramatically compared to contiguous allocation.', conceptBg:'#ECEFF1'},
+    {num:'Step 10 of 10', title:'Postprocessing and response streaming', layer:'Triton postprocessing + client', layerColor:'#7B1FA2',
+     body:'Token IDs are detokenised back to text in the postprocessing step (Python backend). The completed response is returned to the client - either as a streaming chunk-by-chunk response (most LLM APIs) or as a single complete response. Triton records the final metrics: total request latency, compute time, queue time.',
+     concept:'The full round-trip is done. The metrics Triton recorded (queue_duration, compute_infer_duration, total request latency) are the data you would use to diagnose whether the bottleneck was in queuing (Triton under-provisioned), compute (GPU too slow or batch too large), or end-to-end (both).', conceptBg:'#F3E8FD'},
+  ];
+  var lcCurrent=0;
+  function renderLC(){
+    var s=lcSteps[lcCurrent];
+    document.getElementById('lifecycleStep').innerHTML=
+      '<div class="lifecycle-step-num">'+s.num+'</div>'+
+      '<div class="lifecycle-step-title">'+s.title+'</div>'+
+      '<span class="lifecycle-step-layer" style="background:'+s.layerColor+';">'+s.layer+'</span>'+
+      '<div class="lifecycle-step-body">'+s.body+'</div>'+
+      '<div class="lifecycle-step-concept" style="background:'+s.conceptBg+';">'+s.concept+'</div>';
+    document.getElementById('lcPrev').disabled=lcCurrent===0;
+    document.getElementById('lcNext').disabled=lcCurrent===lcSteps.length-1;
+    var dots='';
+    lcSteps.forEach(function(_,i){dots+='<div class="lifecycle-dot'+(i===lcCurrent?' active':'')+'"></div>';});
+    document.getElementById('lcProgress').innerHTML=dots;
+    var btns=document.querySelectorAll('.lifecycle-btn');
+    btns.forEach(function(b,i){b.classList.toggle('active',i===lcCurrent);});
+  }
+  function lcNav(dir){ lcCurrent=Math.max(0,Math.min(lcSteps.length-1,lcCurrent+dir)); renderLC(); }
+  function lcJump(i){ lcCurrent=i; renderLC(); }
+  // Build step buttons
+  var btnHtml='';
+  var shortLabels=['1. API','2. Queue','3. Tokenise','4. Prefill','5. TTFT','6. Decode','7. KV Cache','8. Batching','9. EOS','10. Response'];
+  var btnColors=['#546E7A','#006064','#7B1FA2','#BF360C','#1565C0','#2E7D32','#3949AB','#006064','#546E7A','#7B1FA2'];
+  shortLabels.forEach(function(l,i){
+    btnHtml+='<button class="lifecycle-btn" style="background:'+btnColors[i]+'; color:white;" onclick="lcJump('+i+')">'+l+'</button>';
+  });
+  document.getElementById('lifecycleControls').innerHTML=btnHtml;
+  renderLC();
+
+  /* ── Reference architectures ── */
+  function showArch(scenario){
+    var name,stack,why,tags;
+    if(scenario==='startup'){
+      name='Early-stage startup - fast to production, cost-conscious';
+      stack=[
+        {bg:'rgba(84,110,122,0.8)',name:'Application',detail:'Direct HTTP to vLLM - no separate gateway needed at this scale'},
+        {bg:'rgba(123,31,162,0.8)',name:'vLLM built-in API',detail:'OpenAI-compatible endpoint - no Triton needed'},
+        {bg:'rgba(123,31,162,0.8)',name:'vLLM engine',detail:'Paged Attention + continuous batching out of the box'},
+        {bg:'rgba(21,101,192,0.8)',name:'Quantisation: AWQ INT4',detail:'Llama 3 8B at INT4 fits in 8GB - runs on a single A100 40GB with KV Cache headroom'},
+        {bg:'rgba(27,94,32,0.8)',name:'1x A100 40GB SXM',detail:'Single GPU - no TP needed, no NVLink complexity'},
+      ];
+      why='One GPU, one process, one command. vLLM\'s OpenAI-compatible API means zero integration work for any app built on the OpenAI SDK. INT4 AWQ on a small model maximises the memory available for KV Cache without compromising quality significantly. Add a second GPU and TP=2 when concurrency exceeds ~15 users. Switch to H100 when TPOT becomes the constraint.';
+      tags=['1x A100 40GB','vLLM + AWQ INT4','Llama 3 8B','~$3/hr cloud cost','Scales to ~15 concurrent'];
+    } else if(scenario==='enterprise'){
+      name='Enterprise RAG at scale - quality, SLA, multi-team';
+      stack=[
+        {bg:'rgba(84,110,122,0.8)',name:'API gateway (Kong/Apigee)',detail:'Auth, rate limiting, per-tenant routing, audit logging'},
+        {bg:'rgba(0,96,100,0.8)',name:'Triton Inference Server',detail:'Ensemble pipeline: preprocessing → embedding → retrieval → LLM → postprocessing'},
+        {bg:'rgba(230,81,0,0.8)',name:'TRT-LLM FP8 engine',detail:'Compiled for H100 - 25% more throughput vs vLLM at this scale'},
+        {bg:'rgba(21,101,192,0.8)',name:'Parallelism: TP=4',detail:'Llama 3 70B across 4x H100 SXM within one DGX node - NVLink AllReduce'},
+        {bg:'rgba(123,31,162,0.8)',name:'Prefix caching',detail:'Shared RAG system prompts cached - TTFT from 1.8s to <100ms for repeat document sets'},
+        {bg:'rgba(27,94,32,0.8)',name:'4x H100 SXM (DGX H100)',detail:'NVLink 4.0 for TP=4, 80GB HBM3 each, FP8 Transformer Engine'},
+      ];
+      why='The enterprise tier justifies operational complexity. TRT-LLM\'s compiled FP8 engine delivers consistent TPOT under 25ms at 60+ concurrent users - something vLLM cannot sustain reliably. Triton\'s ensemble pipeline orchestrates the RAG flow server-side, eliminating application-layer orchestration and providing per-stage Prometheus metrics for SLA monitoring. Prefix caching is the single highest-ROI optimisation for RAG - the document set system prompt is shared across thousands of queries.';
+      tags=['4x H100 SXM','TRT-LLM + FP8','Triton ensemble','Prefix caching','60+ concurrent','<25ms TPOT SLA'];
+    } else {
+      name='High-volume batch processing - throughput-first';
+      stack=[
+        {bg:'rgba(84,110,122,0.8)',name:'Job queue (Celery/SQS)',detail:'Async batch submission - no real-time latency SLA'},
+        {bg:'rgba(0,96,100,0.8)',name:'Triton Inference Server',detail:'Sequence batching with max_queue_delay for maximum batch fill rate'},
+        {bg:'rgba(230,81,0,0.8)',name:'TRT-LLM FP8 engine',detail:'Maximum throughput - compiled engine, large batch size (256+)'},
+        {bg:'rgba(21,101,192,0.8)',name:'Parallelism: TP=4, Data Parallel x2',detail:'Two identical 4x H100 sets serving the same model - doubles throughput linearly'},
+        {bg:'rgba(27,94,32,0.8)',name:'8x H100 SXM (2x DGX nodes)',detail:'Two DGX H100 nodes, InfiniBand between nodes for DP coordination'},
+      ];
+      why='Batch workloads care only about tokens per second per dollar - not TTFT or TPOT. TRT-LLM with large max batch size (256+) and long queue_delay_microseconds fills every GPU cycle. Data Parallelism across two DGX nodes doubles throughput linearly with no AllReduce overhead (each DP replica is independent). The async job queue decouples submission from processing, allowing the GPUs to run continuously at near-100% utilisation. Speculative decoding is explicitly excluded - at batch sizes of 256, draft model overhead outweighs acceptance rate gains.';
+      tags=['8x H100 SXM','TRT-LLM FP8','Data Parallelism','Batch size 256+','Maximum tokens/sec','Async queue'];
+    }
+    var layerHtml=stack.map(function(l){
+      return '<div class="arch-result-layer" style="background:'+l.bg+';"><div class="arch-result-layer-name">'+l.name+'</div><div class="arch-result-layer-detail">'+l.detail+'</div></div>';
+    }).join('');
+    document.getElementById('archResult').innerHTML=
+      '<div class="arch-result-name">'+name+'</div>'+
+      '<div class="arch-result-stack">'+layerHtml+'</div>'+
+      '<div class="arch-result-why">'+why+'</div>'+
+      '<div class="arch-result-tags">'+tags.map(function(t){return '<span class="arch-result-tag">'+t+'</span>';}).join('')+'</div>';
+  }
+  showArch('enterprise');
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    document.querySelectorAll('.quiz-option').forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      var l=['a','b','c','d'][i];
+      if(l==='c')o.classList.add('correct');
+      else if(l===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='c'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct - this integrates three separate concepts from Parts 1–4.</strong><br><br><strong>Why FP8 weight quantisation:</strong> The TPOT degradation from 18ms at 20 users to 45ms at 60 users is not primarily a scheduling problem - 18ms at low load tells us the baseline TPOT is already close to the HBM bandwidth floor for BF16 70B on H100 (70GB / 3350 GB/s ≈ 21ms). As concurrency grows, the GPU is reading full BF16 weights more times per second, and memory pressure from the KV Cache at 88% utilisation forces the scheduler to slow down or preempt sequences. FP8 weights halve the bytes read per decode step (35GB instead of 70GB), cutting the TPOT floor from 21ms to ~10ms - leaving far more headroom before memory pressure compounds.<br><br><strong>Why FP8 KV Cache quantisation:</strong> 88% KV Cache utilisation at 60 users is dangerously close to the OOM boundary. When the pool fills further, vLLM begins swapping sequences to CPU RAM, which causes exactly the TPOT spikes observed. FP8 KV Cache (INT8 halves the block footprint) doubles the effective KV Cache capacity, reducing utilisation from 88% to roughly 44% at the same concurrency - eliminating preemption-driven TPOT spikes.<br><br><strong>Why migrate to TRT-LLM:</strong> At 60 concurrent users with a 25ms TPOT SLA, this customer meets all four TRT-LLM criteria (fixed model, high concurrency, tight SLA, presumably an ML platform team). TRT-LLM\'s compiled FP8 kernels on H100 add a further 20–30% throughput on top of the quantisation gains.<br><br><strong>Why not option A (add GPUs):</strong> Adding TP GPUs raises TP from 4 to 8 on the same nodes - but they are already using 8 GPUs total across TP=4, PP=2. TP=8 within a single node requires all 8 GPUs on one DGX, which changes the PP configuration. More importantly, the bottleneck is memory bandwidth and KV Cache pressure, not compute - adding TP reduces per-GPU weight size but does not help the KV Cache pressure per se. Quantisation addresses the root cause more directly.<br><br><strong>Why not option B (speculative decoding):</strong> Speculative decoding explicitly degrades at high concurrency. At 60 users, batch sizes are large enough that the draft model overhead reduces overall throughput - Module 3.5 flagged this directly. The acceptance rate also needs to exceed ~50% to be net positive, and at this concurrency the gain is negative.<br><br><strong>Why not option D (rate limiting):</strong> Hiding the problem by rejecting users is not a fix - it is capitulation to an architectural constraint. The customer needs to serve 60 users at 25ms TPOT, not 30 users.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> Option C is correct. The TPOT degradation from 18ms to 45ms as concurrency grows points to two compounding problems: (1) the baseline TPOT is already near the HBM bandwidth floor for BF16 70B on H100 (~21ms), and (2) 88% KV Cache utilisation at 60 users is causing the scheduler to preempt sequences, adding TPOT spikes. FP8 weight quantisation halves the memory read per decode step, cutting the TPOT floor in half. FP8 KV Cache doubles effective capacity, dropping utilisation from 88% to ~44% and eliminating preemption-driven spikes. Migrating to TRT-LLM adds a further 20–30% throughput. Option A (more GPUs / TP=8) does not address the root cause - memory bandwidth and KV pressure. Option B (speculative decoding) actively hurts at 60 concurrent users. Option D (rate limiting) is not an architectural fix.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>

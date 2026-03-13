@@ -155,7 +155,7 @@
   <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 3 · MODULE 3.1</div>
     <h1>Flash Attention</h1>
-    <p>The same mathematical result as standard attention — computed 2–4× faster and using a fraction of the GPU memory. How reordering the same operations changes everything.</p>
+    <p>The same mathematical result as standard attention - computed 2–4× faster and using a fraction of the GPU memory. How reordering the same operations changes everything.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -165,17 +165,17 @@
   <div class="nav-bar">
     <a href="module2_5.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">2.5 — Memory Bottleneck</div>
+      <div class="nav-title">2.5 - Memory Bottleneck</div>
     </a>
     <a href="module3_2.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">3.2 — Paged Attention</div>
+      <div class="nav-title">3.2 - Paged Attention</div>
     </a>
   </div>
 
   <div class="intro-card">
-    <p>Flash Attention does not change what attention computes — it changes <em>where</em> the computation happens inside the GPU. The result is mathematically identical to standard attention. But by carefully rearranging the order of operations to keep data in fast on-chip memory instead of slow off-chip HBM, it achieves 2–4× speedups and reduces memory usage from quadratic to linear with sequence length.</p>
-    <p>Published by Dao et al. in 2022, Flash Attention has since become the default attention implementation in virtually every major inference framework — vLLM, TensorRT-LLM, and transformer libraries all use it. Understanding why it works makes the rest of Part 3 easier, because the same insight (avoid expensive memory round-trips) underlies many other optimisations.</p>
+    <p>Flash Attention does not change what attention computes - it changes <em>where</em> the computation happens inside the GPU. The result is mathematically identical to standard attention. But by carefully rearranging the order of operations to keep data in fast on-chip memory instead of slow off-chip HBM, it achieves 2–4× speedups and reduces memory usage from quadratic to linear with sequence length.</p>
+    <p>Published by Dao et al. in 2022, Flash Attention has since become the default attention implementation in virtually every major inference framework - vLLM, TensorRT-LLM, and transformer libraries all use it. Understanding why it works makes the rest of Part 3 easier, because the same insight (avoid expensive memory round-trips) underlies many other optimisations.</p>
   </div>
 
   <!-- Section 1: The memory hierarchy problem -->
@@ -183,15 +183,15 @@
     <div class="section-header" id="hdr1" onclick="toggle(1)">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">1</span>
-        The Root Problem — GPU Memory Is Not Flat
+        The Root Problem - GPU Memory Is Not Flat
       </div>
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>To understand Flash Attention, you first need to understand that a GPU has two very different types of memory — and accessing one of them is vastly slower than the other.</p>
+      <p>To understand Flash Attention, you first need to understand that a GPU has two very different types of memory - and accessing one of them is vastly slower than the other.</p>
 
       <div class="mem-hierarchy">
-        <div class="mh-title">GPU memory hierarchy — speed vs capacity</div>
+        <div class="mh-title">GPU memory hierarchy - speed vs capacity</div>
         <div class="mh-row">
           <span class="mh-label">SRAM (on-chip)</span>
           <div class="mh-bar-bg">
@@ -207,12 +207,12 @@
           <span class="mh-meta" style="color:#F87171;">40–141 GB total</span>
         </div>
         <div style="font-size:12.5px; opacity:0.55; margin-top:12px; line-height:1.6;">
-          SRAM (Static RAM) sits directly on the GPU die. It is tiny but extraordinarily fast — roughly 10× the bandwidth of HBM. HBM (High Bandwidth Memory) is the large off-chip memory where model weights and KV Cache live. Every time data must travel between SRAM and HBM, it passes through a bottleneck. Standard attention does this repeatedly. Flash Attention minimises it.
+          SRAM (Static RAM) sits directly on the GPU die. It is tiny but extraordinarily fast - roughly 10× the bandwidth of HBM. HBM (High Bandwidth Memory) is the large off-chip memory where model weights and KV Cache live. Every time data must travel between SRAM and HBM, it passes through a bottleneck. Standard attention does this repeatedly. Flash Attention minimises it.
         </div>
       </div>
 
       <div class="callout callout-blue">
-        <strong>The analogy:</strong> Think of SRAM as a whiteboard right next to you — fast to read and write, but small. HBM is a filing cabinet across the room — much more storage, but every trip takes time. Standard attention repeatedly walks to the filing cabinet and back. Flash Attention reorganises the work so you can do as much as possible at the whiteboard before making a single trip.
+        <strong>The analogy:</strong> Think of SRAM as a whiteboard right next to you - fast to read and write, but small. HBM is a filing cabinet across the room - much more storage, but every trip takes time. Standard attention repeatedly walks to the filing cabinet and back. Flash Attention reorganises the work so you can do as much as possible at the whiteboard before making a single trip.
       </div>
     </div>
   </div>
@@ -222,7 +222,7 @@
     <div class="section-header" id="hdr2" onclick="toggle(2)">
       <div class="section-title">
         <span class="section-num" style="background:#C62828;">2</span>
-        What Standard Attention Does — and Why It Is Slow
+        What Standard Attention Does - and Why It Is Slow
       </div>
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
@@ -249,7 +249,7 @@
             <div><strong>Read final output from HBM</strong> → done</div>
           </div>
           <div class="cb-summary" style="background:#FFCDD2; color:#C62828;">
-            5 round-trips to HBM. The N×N score matrix alone costs O(N²) memory — 128k tokens = 16 billion entries.
+            5 round-trips to HBM. The N×N score matrix alone costs O(N²) memory - 128k tokens = 16 billion entries.
           </div>
         </div>
 
@@ -261,7 +261,7 @@
           </div>
           <div class="cb-step">
             <div class="cb-num" style="background:#C8E6C9; color:#2E7D32;">2</div>
-            <div>Compute scores, softmax, and weighted sum <strong>entirely within SRAM</strong> — no HBM write</div>
+            <div>Compute scores, softmax, and weighted sum <strong>entirely within SRAM</strong> - no HBM write</div>
           </div>
           <div class="cb-step">
             <div class="cb-num" style="background:#C8E6C9; color:#2E7D32;">3</div>
@@ -269,35 +269,35 @@
           </div>
           <div class="cb-step">
             <div class="cb-num" style="background:#C8E6C9; color:#2E7D32;">4</div>
-            <div><strong>Write final output to HBM once</strong> — no intermediate matrices ever stored</div>
+            <div><strong>Write final output to HBM once</strong> - no intermediate matrices ever stored</div>
           </div>
           <div class="cb-summary" style="background:#C8E6C9; color:#1B5E20;">
-            1 write to HBM. No N×N matrix ever materialised. Memory usage is O(N) — linear, not quadratic.
+            1 write to HBM. No N×N matrix ever materialised. Memory usage is O(N) - linear, not quadratic.
           </div>
         </div>
       </div>
 
       <div class="callout callout-red">
-        <strong>The N×N problem in numbers:</strong> For a 4,096-token sequence, the standard attention score matrix has 4,096 × 4,096 = 16.7 million entries per attention head, per layer. A 70B model with 64 attention heads across 80 layers would require storing 85 billion intermediate values — tens of gigabytes — just for one forward pass. Flash Attention never stores this matrix at all.
+        <strong>The N×N problem in numbers:</strong> For a 4,096-token sequence, the standard attention score matrix has 4,096 × 4,096 = 16.7 million entries per attention head, per layer. A 70B model with 64 attention heads across 80 layers would require storing 85 billion intermediate values - tens of gigabytes - just for one forward pass. Flash Attention never stores this matrix at all.
       </div>
     </div>
   </div>
 
-  <!-- Section 3: Tiling — how Flash Attention works -->
+  <!-- Section 3: Tiling - how Flash Attention works -->
   <div class="section-card">
     <div class="section-header" id="hdr3" onclick="toggle(3)">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">3</span>
-        Tiling — How Flash Attention Works
+        Tiling - How Flash Attention Works
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>The core technique Flash Attention uses is called <strong>tiling</strong>. Instead of loading the entire Q, K, V matrices and computing attention in one shot, it divides them into small tiles that fit in SRAM and processes them sequentially — accumulating the correct final result tile by tile.</p>
+      <p>The core technique Flash Attention uses is called <strong>tiling</strong>. Instead of loading the entire Q, K, V matrices and computing attention in one shot, it divides them into small tiles that fit in SRAM and processes them sequentially - accumulating the correct final result tile by tile.</p>
       <p>The mathematical trick that makes this work is an online softmax algorithm: you can compute the correct softmax over the full sequence <em>incrementally</em> as tiles are processed, without ever having all the scores in memory at once. This is the key insight of the Flash Attention paper.</p>
 
       <div class="tile-wrap">
-        <div class="tile-title">Tiling visualisation — 8×8 attention matrix processed in 2×2 tiles</div>
+        <div class="tile-title">Tiling visualisation - 8×8 attention matrix processed in 2×2 tiles</div>
         <div class="tile-controls">
           <button class="tile-btn" id="tileRunBtn" style="background:#3949AB; color:white;" onclick="runTiles()">Animate tiling</button>
           <button class="tile-btn" style="background:#E8EAF6; color:#3949AB;" onclick="resetTiles()">Reset</button>
@@ -308,13 +308,13 @@
         <div class="tile-legend" style="margin-top:10px;">
           <div class="tile-leg-item"><div class="tile-leg-box" style="background:#E8EAF6; border:1px solid #9FA8DA;"></div>Unprocessed</div>
           <div class="tile-leg-item"><div class="tile-leg-box" style="background:#3949AB;"></div>Current tile (in SRAM)</div>
-          <div class="tile-leg-item"><div class="tile-leg-box" style="background:#81D4FA;"></div>Processed — result accumulated</div>
+          <div class="tile-leg-item"><div class="tile-leg-box" style="background:#81D4FA;"></div>Processed - result accumulated</div>
           <div class="tile-leg-item"><div class="tile-leg-box" style="background:#43A047;"></div>Output written to HBM</div>
         </div>
       </div>
 
       <div class="callout callout-purple">
-        <strong>What makes this mathematically correct:</strong> The challenge with tiling is that softmax normally requires all scores before it can normalise them. Flash Attention's online softmax algorithm keeps running statistics (the current maximum score and sum of exponentials) that are updated incrementally as each new tile is processed. The final output is identical to what standard attention would produce — no approximation, no quality loss.
+        <strong>What makes this mathematically correct:</strong> The challenge with tiling is that softmax normally requires all scores before it can normalise them. Flash Attention's online softmax algorithm keeps running statistics (the current maximum score and sum of exponentials) that are updated incrementally as each new tile is processed. The final output is identical to what standard attention would produce - no approximation, no quality loss.
       </div>
     </div>
   </div>
@@ -324,15 +324,15 @@
     <div class="section-header" id="hdr4" onclick="toggle(4)">
       <div class="section-title">
         <span class="section-num" style="background:#2E7D32;">4</span>
-        Real-World Impact — Speed, Memory, and Context Length
+        Real-World Impact - Speed, Memory, and Context Length
       </div>
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
     <div class="section-body" id="bdy4">
-      <p>Flash Attention's impact is felt in three areas simultaneously — and the benefits compound as sequence length grows, because standard attention's problems get worse quadratically while Flash Attention stays linear.</p>
+      <p>Flash Attention's impact is felt in three areas simultaneously - and the benefits compound as sequence length grows, because standard attention's problems get worse quadratically while Flash Attention stays linear.</p>
 
       <div class="impact-wrap">
-        <div class="impact-title">Flash Attention vs Standard Attention — measured improvements</div>
+        <div class="impact-title">Flash Attention vs Standard Attention - measured improvements</div>
         <div class="impact-row">
           <span class="impact-label">Prefill speed</span>
           <div class="impact-bar-bg"><div class="impact-fill" style="background:#1565C0; width:75%;">2–4× faster</div></div>
@@ -356,12 +356,12 @@
         <div class="impact-row">
           <span class="impact-label">Output quality change</span>
           <div class="impact-bar-bg"><div class="impact-fill" style="background:#455A64; width:4%;"></div></div>
-          <span class="impact-note" style="color:#455A64;">Zero — exact</span>
+          <span class="impact-note" style="color:#455A64;">Zero - exact</span>
         </div>
       </div>
 
       <div class="callout callout-green">
-        <strong>Why long contexts became practical:</strong> Before Flash Attention, running a 32k-token context required storing an attention matrix too large to fit in GPU memory — making it practically impossible at inference time. Flash Attention eliminated this constraint entirely. The explosion of 32k, 64k, 128k, and now 1M+ context window models from 2023 onwards was directly enabled by Flash Attention making long-context computation feasible.
+        <strong>Why long contexts became practical:</strong> Before Flash Attention, running a 32k-token context required storing an attention matrix too large to fit in GPU memory - making it practically impossible at inference time. Flash Attention eliminated this constraint entirely. The explosion of 32k, 64k, 128k, and now 1M+ context window models from 2023 onwards was directly enabled by Flash Attention making long-context computation feasible.
       </div>
     </div>
   </div>
@@ -371,7 +371,7 @@
     <div class="section-header" id="hdr5" onclick="toggle(5)">
       <div class="section-title">
         <span class="section-num" style="background:#E65100;">5</span>
-        Flash Attention 1, 2, and 3 — What Each Version Added
+        Flash Attention 1, 2, and 3 - What Each Version Added
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
@@ -400,7 +400,7 @@
           <tr>
             <td class="ver-name">Flash Attention 3</td>
             <td>2024</td>
-            <td>H100-specific optimisations — exploits new Tensor Core features (WGMMA, TMA). Overlaps compute and memory transfers. FP8 support.</td>
+            <td>H100-specific optimisations - exploits new Tensor Core features (WGMMA, TMA). Overlaps compute and memory transfers. FP8 support.</td>
             <td class="ver-good">1.5–2× vs FA2 on H100</td>
             <td>H100/H200 deployments</td>
           </tr>
@@ -408,7 +408,7 @@
       </table>
 
       <div class="callout callout-teal">
-        <strong>What this means for customers:</strong> If a customer is still running standard attention (some older frameworks or custom implementations), switching to Flash Attention 2 is one of the highest-ROI, lowest-risk upgrades available — it is a drop-in replacement that improves Prefill speed and enables longer contexts with zero quality change. If they are on H100s, Flash Attention 3 provides an additional 1.5–2× on top of that.
+        <strong>What this means for customers:</strong> If a customer is still running standard attention (some older frameworks or custom implementations), switching to Flash Attention 2 is one of the highest-ROI, lowest-risk upgrades available - it is a drop-in replacement that improves Prefill speed and enables longer contexts with zero quality change. If they are on H100s, Flash Attention 3 provides an additional 1.5–2× on top of that.
       </div>
     </div>
   </div>
@@ -426,29 +426,29 @@
       <div class="key-item">
         <div class="key-num" style="color:#1565C0;">01</div>
         <div>
-          <div class="key-title">Flash Attention produces the exact same result as standard attention — no approximation</div>
-          <div class="key-desc">This is the most important thing to communicate to technically cautious customers. It is not a quantisation or an approximation — it is a mathematically equivalent reformulation that uses the GPU's memory hierarchy more efficiently. Quality is completely unchanged.</div>
+          <div class="key-title">Flash Attention produces the exact same result as standard attention - no approximation</div>
+          <div class="key-desc">This is the most important thing to communicate to technically cautious customers. It is not a quantisation or an approximation - it is a mathematically equivalent reformulation that uses the GPU's memory hierarchy more efficiently. Quality is completely unchanged.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#7B1FA2;">02</div>
         <div>
-          <div class="key-title">The speedup comes from staying in fast SRAM — not from doing less work</div>
-          <div class="key-desc">Flash Attention does the same mathematical operations as standard attention. The gain is purely from avoiding slow HBM round-trips for intermediate results. This insight — minimise slow memory access, maximise fast on-chip computation — is the core principle behind many other GPU optimisations.</div>
+          <div class="key-title">The speedup comes from staying in fast SRAM - not from doing less work</div>
+          <div class="key-desc">Flash Attention does the same mathematical operations as standard attention. The gain is purely from avoiding slow HBM round-trips for intermediate results. This insight - minimise slow memory access, maximise fast on-chip computation - is the core principle behind many other GPU optimisations.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#2E7D32;">03</div>
         <div>
-          <div class="key-title">It turns O(N²) memory into O(N) — this is what made long contexts possible</div>
-          <div class="key-desc">Standard attention needs memory proportional to the square of the sequence length. A 128k-token context with standard attention would require hundreds of gigabytes just for intermediate matrices. Flash Attention only needs memory proportional to the sequence length — enabling 128k, 200k, and 1M+ context windows that are standard today.</div>
+          <div class="key-title">It turns O(N²) memory into O(N) - this is what made long contexts possible</div>
+          <div class="key-desc">Standard attention needs memory proportional to the square of the sequence length. A 128k-token context with standard attention would require hundreds of gigabytes just for intermediate matrices. Flash Attention only needs memory proportional to the sequence length - enabling 128k, 200k, and 1M+ context windows that are standard today.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">04</div>
         <div>
-          <div class="key-title">Flash Attention primarily benefits Prefill — it speeds up TTFT, not TPOT</div>
-          <div class="key-desc">Flash Attention's biggest gains are during the Prefill phase, where large Q, K, V matrices are being processed for the full input. During Decode, only one new token is computed per step — the attention matrix is tiny — so Flash Attention has less to contribute. If a customer's primary complaint is slow Decode (high TPOT), Flash Attention alone will not fix it.</div>
+          <div class="key-title">Flash Attention primarily benefits Prefill - it speeds up TTFT, not TPOT</div>
+          <div class="key-desc">Flash Attention's biggest gains are during the Prefill phase, where large Q, K, V matrices are being processed for the full input. During Decode, only one new token is computed per step - the attention matrix is tiny - so Flash Attention has less to contribute. If a customer's primary complaint is slow Decode (high TPOT), Flash Attention alone will not fix it.</div>
         </div>
       </div>
     </div>
@@ -456,7 +456,7 @@
 
   <!-- Cheat sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 3.1 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 3.1 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Flash Attention</div>
@@ -476,7 +476,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Online Softmax</div>
-        <div class="cheat-def">The mathematical trick that makes tiling work — allows correct softmax to be computed incrementally as tiles are processed, without storing all scores at once.</div>
+        <div class="cheat-def">The mathematical trick that makes tiling work - allows correct softmax to be computed incrementally as tiles are processed, without storing all scores at once.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">O(N²) → O(N)</div>
@@ -500,19 +500,19 @@
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        Flash Attention will reduce output quality at 64k tokens — they should use a model specifically fine-tuned for long contexts instead.
+        Flash Attention will reduce output quality at 64k tokens - they should use a model specifically fine-tuned for long contexts instead.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        Flash Attention is exactly the right recommendation. It is a drop-in replacement that makes 64k context computationally feasible by eliminating the O(N²) intermediate matrix — the memory that standard attention would need for 64k tokens would be prohibitive. Output quality is unchanged. TTFT will improve significantly. TPOT improvement will be minimal since Decode attention on one new token is small regardless.
+        Flash Attention is exactly the right recommendation. It is a drop-in replacement that makes 64k context computationally feasible by eliminating the O(N²) intermediate matrix - the memory that standard attention would need for 64k tokens would be prohibitive. Output quality is unchanged. TTFT will improve significantly. TPOT improvement will be minimal since Decode attention on one new token is small regardless.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Flash Attention is not the right tool — they need more GPUs to handle the longer context window.
+        Flash Attention is not the right tool - they need more GPUs to handle the longer context window.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        Flash Attention only helps during training, not inference — they should look at Paged Attention instead.
+        Flash Attention only helps during training, not inference - they should look at Paged Attention instead.
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
@@ -521,9 +521,9 @@
 
   <a href="module3_2.html" class="next-module">
     <div>
-      <div class="next-label">Up Next — Module 3.2</div>
+      <div class="next-label">Up Next - Module 3.2</div>
       <div class="next-title">Paged Attention</div>
-      <div class="next-sub">How vLLM manages KV Cache like an OS manages virtual memory — and why it transformed inference serving</div>
+      <div class="next-sub">How vLLM manages KV Cache like an OS manages virtual memory - and why it transformed inference serving</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -599,7 +599,7 @@
       }
       t.cells.forEach(function(ci){ setCellActive(ci,t.color); });
       var tileRow=Math.floor(step/(N/TILE))+1, tileCol=(step%(N/TILE))+1;
-      document.getElementById('tileStatus').textContent='Tile ('+tileRow+','+tileCol+') — loaded into SRAM, computing attention, accumulating result...';
+      document.getElementById('tileStatus').textContent='Tile ('+tileRow+','+tileCol+') - loaded into SRAM, computing attention, accumulating result...';
       step++;
       animTimer=setTimeout(tick, 420);
     }
@@ -651,10 +651,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct — and well reasoned.</strong> This is a near-perfect Flash Attention use case. At 64k tokens, the standard attention intermediate matrix would be 64,000 × 64,000 = 4 billion entries per head per layer — requiring tens to hundreds of gigabytes of HBM just for intermediates, making it completely infeasible. Flash Attention eliminates that matrix entirely and scales linearly, making 64k context routine. Two important details to communicate: (1) output quality is mathematically identical — this is not an approximation, (2) the big win is TTFT for long-prompt ingestion, not TPOT during generation. If the customer is also experiencing slow generation, they will need additional techniques (Paged Attention, GQA, KV quantisation) for that separately.';
+      r.innerHTML='<strong>Correct - and well reasoned.</strong> This is a near-perfect Flash Attention use case. At 64k tokens, the standard attention intermediate matrix would be 64,000 × 64,000 = 4 billion entries per head per layer - requiring tens to hundreds of gigabytes of HBM just for intermediates, making it completely infeasible. Flash Attention eliminates that matrix entirely and scales linearly, making 64k context routine. Two important details to communicate: (1) output quality is mathematically identical - this is not an approximation, (2) the big win is TTFT for long-prompt ingestion, not TPOT during generation. If the customer is also experiencing slow generation, they will need additional techniques (Paged Attention, GQA, KV quantisation) for that separately.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Flash Attention is exactly the right recommendation here (Option B). It produces identical output to standard attention — no quality change. It makes 64k context feasible by eliminating the O(N²) intermediate matrix. It absolutely helps during inference (not just training). More GPUs would not help since the issue is memory scaling, not compute capacity. Option B is complete and correct.';
+      r.innerHTML='<strong>Not quite.</strong> Flash Attention is exactly the right recommendation here (Option B). It produces identical output to standard attention - no quality change. It makes 64k context feasible by eliminating the O(N²) intermediate matrix. It absolutely helps during inference (not just training). More GPUs would not help since the issue is memory scaling, not compute capacity. Option B is complete and correct.';
     }
     document.getElementById('check-btn').style.display='none';
   }

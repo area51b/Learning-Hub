@@ -159,11 +159,11 @@
   <div class="nav-bar">
     <a href="module3_6.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">3.6 — Disaggregation</div>
+      <div class="nav-title">3.6 - Disaggregation</div>
     </a>
     <a href="module4_2.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">4.2 — vLLM Architecture</div>
+      <div class="nav-title">4.2 - vLLM Architecture</div>
     </a>
   </div>
 
@@ -177,17 +177,17 @@
     <div class="section-header" id="hdr1" onclick="toggle(1)">
       <div class="section-title">
         <span class="section-num" style="background:#388E3C;">1</span>
-        GPU vs CPU — Why LLMs Need GPUs
+        GPU vs CPU - Why LLMs Need GPUs
       </div>
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>A CPU is designed for sequential, complex logic — a small number of powerful cores (8–128) that can each handle branching code, OS scheduling, and general-purpose tasks. A GPU is designed for parallel arithmetic — thousands of simpler cores (H100: 16,896 CUDA cores) that all execute the same operation simultaneously on different data.</p>
-      <p>LLM inference is almost entirely matrix multiplication — multiplying activations by weight matrices across hundreds of layers. Matrix multiplication is perfectly parallel: every output element is an independent dot product. A GPU can compute thousands of these simultaneously; a CPU must compute them one after another.</p>
+      <p>A CPU is designed for sequential, complex logic - a small number of powerful cores (8–128) that can each handle branching code, OS scheduling, and general-purpose tasks. A GPU is designed for parallel arithmetic - thousands of simpler cores (H100: 16,896 CUDA cores) that all execute the same operation simultaneously on different data.</p>
+      <p>LLM inference is almost entirely matrix multiplication - multiplying activations by weight matrices across hundreds of layers. Matrix multiplication is perfectly parallel: every output element is an independent dot product. A GPU can compute thousands of these simultaneously; a CPU must compute them one after another.</p>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
         <div style="background:#ECEFF1; border-radius:10px; padding:18px; border-left:3px solid #546E7A;">
-          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#546E7A; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">CPU — built for general logic</div>
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#546E7A; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">CPU - built for general logic</div>
           <div style="font-size:13.5px; line-height:1.9; color:#333;">
             8–128 powerful cores<br>
             Complex branch prediction<br>
@@ -198,7 +198,7 @@
           </div>
         </div>
         <div style="background:#E8F5E9; border-radius:10px; padding:18px; border-left:3px solid #2E7D32;">
-          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">GPU — built for parallel math</div>
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">GPU - built for parallel math</div>
           <div style="font-size:13.5px; line-height:1.9; color:#333;">
             16,896+ simple CUDA cores<br>
             Thousands run same instruction<br>
@@ -211,7 +211,7 @@
       </div>
 
       <div class="callout callout-green">
-        <strong>The practical implication:</strong> Running a 70B LLM on a CPU would take minutes per token. The same model on a single A100 80GB produces tokens in milliseconds. The difference is not software — it is the fundamental architecture. Every serving framework (vLLM, TensorRT-LLM, Triton) is ultimately orchestrating GPU matrix multiplications. Understanding the GPU is understanding why the software works the way it does.
+        <strong>The practical implication:</strong> Running a 70B LLM on a CPU would take minutes per token. The same model on a single A100 80GB produces tokens in milliseconds. The difference is not software - it is the fundamental architecture. Every serving framework (vLLM, TensorRT-LLM, Triton) is ultimately orchestrating GPU matrix multiplications. Understanding the GPU is understanding why the software works the way it does.
       </div>
     </div>
   </div>
@@ -221,12 +221,12 @@
     <div class="section-header" id="hdr2" onclick="toggle(2)">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">2</span>
-        CUDA — The Software Layer Everything Runs On
+        CUDA - The Software Layer Everything Runs On
       </div>
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
     <div class="section-body" id="bdy2">
-      <p>CUDA (Compute Unified Device Architecture) is NVIDIA's parallel computing platform — the programming model and runtime that allows software to talk to GPU hardware. Every LLM framework — PyTorch, vLLM, TensorRT-LLM, JAX — compiles down to CUDA kernels that execute on the GPU. CUDA is why all of these tools only work on NVIDIA GPUs.</p>
+      <p>CUDA (Compute Unified Device Architecture) is NVIDIA's parallel computing platform - the programming model and runtime that allows software to talk to GPU hardware. Every LLM framework - PyTorch, vLLM, TensorRT-LLM, JAX - compiles down to CUDA kernels that execute on the GPU. CUDA is why all of these tools only work on NVIDIA GPUs.</p>
 
       <div class="stack-wrap">
         <div class="stack-row" style="background:#1B5E20;">
@@ -236,7 +236,7 @@
         <div class="stack-arrow">&#9660;</div>
         <div class="stack-row" style="background:#1565C0;">
           <div class="stack-layer" style="color:#90CAF9;">Inference framework</div>
-          <div class="stack-desc">vLLM, TensorRT-LLM — manage batching, KV Cache, scheduling</div>
+          <div class="stack-desc">vLLM, TensorRT-LLM - manage batching, KV Cache, scheduling</div>
         </div>
         <div class="stack-arrow">&#9660;</div>
         <div class="stack-row" style="background:#4A148C;">
@@ -256,11 +256,11 @@
       </div>
 
       <div class="callout callout-blue">
-        <strong>Why this matters in customer conversations:</strong> When a customer says "we're using CUDA 12.4" or "we need to update our CUDA drivers," they are talking about this layer. CUDA version compatibility is a frequent deployment friction point — TensorRT-LLM and vLLM both have minimum CUDA version requirements, and mismatches between the driver version installed by IT and the version the software expects are a common cause of deployment failures. Always ask about CUDA and driver versions early in technical discovery.
+        <strong>Why this matters in customer conversations:</strong> When a customer says "we're using CUDA 12.4" or "we need to update our CUDA drivers," they are talking about this layer. CUDA version compatibility is a frequent deployment friction point - TensorRT-LLM and vLLM both have minimum CUDA version requirements, and mismatches between the driver version installed by IT and the version the software expects are a common cause of deployment failures. Always ask about CUDA and driver versions early in technical discovery.
       </div>
 
       <div class="callout callout-teal">
-        <strong>Key CUDA libraries for LLMs:</strong> cuBLAS handles matrix multiplication (the dominant operation). cuDNN provides optimised attention implementations. NCCL (NVIDIA Collective Communications Library) handles AllReduce operations between GPUs in Tensor Parallelism — when you read about AllReduce in Part 3, NCCL is what actually executes those synchronisations.
+        <strong>Key CUDA libraries for LLMs:</strong> cuBLAS handles matrix multiplication (the dominant operation). cuDNN provides optimised attention implementations. NCCL (NVIDIA Collective Communications Library) handles AllReduce operations between GPUs in Tensor Parallelism - when you read about AllReduce in Part 3, NCCL is what actually executes those synchronisations.
       </div>
     </div>
   </div>
@@ -270,15 +270,15 @@
     <div class="section-header" id="hdr3" onclick="toggle(3)">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">3</span>
-        HBM — Why Memory Bandwidth Is the Bottleneck
+        HBM - Why Memory Bandwidth Is the Bottleneck
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>HBM (High Bandwidth Memory) is the memory technology used in data-centre GPUs. Unlike DDR5 RAM in a CPU (which sits on a PCIe bus), HBM is stacked directly alongside the GPU die using silicon interposer connections — giving it dramatically higher bandwidth at the cost of high manufacturing complexity and price.</p>
+      <p>HBM (High Bandwidth Memory) is the memory technology used in data-centre GPUs. Unlike DDR5 RAM in a CPU (which sits on a PCIe bus), HBM is stacked directly alongside the GPU die using silicon interposer connections - giving it dramatically higher bandwidth at the cost of high manufacturing complexity and price.</p>
 
       <div class="mem-wrap">
-        <div class="mem-title">Memory bandwidth comparison — why HBM matters for Decode</div>
+        <div class="mem-title">Memory bandwidth comparison - why HBM matters for Decode</div>
         <div class="mem-row">
           <div class="mem-label" style="color:#546E7A;">DDR5 RAM</div>
           <div class="mem-bar-bg"><div class="mem-fill" style="width:4%; background:#546E7A;">~100</div></div>
@@ -306,10 +306,10 @@
         </div>
       </div>
 
-      <p>Recall from Module 2.5: Decode is memory-bandwidth-bound. Every token generation requires reading all model weights from HBM into the compute units. A 70B model at FP16 requires reading ~140GB of weights per decode step. At A100 bandwidth (2,000 GB/s), this takes ~70ms — which sets a hard floor on TPOT regardless of all other optimisations. The H100 (3,350 GB/s) does the same read in ~42ms, and the B200 (8,000 GB/s) in ~17ms.</p>
+      <p>Recall from Module 2.5: Decode is memory-bandwidth-bound. Every token generation requires reading all model weights from HBM into the compute units. A 70B model at FP16 requires reading ~140GB of weights per decode step. At A100 bandwidth (2,000 GB/s), this takes ~70ms - which sets a hard floor on TPOT regardless of all other optimisations. The H100 (3,350 GB/s) does the same read in ~42ms, and the B200 (8,000 GB/s) in ~17ms.</p>
 
       <div class="callout callout-purple">
-        <strong>HBM capacity vs HBM bandwidth — two separate specs:</strong> HBM has both a capacity (how many GB it holds) and a bandwidth (how fast data moves). The A100 comes in 40GB and 80GB variants — same bandwidth (2,000 GB/s), different capacity. Capacity determines how large a model fits and how many concurrent KV Caches you can hold. Bandwidth determines TPOT for a given model size. When a customer asks "should I get A100 40GB or 80GB?", the answer is almost always 80GB for LLM inference — the capacity difference is critical, the bandwidth is identical.
+        <strong>HBM capacity vs HBM bandwidth - two separate specs:</strong> HBM has both a capacity (how many GB it holds) and a bandwidth (how fast data moves). The A100 comes in 40GB and 80GB variants - same bandwidth (2,000 GB/s), different capacity. Capacity determines how large a model fits and how many concurrent KV Caches you can hold. Bandwidth determines TPOT for a given model size. When a customer asks "should I get A100 40GB or 80GB?", the answer is almost always 80GB for LLM inference - the capacity difference is critical, the bandwidth is identical.
       </div>
     </div>
   </div>
@@ -319,15 +319,15 @@
     <div class="section-header" id="hdr4" onclick="toggle(4)">
       <div class="section-title">
         <span class="section-num" style="background:#00796B;">4</span>
-        Tensor Cores — What Makes Modern GPUs Fast at Transformers
+        Tensor Cores - What Makes Modern GPUs Fast at Transformers
       </div>
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
     <div class="section-body" id="bdy4">
-      <p>Standard CUDA cores multiply one number at a time. Tensor Cores — introduced in Volta (V100) and substantially improved each generation — perform a 4&#215;4 matrix multiply-accumulate operation in a single clock cycle. For LLM inference, which is almost entirely matrix multiplication, Tensor Cores are the primary throughput driver.</p>
+      <p>Standard CUDA cores multiply one number at a time. Tensor Cores - introduced in Volta (V100) and substantially improved each generation - perform a 4&#215;4 matrix multiply-accumulate operation in a single clock cycle. For LLM inference, which is almost entirely matrix multiplication, Tensor Cores are the primary throughput driver.</p>
 
       <div class="gpu-wrap">
-        <div class="gpu-title">Tensor Core evolution — peak throughput per GPU</div>
+        <div class="gpu-title">Tensor Core evolution - peak throughput per GPU</div>
         <div class="gpu-grid">
           <div class="gpu-block" style="background:rgba(84,110,122,0.3);">
             <div class="gpu-block-title">V100 (Volta, 2017)</div>
@@ -350,11 +350,11 @@
             <div class="gpu-block-stat">~9,000 TFLOPS FP8 &nbsp;|&nbsp; ~18,000 FP4</div>
           </div>
         </div>
-        <div class="gpu-note">TFLOPS = trillion floating point operations per second. Prefill is compute-bound — more TFLOPS directly improves TTFT. Decode is memory-bandwidth-bound — TFLOPS matter less than HBM bandwidth for Decode.</div>
+        <div class="gpu-note">TFLOPS = trillion floating point operations per second. Prefill is compute-bound - more TFLOPS directly improves TTFT. Decode is memory-bandwidth-bound - TFLOPS matter less than HBM bandwidth for Decode.</div>
       </div>
 
       <div class="callout callout-green">
-        <strong>The Transformer Engine (H100+):</strong> The H100 introduced a Transformer Engine that automatically selects between FP8 and FP16 precision layer-by-layer during inference, maximising throughput without manual quantisation configuration. This is why FP8 is the recommended default for H100 deployments (Module 3.3) — the hardware handles the precision management automatically, and TensorRT-LLM exposes this through simple configuration flags.
+        <strong>The Transformer Engine (H100+):</strong> The H100 introduced a Transformer Engine that automatically selects between FP8 and FP16 precision layer-by-layer during inference, maximising throughput without manual quantisation configuration. This is why FP8 is the recommended default for H100 deployments (Module 3.3) - the hardware handles the precision management automatically, and TensorRT-LLM exposes this through simple configuration flags.
       </div>
     </div>
   </div>
@@ -364,15 +364,15 @@
     <div class="section-header" id="hdr5" onclick="toggle(5)">
       <div class="section-title">
         <span class="section-num" style="background:#E65100;">5</span>
-        NVLink &amp; NVSwitch — The Interconnect That Enables Tensor Parallelism
+        NVLink &amp; NVSwitch - The Interconnect That Enables Tensor Parallelism
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
-      <p>NVLink is NVIDIA's high-speed GPU-to-GPU interconnect. It is what makes Tensor Parallelism practical within a node — the AllReduce operations between GPUs that happen after every layer require bandwidth that PCIe (the standard CPU-GPU bus) cannot provide at acceptable latency.</p>
+      <p>NVLink is NVIDIA's high-speed GPU-to-GPU interconnect. It is what makes Tensor Parallelism practical within a node - the AllReduce operations between GPUs that happen after every layer require bandwidth that PCIe (the standard CPU-GPU bus) cannot provide at acceptable latency.</p>
 
       <div class="nvlink-wrap">
-        <div class="nvlink-title">NVLink generations — bandwidth and implications</div>
+        <div class="nvlink-title">NVLink generations - bandwidth and implications</div>
         <div class="nvlink-controls">
           <button class="nvlink-btn" style="background:#546E7A; color:white;" onclick="showNVLink('v100')">NVLink 2.0 (V100)</button>
           <button class="nvlink-btn" style="background:#E65100; color:white;" onclick="showNVLink('a100')">NVLink 3.0 (A100)</button>
@@ -383,10 +383,10 @@
         <div class="nvlink-note" id="nvlinkNote"></div>
       </div>
 
-      <p>NVSwitch is a dedicated switch chip that provides full all-to-all NVLink connectivity between all GPUs in a DGX node — without NVSwitch, GPU A connecting to GPU H would consume bandwidth on intermediate GPUs. NVSwitch ensures every GPU pair in a node communicates at full NVLink bandwidth simultaneously, which is what makes 8-way Tensor Parallelism within a DGX node practical.</p>
+      <p>NVSwitch is a dedicated switch chip that provides full all-to-all NVLink connectivity between all GPUs in a DGX node - without NVSwitch, GPU A connecting to GPU H would consume bandwidth on intermediate GPUs. NVSwitch ensures every GPU pair in a node communicates at full NVLink bandwidth simultaneously, which is what makes 8-way Tensor Parallelism within a DGX node practical.</p>
 
       <div class="callout callout-orange">
-        <strong>PCIe vs NVLink — the crucial distinction:</strong> Cloud instances without NVLink (e.g. some AWS and Azure GPU instances use PCIe between GPUs) have ~64 GB/s bidirectional between GPUs. NVLink H100 provides ~900 GB/s. For Tensor Parallelism, which runs AllReduce after every layer, this 14&#215; bandwidth difference is the difference between TP being net-positive for latency and being net-negative. Always ask customers whether their GPU interconnect is NVLink or PCIe before recommending TP configurations.
+        <strong>PCIe vs NVLink - the crucial distinction:</strong> Cloud instances without NVLink (e.g. some AWS and Azure GPU instances use PCIe between GPUs) have ~64 GB/s bidirectional between GPUs. NVLink H100 provides ~900 GB/s. For Tensor Parallelism, which runs AllReduce after every layer, this 14&#215; bandwidth difference is the difference between TP being net-positive for latency and being net-negative. Always ask customers whether their GPU interconnect is NVLink or PCIe before recommending TP configurations.
       </div>
     </div>
   </div>
@@ -396,7 +396,7 @@
     <div class="section-header" id="hdr6" onclick="toggle(6)">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">6</span>
-        GPU Comparison — A100 vs H100 vs H200 vs B200
+        GPU Comparison - A100 vs H100 vs H200 vs B200
       </div>
       <span class="chevron" id="chv6">&#9662;</span>
     </div>
@@ -424,7 +424,7 @@
               <td>80GB HBM2e</td>
               <td>2,000 GB/s</td>
               <td>312</td>
-              <td>— (INT8: 624)</td>
+              <td>- (INT8: 624)</td>
               <td>600 GB/s</td>
               <td class="gpu-note-cell">Workhorse of current deployments. No native FP8. INT8 with SmoothQuant is standard.</td>
             </tr>
@@ -463,7 +463,7 @@
       </div>
 
       <div class="callout callout-slate">
-        <strong>H100 PCIe vs H100 SXM — not the same GPU:</strong> NVIDIA sells the H100 in two form factors. SXM (used in DGX H100 servers) has NVLink 4.0 at 900 GB/s and higher TDP (700W). PCIe (used in standard rack servers) has PCIe 5.0 at 64 GB/s and lower TDP (350W). HBM bandwidth is also lower: 3,350 vs 2,000 GB/s. For Tensor Parallelism and high-throughput inference, always ask which form factor the customer has — the SXM variant is significantly more capable for LLM workloads.
+        <strong>H100 PCIe vs H100 SXM - not the same GPU:</strong> NVIDIA sells the H100 in two form factors. SXM (used in DGX H100 servers) has NVLink 4.0 at 900 GB/s and higher TDP (700W). PCIe (used in standard rack servers) has PCIe 5.0 at 64 GB/s and lower TDP (350W). HBM bandwidth is also lower: 3,350 vs 2,000 GB/s. For Tensor Parallelism and high-throughput inference, always ask which form factor the customer has - the SXM variant is significantly more capable for LLM workloads.
       </div>
     </div>
   </div>
@@ -481,8 +481,8 @@
       <div class="key-item">
         <div class="key-num" style="color:#388E3C;">01</div>
         <div>
-          <div class="key-title">HBM bandwidth sets the TPOT floor — it is the single most important spec for Decode</div>
-          <div class="key-desc">Decode reads all model weights from HBM every token. A100 at 2,000 GB/s, H100 at 3,350 GB/s, B200 at 8,000 GB/s — these numbers directly translate to minimum achievable TPOT for a given model size. When a customer asks why their TPOT is what it is, start here.</div>
+          <div class="key-title">HBM bandwidth sets the TPOT floor - it is the single most important spec for Decode</div>
+          <div class="key-desc">Decode reads all model weights from HBM every token. A100 at 2,000 GB/s, H100 at 3,350 GB/s, B200 at 8,000 GB/s - these numbers directly translate to minimum achievable TPOT for a given model size. When a customer asks why their TPOT is what it is, start here.</div>
         </div>
       </div>
       <div class="key-item">
@@ -495,15 +495,15 @@
       <div class="key-item">
         <div class="key-num" style="color:#7B1FA2;">03</div>
         <div>
-          <div class="key-title">The H100's Transformer Engine makes FP8 the right default — no extra work needed</div>
+          <div class="key-title">The H100's Transformer Engine makes FP8 the right default - no extra work needed</div>
           <div class="key-desc">The Transformer Engine auto-selects FP8 vs FP16 per layer at runtime. TensorRT-LLM exposes this through a single config flag. The quality-vs-speed analysis from Module 3.3 is real, but on H100 the hardware largely handles it. On A100, you need to choose and validate INT8 explicitly.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">04</div>
         <div>
-          <div class="key-title">CUDA is the foundation everything builds on — version compatibility is a real deployment risk</div>
-          <div class="key-desc">vLLM, TensorRT-LLM, PyTorch — all compile to CUDA kernels. CUDA driver version mismatches are among the most common causes of deployment failures in the field. When a customer reports "it won't install" or "the framework crashes on startup," CUDA/driver version incompatibility is the first thing to check.</div>
+          <div class="key-title">CUDA is the foundation everything builds on - version compatibility is a real deployment risk</div>
+          <div class="key-desc">vLLM, TensorRT-LLM, PyTorch - all compile to CUDA kernels. CUDA driver version mismatches are among the most common causes of deployment failures in the field. When a customer reports "it won't install" or "the framework crashes on startup," CUDA/driver version incompatibility is the first thing to check.</div>
         </div>
       </div>
     </div>
@@ -511,7 +511,7 @@
 
   <!-- Cheat sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 4.1 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 4.1 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">HBM (High Bandwidth Memory)</div>
@@ -531,7 +531,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">NVLink</div>
-        <div class="cheat-def">GPU-to-GPU interconnect within a node. H100: 900 GB/s. Required for Tensor Parallelism — AllReduce after every layer needs this bandwidth. PCIe (64 GB/s) is too slow for TP.</div>
+        <div class="cheat-def">GPU-to-GPU interconnect within a node. H100: 900 GB/s. Required for Tensor Parallelism - AllReduce after every layer needs this bandwidth. PCIe (64 GB/s) is too slow for TP.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">NVSwitch</div>
@@ -559,11 +559,11 @@
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        H100 PCIe GPUs are connected via PCIe 5.0 (~64 GB/s), not NVLink (~900 GB/s). Tensor Parallelism=8 requires AllReduce communication after every layer across all 8 GPUs — at PCIe bandwidth, this communication overhead will likely dominate the forward pass time and make TP=8 net-negative for TPOT compared to running the model with TP=1 or TP=2. Recommend validating with a benchmark, and consider TP=2 at most, or switching to a configuration with NVLink-connected GPUs if budget allows.
+        H100 PCIe GPUs are connected via PCIe 5.0 (~64 GB/s), not NVLink (~900 GB/s). Tensor Parallelism=8 requires AllReduce communication after every layer across all 8 GPUs - at PCIe bandwidth, this communication overhead will likely dominate the forward pass time and make TP=8 net-negative for TPOT compared to running the model with TP=1 or TP=2. Recommend validating with a benchmark, and consider TP=2 at most, or switching to a configuration with NVLink-connected GPUs if budget allows.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        70B is too large for 8&#215; H100 PCIe — the model will not fit in GPU memory.
+        70B is too large for 8&#215; H100 PCIe - the model will not fit in GPU memory.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
@@ -576,9 +576,9 @@
 
   <a href="module4_2.html" class="next-module">
     <div>
-      <div class="next-label">Up Next — Module 4.2</div>
+      <div class="next-label">Up Next - Module 4.2</div>
       <div class="next-title">vLLM Architecture</div>
-      <div class="next-sub">How vLLM implements Paged Attention, continuous batching, and the full inference serving stack — and how to configure it for production</div>
+      <div class="next-sub">How vLLM implements Paged Attention, continuous batching, and the full inference serving stack - and how to configure it for production</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -600,7 +600,7 @@
     v100:{ gen:'NVLink 2.0', gpu:'V100', bw:'300 GB/s', links:6,  gpuPerNode:8, tpMax:'TP=4 practical', note:'6 NVLink lanes per GPU. 300 GB/s bidirectional. Sufficient for TP=2 and TP=4 configurations. TP=8 begins showing diminishing returns due to AllReduce overhead at this bandwidth.' },
     a100:{ gen:'NVLink 3.0', gpu:'A100', bw:'600 GB/s', links:12, gpuPerNode:8, tpMax:'TP=8 practical', note:'12 NVLink lanes per GPU. 600 GB/s bidirectional. Standard DGX A100 nodes use NVSwitch for all-to-all connectivity. TP=8 is viable and commonly deployed for large models.' },
     h100:{ gen:'NVLink 4.0', gpu:'H100', bw:'900 GB/s', links:18, gpuPerNode:8, tpMax:'TP=8 recommended', note:'18 NVLink lanes per GPU. 900 GB/s bidirectional. DGX H100 nodes support full 8-way TP with NVSwitch. AllReduce overhead is low enough that TP=8 is the standard configuration for 70B+ models.' },
-    b200:{ gen:'NVLink 5.0', gpu:'B200', bw:'1,800 GB/s', links:18, gpuPerNode:8, tpMax:'TP=8 highly efficient', note:'1,800 GB/s bidirectional — double H100. Enables very large batch AllReduce with minimal overhead. Combined with 192GB HBM per GPU, a single DGX B200 node (8 GPUs, 1.5TB total HBM) can serve 405B at FP8 with TP=8.' }
+    b200:{ gen:'NVLink 5.0', gpu:'B200', bw:'1,800 GB/s', links:18, gpuPerNode:8, tpMax:'TP=8 highly efficient', note:'1,800 GB/s bidirectional - double H100. Enables very large batch AllReduce with minimal overhead. Combined with 192GB HBM per GPU, a single DGX B200 node (8 GPUs, 1.5TB total HBM) can serve 405B at FP8 with TP=8.' }
   };
   function showNVLink(gpu){
     var d=nvData[gpu];
@@ -632,10 +632,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct — and this is an easy win to catch in a customer conversation.</strong> The H100 PCIe form factor is a common point of confusion. Customers see "H100" and assume all H100s are equivalent. The critical difference is the interconnect: PCIe 5.0 between GPUs gives ~64 GB/s bidirectional bandwidth. NVLink 4.0 on SXM gives ~900 GB/s. For Tensor Parallelism=8, AllReduce runs across all 8 GPUs after every single transformer layer (~80 layers in a 70B model). At PCIe speeds, each AllReduce at the layer output size (~16MB for a 70B model) takes ~0.25ms, totalling ~20ms just in communication per token — which likely exceeds the compute time. On NVLink, the same AllReduce takes ~0.017ms, totalling ~1.4ms, which is acceptable overhead. Option A is incorrect — H100 PCIe does support FP8 via the Transformer Engine. Option C is incorrect — 8&#215; H100 PCIe provides 8&#215; 80GB = 640GB total, more than sufficient for 70B at FP16 (140GB). Option D is incorrect — TP is supported on all NVIDIA data-centre GPUs.';
+      r.innerHTML='<strong>Correct - and this is an easy win to catch in a customer conversation.</strong> The H100 PCIe form factor is a common point of confusion. Customers see "H100" and assume all H100s are equivalent. The critical difference is the interconnect: PCIe 5.0 between GPUs gives ~64 GB/s bidirectional bandwidth. NVLink 4.0 on SXM gives ~900 GB/s. For Tensor Parallelism=8, AllReduce runs across all 8 GPUs after every single transformer layer (~80 layers in a 70B model). At PCIe speeds, each AllReduce at the layer output size (~16MB for a 70B model) takes ~0.25ms, totalling ~20ms just in communication per token - which likely exceeds the compute time. On NVLink, the same AllReduce takes ~0.017ms, totalling ~1.4ms, which is acceptable overhead. Option A is incorrect - H100 PCIe does support FP8 via the Transformer Engine. Option C is incorrect - 8&#215; H100 PCIe provides 8&#215; 80GB = 640GB total, more than sufficient for 70B at FP16 (140GB). Option D is incorrect - TP is supported on all NVIDIA data-centre GPUs.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The key issue is interconnect bandwidth: H100 PCIe GPUs communicate via PCIe 5.0 (~64 GB/s), not NVLink (~900 GB/s). TP=8 AllReduce after every layer becomes the bottleneck — the communication overhead at PCIe speeds will likely make TP=8 slower than TP=1 or TP=2. Option A is incorrect (H100 PCIe supports FP8). Option C is incorrect (8&#215; 80GB = 640GB, 70B at FP16 only needs 140GB). Option D is incorrect (TP works on all NVIDIA data-centre GPUs).';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The key issue is interconnect bandwidth: H100 PCIe GPUs communicate via PCIe 5.0 (~64 GB/s), not NVLink (~900 GB/s). TP=8 AllReduce after every layer becomes the bottleneck - the communication overhead at PCIe speeds will likely make TP=8 slower than TP=1 or TP=2. Option A is incorrect (H100 PCIe supports FP8). Option C is incorrect (8&#215; 80GB = 640GB, 70B at FP16 only needs 140GB). Option D is incorrect (TP works on all NVIDIA data-centre GPUs).';
     }
     document.getElementById('check-btn').style.display='none';
   }

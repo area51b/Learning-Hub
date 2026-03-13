@@ -162,8 +162,8 @@
 
   <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 3 · MODULE 3.3</div>
-    <h1>Quantisation — INT8, FP8, INT4</h1>
-    <p>Using smaller numbers to represent model weights reduces memory, increases throughput, and enables larger models on the same hardware — with carefully managed quality trade-offs.</p>
+    <h1>Quantisation - INT8, FP8, INT4</h1>
+    <p>Using smaller numbers to represent model weights reduces memory, increases throughput, and enables larger models on the same hardware - with carefully managed quality trade-offs.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -173,17 +173,17 @@
   <div class="nav-bar">
     <a href="module3_2.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">3.2 — Paged Attention</div>
+      <div class="nav-title">3.2 - Paged Attention</div>
     </a>
     <a href="module3_4.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">3.4 — Tensor &amp; Pipeline Parallelism</div>
+      <div class="nav-title">3.4 - Tensor &amp; Pipeline Parallelism</div>
     </a>
   </div>
 
   <div class="intro-card">
-    <p>Every number stored in a neural network takes up space. A standard FP16 weight uses 16 bits — two bytes. Quantisation compresses those numbers into fewer bits: INT8 uses 8 bits, FP8 uses 8 bits with a different layout, INT4 uses only 4 bits. Halving the bit-width halves the memory required and, because Decode is memory-bandwidth-bound, roughly doubles throughput.</p>
-    <p>The catch: fewer bits means less precision, and less precision means some loss of model quality. The art of quantisation is choosing the right format for the right layer so quality loss is acceptable — ideally imperceptible. Modern quantisation methods (GPTQ, AWQ, SmoothQuant, FP8) have made this trade-off so favourable that INT8 is now nearly lossless on most tasks, and FP8 is the new standard for H100 deployments.</p>
+    <p>Every number stored in a neural network takes up space. A standard FP16 weight uses 16 bits - two bytes. Quantisation compresses those numbers into fewer bits: INT8 uses 8 bits, FP8 uses 8 bits with a different layout, INT4 uses only 4 bits. Halving the bit-width halves the memory required and, because Decode is memory-bandwidth-bound, roughly doubles throughput.</p>
+    <p>The catch: fewer bits means less precision, and less precision means some loss of model quality. The art of quantisation is choosing the right format for the right layer so quality loss is acceptable - ideally imperceptible. Modern quantisation methods (GPTQ, AWQ, SmoothQuant, FP8) have made this trade-off so favourable that INT8 is now nearly lossless on most tasks, and FP8 is the new standard for H100 deployments.</p>
   </div>
 
   <!-- Section 1: What quantisation is -->
@@ -196,28 +196,28 @@
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>A model weight is just a number — typically a decimal like 0.3847291. In FP16 (16-bit floating point), that number is stored using 16 bits, giving very fine precision. Quantisation maps those precise values to a smaller set of representable values using fewer bits.</p>
-      <p>Think of it like rounding: instead of storing 0.3847291, you store 0.38 — close enough for most purposes, but using less space. The question quantisation research is answering is: how do you choose what to round to, so the rounding errors cancel out rather than compound across hundreds of billions of weights?</p>
+      <p>A model weight is just a number - typically a decimal like 0.3847291. In FP16 (16-bit floating point), that number is stored using 16 bits, giving very fine precision. Quantisation maps those precise values to a smaller set of representable values using fewer bits.</p>
+      <p>Think of it like rounding: instead of storing 0.3847291, you store 0.38 - close enough for most purposes, but using less space. The question quantisation research is answering is: how do you choose what to round to, so the rounding errors cancel out rather than compound across hundreds of billions of weights?</p>
 
       <div class="numline-wrap">
-        <div class="nl-title">Bit-width comparison — same weight, different precisions</div>
+        <div class="nl-title">Bit-width comparison - same weight, different precisions</div>
 
         <div class="nl-row">
           <div class="nl-label">
-            <span>FP32 — 32 bits</span>
+            <span>FP32 - 32 bits</span>
             <span class="nl-badge" style="background:#455A64; color:white;">Training baseline</span>
           </div>
           <div class="nl-bar">
             <div class="nl-bit" style="background:#C62828; color:white; flex:1;">sign</div>
             <div class="nl-bit" style="background:#1565C0; color:white; flex:8;">exponent (8b)</div>
-            <div class="nl-bit" style="background:#2E7D32; color:white; flex:23;">mantissa (23b) — very fine precision</div>
+            <div class="nl-bit" style="background:#2E7D32; color:white; flex:23;">mantissa (23b) - very fine precision</div>
           </div>
           <div class="nl-meta">4 bytes/weight &nbsp;|&nbsp; ~infinite precision for LLMs &nbsp;|&nbsp; Rarely used at inference</div>
         </div>
 
         <div class="nl-row">
           <div class="nl-label">
-            <span>FP16 — 16 bits</span>
+            <span>FP16 - 16 bits</span>
             <span class="nl-badge" style="background:#1565C0; color:white;">Inference default</span>
           </div>
           <div class="nl-bar">
@@ -230,7 +230,7 @@
 
         <div class="nl-row">
           <div class="nl-label">
-            <span>FP8 — 8 bits</span>
+            <span>FP8 - 8 bits</span>
             <span class="nl-badge" style="background:#7B1FA2; color:white;">H100 standard</span>
           </div>
           <div class="nl-bar">
@@ -243,18 +243,18 @@
 
         <div class="nl-row" style="margin-bottom:0;">
           <div class="nl-label">
-            <span>INT4 — 4 bits</span>
+            <span>INT4 - 4 bits</span>
             <span class="nl-badge" style="background:#E65100; color:white;">Aggressive compression</span>
           </div>
           <div class="nl-bar">
-            <div class="nl-bit" style="background:#E65100; color:white; flex:4;">4 bits — 16 possible values</div>
+            <div class="nl-bit" style="background:#E65100; color:white; flex:4;">4 bits - 16 possible values</div>
           </div>
           <div class="nl-meta">0.5 bytes/weight &nbsp;|&nbsp; Noticeable on complex tasks &nbsp;|&nbsp; Use carefully</div>
         </div>
       </div>
 
       <div class="callout callout-purple">
-        <strong>The critical insight:</strong> Quantisation does not change the model architecture — the number of layers, attention heads, or parameters stays identical. It only changes the precision of the stored values. The computational graph is the same; the numbers flowing through it are slightly less precise. Most of the time, for most tasks, the model cannot tell the difference.
+        <strong>The critical insight:</strong> Quantisation does not change the model architecture - the number of layers, attention heads, or parameters stays identical. It only changes the precision of the stored values. The computational graph is the same; the numbers flowing through it are slightly less precise. Most of the time, for most tasks, the model cannot tell the difference.
       </div>
     </div>
   </div>
@@ -264,7 +264,7 @@
     <div class="section-header" id="hdr2" onclick="toggle(2)">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">2</span>
-        Format Comparison — FP16, FP8, INT8, INT4
+        Format Comparison - FP16, FP8, INT8, INT4
       </div>
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
@@ -306,7 +306,7 @@
       </div>
 
       <div class="callout callout-blue">
-        <strong>FP8 vs INT8 — why both exist at 8 bits:</strong> INT8 stores integers (whole numbers from -128 to 127). FP8 stores floating-point values with an exponent, giving it a much wider dynamic range — it can represent both very large and very small numbers accurately. For neural network weights, which span a large dynamic range, FP8 typically achieves lower quality loss than INT8 at the same bit-width. H100 GPUs have dedicated FP8 Tensor Cores that make FP8 operations faster than INT8 on that hardware.
+        <strong>FP8 vs INT8 - why both exist at 8 bits:</strong> INT8 stores integers (whole numbers from -128 to 127). FP8 stores floating-point values with an exponent, giving it a much wider dynamic range - it can represent both very large and very small numbers accurately. For neural network weights, which span a large dynamic range, FP8 typically achieves lower quality loss than INT8 at the same bit-width. H100 GPUs have dedicated FP8 Tensor Cores that make FP8 operations faster than INT8 on that hardware.
       </div>
     </div>
   </div>
@@ -348,7 +348,7 @@
       </div>
 
       <div class="callout callout-green">
-        <strong>The 70B example:</strong> Llama 3 70B in FP16 requires ~140GB — two A100 80GB GPUs minimum. In INT8 it fits on a single A100 80GB with room for KV Cache. In INT4 it fits on a single 40GB A100. This is what quantisation means practically: it determines whether you need 4 GPUs, 2 GPUs, or 1 GPU. At $2–3/hr per A100, that difference compounds quickly in production.
+        <strong>The 70B example:</strong> Llama 3 70B in FP16 requires ~140GB - two A100 80GB GPUs minimum. In INT8 it fits on a single A100 80GB with room for KV Cache. In INT4 it fits on a single 40GB A100. This is what quantisation means practically: it determines whether you need 4 GPUs, 2 GPUs, or 1 GPU. At $2–3/hr per A100, that difference compounds quickly in production.
       </div>
     </div>
   </div>
@@ -358,15 +358,15 @@
     <div class="section-header" id="hdr4" onclick="toggle(4)">
       <div class="section-title">
         <span class="section-num" style="background:#C62828;">4</span>
-        Quality Trade-offs — What Actually Degrades and When
+        Quality Trade-offs - What Actually Degrades and When
       </div>
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
     <div class="section-body" id="bdy4">
-      <p>Quality loss from quantisation is not uniform — it depends on the task and the model size. Larger models are more robust to quantisation (they have redundant capacity to absorb precision loss). Harder tasks like multi-step reasoning are more sensitive than simple classification or summarisation.</p>
+      <p>Quality loss from quantisation is not uniform - it depends on the task and the model size. Larger models are more robust to quantisation (they have redundant capacity to absorb precision loss). Harder tasks like multi-step reasoning are more sensitive than simple classification or summarisation.</p>
 
       <div class="qual-wrap">
-        <div class="qual-title">Relative quality retention by precision and task — select a task type</div>
+        <div class="qual-title">Relative quality retention by precision and task - select a task type</div>
         <select class="qual-task-select" id="qualTask" onchange="updateQual()">
           <option value="summary">Summarisation / Classification</option>
           <option value="chat">Conversational chat</option>
@@ -378,7 +378,7 @@
       </div>
 
       <div class="callout callout-orange">
-        <strong>The first-token vs later-token asymmetry:</strong> Quantisation affects different parts of the model differently. Embedding layers (which handle the first token) and final output layers are more sensitive to precision loss than middle layers. Advanced quantisation methods like GPTQ and AWQ account for this — they use higher precision for sensitive layers and more aggressive quantisation for robust ones, rather than applying the same format uniformly.
+        <strong>The first-token vs later-token asymmetry:</strong> Quantisation affects different parts of the model differently. Embedding layers (which handle the first token) and final output layers are more sensitive to precision loss than middle layers. Advanced quantisation methods like GPTQ and AWQ account for this - they use higher precision for sensitive layers and more aggressive quantisation for robust ones, rather than applying the same format uniformly.
       </div>
 
       <div class="callout callout-red">
@@ -392,7 +392,7 @@
     <div class="section-header" id="hdr5" onclick="toggle(5)">
       <div class="section-title">
         <span class="section-num" style="background:#E65100;">5</span>
-        Quantisation Methods — How It Is Actually Done
+        Quantisation Methods - How It Is Actually Done
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
@@ -407,20 +407,20 @@
           <tr>
             <td class="tech-name">RTN<br><span style="font-weight:normal; font-size:11px; color:#888;">Round-to-Nearest</span></td>
             <td>Divide each weight by a scale factor, round to nearest integer. Simplest possible approach.</td>
-            <td class="tech-warn">Lowest — significant degradation at INT4</td>
+            <td class="tech-warn">Lowest - significant degradation at INT4</td>
             <td class="tech-good">Instant</td>
             <td>Quick experiments only</td>
           </tr>
           <tr>
             <td class="tech-name">GPTQ</td>
             <td>Post-training quantisation using a small calibration dataset. Minimises quantisation error layer-by-layer by finding optimal rounding decisions.</td>
-            <td class="tech-good">Good — near-lossless at INT8, acceptable INT4</td>
+            <td class="tech-good">Good - near-lossless at INT8, acceptable INT4</td>
             <td class="tech-good">Fast (minutes)</td>
             <td>vLLM, AutoGPTQ, most open models</td>
           </tr>
           <tr>
             <td class="tech-name">AWQ</td>
-            <td>Activation-aware — identifies the most important weights per channel (those with large activations) and protects them with higher precision.</td>
+            <td>Activation-aware - identifies the most important weights per channel (those with large activations) and protects them with higher precision.</td>
             <td class="tech-good">Better than GPTQ at INT4</td>
             <td class="tech-good">Fast</td>
             <td>vLLM, llama.cpp, edge deployments</td>
@@ -434,8 +434,8 @@
           </tr>
           <tr>
             <td class="tech-name">FP8 (native)</td>
-            <td>Hardware-native on H100/H200 — the GPU performs FP8 matrix multiplications directly. No separate quantisation step needed if training in FP8.</td>
-            <td class="tech-good">Near-lossless — best 8-bit option</td>
+            <td>Hardware-native on H100/H200 - the GPU performs FP8 matrix multiplications directly. No separate quantisation step needed if training in FP8.</td>
+            <td class="tech-good">Near-lossless - best 8-bit option</td>
             <td class="tech-good">2× vs FP16 on H100</td>
             <td>TensorRT-LLM, vLLM on H100/H200</td>
           </tr>
@@ -443,7 +443,7 @@
       </table>
 
       <div class="callout callout-teal">
-        <strong>The practical recommendation matrix:</strong> On A100 — use INT8 with SmoothQuant or GPTQ. On H100/H200 — use FP8 natively where possible, INT8 otherwise. For edge/memory-constrained — use AWQ INT4. For maximum quality preservation — INT8 everywhere. Never use RTN INT4 in production.
+        <strong>The practical recommendation matrix:</strong> On A100 - use INT8 with SmoothQuant or GPTQ. On H100/H200 - use FP8 natively where possible, INT8 otherwise. For edge/memory-constrained - use AWQ INT4. For maximum quality preservation - INT8 everywhere. Never use RTN INT4 in production.
       </div>
     </div>
   </div>
@@ -453,12 +453,12 @@
     <div class="section-header" id="hdr6" onclick="toggle(6)">
       <div class="section-title">
         <span class="section-num" style="background:#00796B;">6</span>
-        KV Cache Quantisation — A Separate Lever
+        KV Cache Quantisation - A Separate Lever
       </div>
       <span class="chevron" id="chv6">&#9662;</span>
     </div>
     <div class="section-body" id="bdy6">
-      <p>Quantisation applies to two separate things in inference: the model weights, and the KV Cache. These are independent decisions with different trade-offs — and it is common to quantise them differently.</p>
+      <p>Quantisation applies to two separate things in inference: the model weights, and the KV Cache. These are independent decisions with different trade-offs - and it is common to quantise them differently.</p>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
         <div style="background:#E8F5E9; border-radius:10px; padding:16px; border-left:3px solid #2E7D32;">
@@ -466,7 +466,7 @@
           <div style="font-size:13.5px; line-height:1.8; color:#333;">
             <div style="margin-bottom:6px;">Reduces model size in memory</div>
             <div style="margin-bottom:6px;">Improves throughput (less memory to read)</div>
-            <div style="margin-bottom:6px;">Quality-sensitive — benchmark carefully</div>
+            <div style="margin-bottom:6px;">Quality-sensitive - benchmark carefully</div>
             <div>Done once at model load time</div>
           </div>
         </div>
@@ -482,7 +482,7 @@
       </div>
 
       <div class="callout callout-purple">
-        <strong>Why KV Cache is less sensitive to quantisation:</strong> Model weights are used in every forward pass — errors in weights compound over many layers and tokens. KV Cache values are read once per decode step and used for attention scoring — small errors in individual KV values tend to average out across hundreds of attention queries. This is why INT8 KV Cache quantisation is nearly lossless in practice even when INT8 weight quantisation might show some degradation on hard tasks. vLLM supports KV Cache quantisation with <code>--kv-cache-dtype fp8</code>.
+        <strong>Why KV Cache is less sensitive to quantisation:</strong> Model weights are used in every forward pass - errors in weights compound over many layers and tokens. KV Cache values are read once per decode step and used for attention scoring - small errors in individual KV values tend to average out across hundreds of attention queries. This is why INT8 KV Cache quantisation is nearly lossless in practice even when INT8 weight quantisation might show some degradation on hard tasks. vLLM supports KV Cache quantisation with <code>--kv-cache-dtype fp8</code>.
       </div>
     </div>
   </div>
@@ -521,8 +521,8 @@
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">04</div>
         <div>
-          <div class="key-title">FP8 on H100 is now the recommended default — not a compromise</div>
-          <div class="key-desc">The H100's hardware-native FP8 Tensor Cores, combined with the wider dynamic range of floating-point representation, make FP8 the best available option for H100/H200 deployments — not a trade-off. It is faster than FP16, uses half the memory, and has quality loss in the 0.1–0.5% range that is imperceptible on most tasks.</div>
+          <div class="key-title">FP8 on H100 is now the recommended default - not a compromise</div>
+          <div class="key-desc">The H100's hardware-native FP8 Tensor Cores, combined with the wider dynamic range of floating-point representation, make FP8 the best available option for H100/H200 deployments - not a trade-off. It is faster than FP16, uses half the memory, and has quality loss in the 0.1–0.5% range that is imperceptible on most tasks.</div>
         </div>
       </div>
     </div>
@@ -530,7 +530,7 @@
 
   <!-- Cheat sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 3.3 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 3.3 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Quantisation</div>
@@ -546,7 +546,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">INT4</div>
-        <div class="cheat-def">4 bits per weight — 4× memory reduction vs FP16. 1–5%+ quality drop on hard tasks. Use for edge/memory-critical deployments. Always benchmark first.</div>
+        <div class="cheat-def">4 bits per weight - 4× memory reduction vs FP16. 1–5%+ quality drop on hard tasks. Use for edge/memory-critical deployments. Always benchmark first.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">GPTQ / AWQ</div>
@@ -574,19 +574,19 @@
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        Switch to INT4 — it gives the maximum memory savings and will quadruple concurrent users.
+        Switch to INT4 - it gives the maximum memory savings and will quadruple concurrent users.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        Switch model weights to INT8 (SmoothQuant or GPTQ) and KV Cache to INT8 quantisation. Weight INT8 frees ~70GB of the 160GB total — freeing headroom for more concurrent KV Caches. INT8 KV then roughly doubles KV capacity per GB. Together, this should increase concurrent users 3–4× with less than 1% quality degradation on most tasks, and no hardware change.
+        Switch model weights to INT8 (SmoothQuant or GPTQ) and KV Cache to INT8 quantisation. Weight INT8 frees ~70GB of the 160GB total - freeing headroom for more concurrent KV Caches. INT8 KV then roughly doubles KV capacity per GB. Together, this should increase concurrent users 3–4× with less than 1% quality degradation on most tasks, and no hardware change.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Quantisation will not help — the bottleneck is the number of attention heads, not memory.
+        Quantisation will not help - the bottleneck is the number of attention heads, not memory.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        Switch to FP8 — it is the best option available and will solve the problem on A100s.
+        Switch to FP8 - it is the best option available and will solve the problem on A100s.
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
@@ -595,9 +595,9 @@
 
   <a href="module3_4.html" class="next-module">
     <div>
-      <div class="next-label">Up Next — Module 3.4</div>
+      <div class="next-label">Up Next - Module 3.4</div>
       <div class="next-title">Tensor &amp; Pipeline Parallelism</div>
-      <div class="next-sub">How to split a model that is too large for one GPU across multiple GPUs — and the trade-offs of each approach</div>
+      <div class="next-sub">How to split a model that is too large for one GPU across multiple GPUs - and the trade-offs of each approach</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -641,7 +641,7 @@
         sc('Quality loss',qual,qcol)+
         sc('Min A100 80GB',a100_80+' GPU'+(a100_80>1?'s':''),'')+
       '</div>'+
-      '<div style="font-size:12px; opacity:0.6; font-family:Arial,sans-serif; margin-top:10px; line-height:1.6;">Weight memory only — add ~3GB overhead + KV Cache headroom for total GPU requirement. KV Cache scales with concurrent requests and context length.</div>';
+      '<div style="font-size:12px; opacity:0.6; font-family:Arial,sans-serif; margin-top:10px; line-height:1.6;">Weight memory only - add ~3GB overhead + KV Cache headroom for total GPU requirement. KV Cache scales with concurrent requests and context length.</div>';
   }
   function sc(label,val,col){
     return '<div class="sizer-cell"><div class="sizer-cell-label">'+label+'</div><div class="sizer-cell-val"'+(col?' style="color:'+col+'"':'')+'>'+val+'</div></div>';
@@ -652,7 +652,7 @@
   var qualData={
     summary:{fp16:100,fp8:99.7,int8:99.2,int4:97.5, note:'Summarisation and classification are highly robust to quantisation. Even INT4 typically shows less than 3% quality drop. These tasks are good candidates for aggressive quantisation.'},
     chat:   {fp16:100,fp8:99.5,int8:98.8,int4:95.5, note:'Conversational quality is moderately sensitive. INT8 is generally imperceptible to users. INT4 may show subtle coherence issues on complex multi-turn conversations.'},
-    code:   {fp16:100,fp8:99.3,int8:98.2,int4:93.0, note:'Code generation is more sensitive — syntax errors and logic bugs increase with lower precision. INT8 is usually acceptable; INT4 should be validated carefully on your target languages and complexity.'},
+    code:   {fp16:100,fp8:99.3,int8:98.2,int4:93.0, note:'Code generation is more sensitive - syntax errors and logic bugs increase with lower precision. INT8 is usually acceptable; INT4 should be validated carefully on your target languages and complexity.'},
     math:   {fp16:100,fp8:99.0,int8:97.0,int4:88.0, note:'Complex reasoning and mathematics are the most sensitive to quantisation. INT4 can show 10–15% degradation on hard reasoning benchmarks. Use INT8 minimum, and benchmark extensively on your specific task.'}
   };
   var qualColors={fp16:'#455A64',fp8:'#4A148C',int8:'#1565C0',int4:'#E65100'};
@@ -692,10 +692,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct.</strong> INT8 weights + INT8 KV is the right prescription here. The two levers work together: weight quantisation frees GPU memory so more of it is available for KV Cache (allowing more concurrent requests before exhaustion), while KV quantisation makes each concurrent request\'s KV footprint smaller (further multiplying capacity). Combined on a 2×A100 setup with a 70B model, this typically moves from ~8–12 concurrent users to ~30–50, depending on context length. The quality caveat is important to mention: benchmark on the customer\'s specific task before rolling to production — most general tasks will see under 1% degradation. Option A (INT4) is too aggressive without task validation. Option D (FP8) is the right answer for H100s, not A100s — the A100 does not have hardware-native FP8 support, so FP8 on A100 would fall back to slower emulation.';
+      r.innerHTML='<strong>Correct.</strong> INT8 weights + INT8 KV is the right prescription here. The two levers work together: weight quantisation frees GPU memory so more of it is available for KV Cache (allowing more concurrent requests before exhaustion), while KV quantisation makes each concurrent request\'s KV footprint smaller (further multiplying capacity). Combined on a 2×A100 setup with a 70B model, this typically moves from ~8–12 concurrent users to ~30–50, depending on context length. The quality caveat is important to mention: benchmark on the customer\'s specific task before rolling to production - most general tasks will see under 1% degradation. Option A (INT4) is too aggressive without task validation. Option D (FP8) is the right answer for H100s, not A100s - the A100 does not have hardware-native FP8 support, so FP8 on A100 would fall back to slower emulation.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option B is correct. INT4 (Option A) is risky without task validation and more aggressive than necessary — INT8 gets most of the benefit with less risk. Quantisation absolutely helps concurrency (Option C is wrong) — it directly expands KV Cache headroom. FP8 (Option D) is the right path for H100/H200, but A100 GPUs do not have native FP8 hardware support, so this would not deliver the expected speedup on the customer\'s current hardware.';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. INT4 (Option A) is risky without task validation and more aggressive than necessary - INT8 gets most of the benefit with less risk. Quantisation absolutely helps concurrency (Option C is wrong) - it directly expands KV Cache headroom. FP8 (Option D) is the right path for H100/H200, but A100 GPUs do not have native FP8 hardware support, so this would not deliver the expected speedup on the customer\'s current hardware.';
     }
     document.getElementById('check-btn').style.display='none';
   }

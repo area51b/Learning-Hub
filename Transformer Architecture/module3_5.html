@@ -155,7 +155,7 @@
     <a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 3 · MODULE 3.5</div>
     <h1>Speculative Decoding</h1>
-    <p>Using a fast small model to draft candidate tokens that a large model verifies in a single parallel pass — cutting TPOT by 2–4× with mathematically guaranteed identical output.</p>
+    <p>Using a fast small model to draft candidate tokens that a large model verifies in a single parallel pass - cutting TPOT by 2–4× with mathematically guaranteed identical output.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -165,17 +165,17 @@
   <div class="nav-bar">
     <a href="module3_4.html" class="nav-btn prev">
       <div class="nav-dir">&#8592; Previous</div>
-      <div class="nav-title">3.4 — Tensor &amp; Pipeline Parallelism</div>
+      <div class="nav-title">3.4 - Tensor &amp; Pipeline Parallelism</div>
     </a>
     <a href="module3_6.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">3.6 — Disaggregation</div>
+      <div class="nav-title">3.6 - Disaggregation</div>
     </a>
   </div>
 
   <div class="intro-card">
-    <p>Every technique covered so far in Part 3 has targeted memory efficiency or compute distribution. Speculative Decoding attacks something different: the fundamental seriality of the Decode phase. Standard Decode generates exactly one token per forward pass — no matter how fast each pass is, you cannot do two at once. Speculative Decoding breaks this constraint.</p>
-    <p>The insight: a small, fast "draft" model proposes a sequence of tokens speculatively. The large "target" model then verifies all proposed tokens in a single parallel forward pass — accepting the ones it agrees with and rejecting from the first disagreement. When the draft is mostly right (which it often is for predictable text), you get multiple tokens output for roughly the cost of one large-model forward pass. TPOT drops 2–4× with zero change to output quality — the target model's outputs are statistically identical to what it would have produced without speculation.</p>
+    <p>Every technique covered so far in Part 3 has targeted memory efficiency or compute distribution. Speculative Decoding attacks something different: the fundamental seriality of the Decode phase. Standard Decode generates exactly one token per forward pass - no matter how fast each pass is, you cannot do two at once. Speculative Decoding breaks this constraint.</p>
+    <p>The insight: a small, fast "draft" model proposes a sequence of tokens speculatively. The large "target" model then verifies all proposed tokens in a single parallel forward pass - accepting the ones it agrees with and rejecting from the first disagreement. When the draft is mostly right (which it often is for predictable text), you get multiple tokens output for roughly the cost of one large-model forward pass. TPOT drops 2–4× with zero change to output quality - the target model's outputs are statistically identical to what it would have produced without speculation.</p>
   </div>
 
   <!-- Section 1 -->
@@ -188,10 +188,10 @@
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>Recall from Part 1 that Decode is inherently serial — each token depends on all previous tokens, so you cannot generate token N+1 until token N is complete. This means:</p>
+      <p>Recall from Part 1 that Decode is inherently serial - each token depends on all previous tokens, so you cannot generate token N+1 until token N is complete. This means:</p>
 
       <div style="background:#0F172A; border-radius:12px; padding:18px 20px; margin:16px 0; font-family:monospace; color:white; font-size:13px; line-height:2;">
-        <div style="font-size:11px; font-family:Arial,sans-serif; opacity:0.4; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px;">Standard decode — strictly serial</div>
+        <div style="font-size:11px; font-family:Arial,sans-serif; opacity:0.4; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px;">Standard decode - strictly serial</div>
         <span style="background:#1565C0; border-radius:3px; padding:2px 8px; margin:2px;">Forward pass 1</span> &#8594; token: <span style="color:#86EFAC;">"The"</span><br>
         <span style="background:#1565C0; border-radius:3px; padding:2px 8px; margin:2px;">Forward pass 2</span> &#8594; token: <span style="color:#86EFAC;">"capital"</span><br>
         <span style="background:#1565C0; border-radius:3px; padding:2px 8px; margin:2px;">Forward pass 3</span> &#8594; token: <span style="color:#86EFAC;">"of"</span><br>
@@ -203,7 +203,7 @@
       <p>Every other optimisation in Part 3 has made each forward pass faster or more memory-efficient. Speculative Decoding is the first technique that reduces the <em>number</em> of large-model forward passes needed to produce a given number of tokens.</p>
 
       <div class="callout callout-orange">
-        <strong>Why this matters for TPOT specifically:</strong> Flash Attention, Paged Attention, and quantisation all improve TPOT somewhat by making each forward pass faster or lighter. But even an infinitely fast forward pass still produces only one token — TPOT is bounded by the number of passes. Speculative Decoding is the only technique that breaks this bound by producing multiple tokens per large-model pass.
+        <strong>Why this matters for TPOT specifically:</strong> Flash Attention, Paged Attention, and quantisation all improve TPOT somewhat by making each forward pass faster or lighter. But even an infinitely fast forward pass still produces only one token - TPOT is bounded by the number of passes. Speculative Decoding is the only technique that breaks this bound by producing multiple tokens per large-model pass.
       </div>
     </div>
   </div>
@@ -213,7 +213,7 @@
     <div class="section-header" id="hdr2" onclick="toggle(2)">
       <div class="section-title">
         <span class="section-num" style="background:#C62828;">2</span>
-        How Speculative Decoding Works — Step by Step
+        How Speculative Decoding Works - Step by Step
       </div>
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
@@ -232,7 +232,7 @@
           </div>
           <div class="cmp-step">
             <div class="cmp-num" style="background:#FFCDD2; color:#C62828;">3</div>
-            <div>Repeat — one full pass per token</div>
+            <div>Repeat - one full pass per token</div>
           </div>
           <div style="margin-top:10px; font-size:12.5px; font-family:Arial,sans-serif; background:#FFCDD2; border-radius:6px; padding:8px 10px; color:#B71C1C; line-height:1.6;">N tokens = N large-model forward passes</div>
         </div>
@@ -253,9 +253,9 @@
           </div>
           <div class="cmp-step">
             <div class="cmp-num" style="background:#C8E6C9; color:#2E7D32;">4</div>
-            <div>Repeat — net output: 1–K tokens per large-model pass</div>
+            <div>Repeat - net output: 1–K tokens per large-model pass</div>
           </div>
-          <div style="margin-top:4px; font-size:12.5px; font-family:Arial,sans-serif; background:#C8E6C9; border-radius:6px; padding:8px 10px; color:#1B5E20; line-height:1.6;">N tokens &#8776; N/acceptance_rate large-model passes — often 2–4&#215; fewer</div>
+          <div style="margin-top:4px; font-size:12.5px; font-family:Arial,sans-serif; background:#C8E6C9; border-radius:6px; padding:8px 10px; color:#1B5E20; line-height:1.6;">N tokens &#8776; N/acceptance_rate large-model passes - often 2–4&#215; fewer</div>
         </div>
       </div>
 
@@ -270,7 +270,7 @@
     <div class="section-header" id="hdr3" onclick="toggle(3)">
       <div class="section-title">
         <span class="section-num" style="background:#2E7D32;">3</span>
-        Interactive — Token Acceptance in Action
+        Interactive - Token Acceptance in Action
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
@@ -278,7 +278,7 @@
       <p>Click through the examples below to see how draft tokens are accepted or rejected across different types of text. Notice how predictable sequences get high acceptance rates, while creative or ambiguous continuations get lower ones.</p>
 
       <div class="stream-wrap">
-        <div class="sw-title">Speculative decoding — token acceptance visualiser</div>
+        <div class="sw-title">Speculative decoding - token acceptance visualiser</div>
         <div class="sw-subtitle">Green = draft accepted. Red = draft rejected (struck through). Orange = target model correction token.</div>
 
         <div class="sw-controls">
@@ -293,15 +293,15 @@
         <div class="sw-stats" id="swStats" style="display:none;">
           <div class="sw-stat">
             <div class="sw-stat-label">Tokens accepted</div>
-            <div class="sw-stat-val" id="statAccepted">—</div>
+            <div class="sw-stat-val" id="statAccepted">-</div>
           </div>
           <div class="sw-stat">
             <div class="sw-stat-label">Acceptance rate</div>
-            <div class="sw-stat-val" id="statRate">—</div>
+            <div class="sw-stat-val" id="statRate">-</div>
           </div>
           <div class="sw-stat">
             <div class="sw-stat-label">Approx speedup</div>
-            <div class="sw-stat-val" id="statSpeedup">—</div>
+            <div class="sw-stat-val" id="statSpeedup">-</div>
           </div>
         </div>
 
@@ -313,7 +313,7 @@
       </div>
 
       <div class="callout callout-blue">
-        <strong>Why acceptance rate varies by content:</strong> The draft model is most accurate on predictable, formulaic text — common phrases, code patterns, factual continuations. On creative writing, ambiguous contexts, or domain-specific terminology, it diverges more often from the target. The speedup from speculative decoding is therefore workload-dependent, and measuring acceptance rate on your specific task is essential before deciding to deploy it.
+        <strong>Why acceptance rate varies by content:</strong> The draft model is most accurate on predictable, formulaic text - common phrases, code patterns, factual continuations. On creative writing, ambiguous contexts, or domain-specific terminology, it diverges more often from the target. The speedup from speculative decoding is therefore workload-dependent, and measuring acceptance rate on your specific task is essential before deciding to deploy it.
       </div>
     </div>
   </div>
@@ -323,12 +323,12 @@
     <div class="section-header" id="hdr4" onclick="toggle(4)">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">4</span>
-        Acceptance Rate — The Key Variable
+        Acceptance Rate - The Key Variable
       </div>
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
     <div class="section-body" id="bdy4">
-      <p>Everything in speculative decoding flows from one number: the acceptance rate — the fraction of draft tokens the target model accepts. A higher acceptance rate means more tokens produced per large-model pass and greater speedup.</p>
+      <p>Everything in speculative decoding flows from one number: the acceptance rate - the fraction of draft tokens the target model accepts. A higher acceptance rate means more tokens produced per large-model pass and greater speedup.</p>
 
       <div class="acc-wrap">
         <div class="acc-title">Acceptance rate &#8594; speedup (draft length K=5)</div>
@@ -344,7 +344,7 @@
       </div>
 
       <div class="callout callout-purple">
-        <strong>What happens at rejection:</strong> When the target model rejects a draft token at position i, all subsequent draft tokens (positions i+1 to K) are also discarded — they were conditioned on the wrong token. The target model generates its own correct token at position i and the process restarts. If the draft model is very inaccurate, the overhead of running K draft passes plus one target verification pass can make speculative decoding slower than standard decoding. Acceptance rate must stay above roughly 50% for a net benefit.
+        <strong>What happens at rejection:</strong> When the target model rejects a draft token at position i, all subsequent draft tokens (positions i+1 to K) are also discarded - they were conditioned on the wrong token. The target model generates its own correct token at position i and the process restarts. If the draft model is very inaccurate, the overhead of running K draft passes plus one target verification pass can make speculative decoding slower than standard decoding. Acceptance rate must stay above roughly 50% for a net benefit.
       </div>
     </div>
   </div>
@@ -354,7 +354,7 @@
     <div class="section-header" id="hdr5" onclick="toggle(5)">
       <div class="section-title">
         <span class="section-num" style="background:#00796B;">5</span>
-        Draft Model Options — What to Use as the Drafter
+        Draft Model Options - What to Use as the Drafter
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
@@ -369,21 +369,21 @@
             <td class="dt-name">Small model of same family</td>
             <td>e.g. Llama 3 8B drafts for Llama 3 70B</td>
             <td class="dt-good">High (75–90%)</td>
-            <td>Moderate — run two models</td>
+            <td>Moderate - run two models</td>
             <td>General text, most production use cases</td>
           </tr>
           <tr>
             <td class="dt-name">Self-speculative / MEDUSA</td>
-            <td>Extra draft heads added to the target model — no separate model</td>
+            <td>Extra draft heads added to the target model - no separate model</td>
             <td class="dt-good">Medium-high (65–85%)</td>
-            <td>Low — one model, extra heads</td>
+            <td>Low - one model, extra heads</td>
             <td>Memory-constrained deployments</td>
           </tr>
           <tr>
             <td class="dt-name">Prompt lookup decoding</td>
-            <td>Copies candidate tokens directly from the prompt — no separate model</td>
+            <td>Copies candidate tokens directly from the prompt - no separate model</td>
             <td class="dt-warn">Task-dependent (high for RAG/summarisation)</td>
-            <td>Very low — zero additional model</td>
+            <td>Very low - zero additional model</td>
             <td>RAG, summarisation, document Q&amp;A</td>
           </tr>
           <tr>
@@ -397,7 +397,7 @@
       </table>
 
       <div class="callout callout-teal">
-        <strong>The same-family advantage:</strong> When the draft model is a smaller version of the same model family — trained with the same tokeniser, vocabulary, and similar data — its token distribution closely matches the target. Llama 3 8B and Llama 3 70B share tokenisation and training distribution. This high alignment translates directly to high acceptance rates, which is why same-family pairing is the default recommendation.
+        <strong>The same-family advantage:</strong> When the draft model is a smaller version of the same model family - trained with the same tokeniser, vocabulary, and similar data - its token distribution closely matches the target. Llama 3 8B and Llama 3 70B share tokenisation and training distribution. This high alignment translates directly to high acceptance rates, which is why same-family pairing is the default recommendation.
       </div>
     </div>
   </div>
@@ -407,7 +407,7 @@
     <div class="section-header" id="hdr6" onclick="toggle(6)">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">6</span>
-        When Speculative Decoding Helps — and When It Does Not
+        When Speculative Decoding Helps - and When It Does Not
       </div>
       <span class="chevron" id="chv6">&#9662;</span>
     </div>
@@ -418,14 +418,14 @@
           <div class="wl-icon" style="background:#2E7D32;">GO</div>
           <div class="wl-body" style="background:#E8F5E9; border-left:3px solid #2E7D32;">
             <div class="wl-title">Low-to-medium concurrency, latency-sensitive</div>
-            <div class="wl-desc">Speculative decoding shines when few requests share a GPU — extra compute from draft runs is available. Reduces TPOT 2–4&#215;. Best ROI for interactive chat, copilot, and real-time applications where users feel per-token delay.</div>
+            <div class="wl-desc">Speculative decoding shines when few requests share a GPU - extra compute from draft runs is available. Reduces TPOT 2–4&#215;. Best ROI for interactive chat, copilot, and real-time applications where users feel per-token delay.</div>
           </div>
         </div>
         <div class="wl-row">
           <div class="wl-icon" style="background:#2E7D32;">GO</div>
           <div class="wl-body" style="background:#E8F5E9; border-left:3px solid #2E7D32;">
             <div class="wl-title">Predictable, formulaic output</div>
-            <div class="wl-desc">Code completion, structured data extraction, common phrasing, RAG summarisation — tasks where the target model's output is predictable and the draft model achieves 80%+ acceptance. High acceptance rate &#8594; high speedup.</div>
+            <div class="wl-desc">Code completion, structured data extraction, common phrasing, RAG summarisation - tasks where the target model's output is predictable and the draft model achieves 80%+ acceptance. High acceptance rate &#8594; high speedup.</div>
           </div>
         </div>
         <div class="wl-row">
@@ -445,7 +445,7 @@
       </div>
 
       <div class="callout callout-orange">
-        <strong>The memory overhead caveat:</strong> Running both a draft and a target model simultaneously requires enough GPU memory to hold both. Llama 3 8B (draft) + Llama 3 70B (target) at INT8 requires roughly 7GB + 70GB = 77GB — barely fitting on a single A100 80GB. In memory-constrained environments, self-speculative methods (MEDUSA heads) or prompt lookup decoding (zero additional model) are better choices.
+        <strong>The memory overhead caveat:</strong> Running both a draft and a target model simultaneously requires enough GPU memory to hold both. Llama 3 8B (draft) + Llama 3 70B (target) at INT8 requires roughly 7GB + 70GB = 77GB - barely fitting on a single A100 80GB. In memory-constrained environments, self-speculative methods (MEDUSA heads) or prompt lookup decoding (zero additional model) are better choices.
       </div>
     </div>
   </div>
@@ -463,29 +463,29 @@
       <div class="key-item">
         <div class="key-num" style="color:#F57C00;">01</div>
         <div>
-          <div class="key-title">Speculative decoding targets TPOT — the metric everything else cannot break</div>
-          <div class="key-desc">Flash Attention, quantisation, and Paged Attention all make each forward pass faster or cheaper — but they still produce one token per pass. Speculative decoding is the only technique that produces multiple tokens per large-model pass, directly reducing TPOT by 2–4&#215; on suitable workloads.</div>
+          <div class="key-title">Speculative decoding targets TPOT - the metric everything else cannot break</div>
+          <div class="key-desc">Flash Attention, quantisation, and Paged Attention all make each forward pass faster or cheaper - but they still produce one token per pass. Speculative decoding is the only technique that produces multiple tokens per large-model pass, directly reducing TPOT by 2–4&#215; on suitable workloads.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#2E7D32;">02</div>
         <div>
-          <div class="key-title">Output quality is mathematically guaranteed identical — this is not an approximation</div>
+          <div class="key-title">Output quality is mathematically guaranteed identical - this is not an approximation</div>
           <div class="key-desc">The rejection sampling algorithm ensures the accepted token distribution matches the target model's distribution exactly. A customer asking "will this change the model's outputs?" has a clear answer: no. The only observable difference is that responses arrive faster.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#7B1FA2;">03</div>
         <div>
-          <div class="key-title">Acceptance rate determines everything — measure it before committing</div>
+          <div class="key-title">Acceptance rate determines everything - measure it before committing</div>
           <div class="key-desc">High acceptance (80–90%): 3–4&#215; TPOT improvement, strong ROI. Medium acceptance (60–75%): 1.5–2.5&#215; improvement, still worthwhile. Low acceptance (below 50%): negative ROI, slower than standard decoding. Measure on your actual task and model pairing before deploying.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#1565C0;">04</div>
         <div>
-          <div class="key-title">Best at low concurrency — at high batch sizes the benefit inverts</div>
-          <div class="key-desc">Speculative decoding uses extra GPU compute on draft passes. At low concurrency, that compute is idle anyway — free speedup. At high concurrency, every GPU cycle is needed for requests — draft overhead reduces throughput. Use speculative decoding for latency-sensitive, low-concurrency workloads; rely on batching and quantisation for high-throughput ones.</div>
+          <div class="key-title">Best at low concurrency - at high batch sizes the benefit inverts</div>
+          <div class="key-desc">Speculative decoding uses extra GPU compute on draft passes. At low concurrency, that compute is idle anyway - free speedup. At high concurrency, every GPU cycle is needed for requests - draft overhead reduces throughput. Use speculative decoding for latency-sensitive, low-concurrency workloads; rely on batching and quantisation for high-throughput ones.</div>
         </div>
       </div>
     </div>
@@ -493,7 +493,7 @@
 
   <!-- Cheat sheet -->
   <div class="cheatsheet">
-    <div class="cheatsheet-label">MODULE 3.5 — CHEAT SHEET</div>
+    <div class="cheatsheet-label">MODULE 3.5 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Speculative Decoding</div>
@@ -505,7 +505,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Target Model</div>
-        <div class="cheat-def">The large model that verifies draft tokens. Its output distribution is mathematically preserved — identical to running it without speculation.</div>
+        <div class="cheat-def">The large model that verifies draft tokens. Its output distribution is mathematically preserved - identical to running it without speculation.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Acceptance Rate</div>
@@ -517,7 +517,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">MEDUSA / Self-Speculative</div>
-        <div class="cheat-def">Extra prediction heads added to the target model itself — no separate draft model needed. Lower memory overhead. Slightly lower acceptance rate than same-family pairing.</div>
+        <div class="cheat-def">Extra prediction heads added to the target model itself - no separate draft model needed. Lower memory overhead. Slightly lower acceptance rate than same-family pairing.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Prompt Lookup Decoding</div>
@@ -533,11 +533,11 @@
   <!-- Quiz -->
   <div class="quiz-section">
     <div class="quiz-label">QUICK CHECK</div>
-    <div class="quiz-q">A customer runs a legal document review application using Llama 3 70B. The task involves extracting structured fields (dates, parties, obligations) from contracts — highly formulaic, repetitive output patterns. They are serving 2–4 concurrent users at a time and their TPOT of 45ms per token feels too slow for their reviewers. What is your recommendation?</div>
+    <div class="quiz-q">A customer runs a legal document review application using Llama 3 70B. The task involves extracting structured fields (dates, parties, obligations) from contracts - highly formulaic, repetitive output patterns. They are serving 2–4 concurrent users at a time and their TPOT of 45ms per token feels too slow for their reviewers. What is your recommendation?</div>
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        Add more GPUs to reduce TPOT — parallelism is the right tool for latency problems.
+        Add more GPUs to reduce TPOT - parallelism is the right tool for latency problems.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
@@ -549,7 +549,7 @@
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        Switch to a smaller model like Llama 3 8B — 70B is overkill for structured field extraction.
+        Switch to a smaller model like Llama 3 8B - 70B is overkill for structured field extraction.
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
@@ -558,9 +558,9 @@
 
   <a href="module3_6.html" class="next-module">
     <div>
-      <div class="next-label">Up Next — Module 3.6</div>
-      <div class="next-title">Disaggregation — Prefill/Decode Split</div>
-      <div class="next-sub">Separating Prefill and Decode onto dedicated hardware — the frontier technique for simultaneously optimising TTFT and TPOT at scale</div>
+      <div class="next-label">Up Next - Module 3.6</div>
+      <div class="next-title">Disaggregation - Prefill/Decode Split</div>
+      <div class="next-sub">Separating Prefill and Decode onto dedicated hardware - the frontier technique for simultaneously optimising TTFT and TPOT at scale</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -609,9 +609,9 @@
     }
   ];
   var exNotes=[
-    'Factual continuations are highly predictable. ~90% acceptance rate — only "Berlin" was rejected on geography. ~3&#215; speedup.',
-    'Code completion has strong patterns. Python idioms and function signatures are predictable. ~85% acceptance rate — ~2.5&#215; speedup.',
-    'Creative writing has many equally valid continuations — the small draft model frequently diverges. ~40% acceptance rate — net negative speedup. Not recommended.',
+    'Factual continuations are highly predictable. ~90% acceptance rate - only "Berlin" was rejected on geography. ~3&#215; speedup.',
+    'Code completion has strong patterns. Python idioms and function signatures are predictable. ~85% acceptance rate - ~2.5&#215; speedup.',
+    'Creative writing has many equally valid continuations - the small draft model frequently diverges. ~40% acceptance rate - net negative speedup. Not recommended.',
     'Highly predictable phrases achieve near-100% acceptance. Draft model has essentially memorised these patterns. Maximum speedup.'
   ];
 
@@ -659,8 +659,8 @@
     var noteMap={
       30:'Acceptance rate too low for any net benefit. Standard decoding is faster. Do not deploy.',
       50:'Right at break-even. Marginal benefit at best. Measure carefully on your specific task.',
-      70:'Good acceptance rate — meaningful TPOT improvement. Suitable for production.',
-      90:'Excellent acceptance rate. Near-maximum speedup. Ideal scenario — predictable, formulaic output.'
+      70:'Good acceptance rate - meaningful TPOT improvement. Suitable for production.',
+      90:'Excellent acceptance rate. Near-maximum speedup. Ideal scenario - predictable, formulaic output.'
     };
     var closest=Object.keys(noteMap).reduce(function(a,b){return Math.abs(b-v)<Math.abs(a-v)?b:a;});
     document.getElementById('accNote').textContent=noteMap[closest];
@@ -689,10 +689,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct — this is a near-textbook speculative decoding use case.</strong> Three signals make this ideal: (1) <strong>Low concurrency</strong> — with only 2–4 concurrent users the GPU has substantial idle compute capacity that draft passes can use without reducing throughput. (2) <strong>Structured, repetitive output</strong> — extracting dates, parties, and obligations from legal contracts follows consistent patterns. A Llama 3 8B model trained on the same data distribution will predict these patterns well, yielding high acceptance rates (likely 75–85%). (3) <strong>Latency sensitivity</strong> — the reviewers feel the per-token delay, and TPOT is the exact metric speculative decoding addresses. Memory note: Llama 3 70B at INT8 (~70GB) + Llama 3 8B at INT8 (~7GB) = ~77GB, which fits on a single A100 80GB. If memory is tighter, MEDUSA heads on the 70B model are an alternative. Option C is incorrect — "complex legal text" does not mean unpredictable output <em>patterns</em>; structured extraction is formulaic regardless of domain. Option D trades quality for speed rather than preserving quality while gaining speed.';
+      r.innerHTML='<strong>Correct - this is a near-textbook speculative decoding use case.</strong> Three signals make this ideal: (1) <strong>Low concurrency</strong> - with only 2–4 concurrent users the GPU has substantial idle compute capacity that draft passes can use without reducing throughput. (2) <strong>Structured, repetitive output</strong> - extracting dates, parties, and obligations from legal contracts follows consistent patterns. A Llama 3 8B model trained on the same data distribution will predict these patterns well, yielding high acceptance rates (likely 75–85%). (3) <strong>Latency sensitivity</strong> - the reviewers feel the per-token delay, and TPOT is the exact metric speculative decoding addresses. Memory note: Llama 3 70B at INT8 (~70GB) + Llama 3 8B at INT8 (~7GB) = ~77GB, which fits on a single A100 80GB. If memory is tighter, MEDUSA heads on the 70B model are an alternative. Option C is incorrect - "complex legal text" does not mean unpredictable output <em>patterns</em>; structured extraction is formulaic regardless of domain. Option D trades quality for speed rather than preserving quality while gaining speed.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option B is correct. More GPUs (Option A) reduce TPOT through tensor parallelism but require hardware spend — speculative decoding delivers the same benefit through software, and this workload checks every box: low concurrency, structured output, latency sensitivity. Option C misidentifies the relevant variable — legal extraction is formulaic (high acceptance rate), not creative. Option D would reduce quality unnecessarily when the problem is latency, not capability.';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. More GPUs (Option A) reduce TPOT through tensor parallelism but require hardware spend - speculative decoding delivers the same benefit through software, and this workload checks every box: low concurrency, structured output, latency sensitivity. Option C misidentifies the relevant variable - legal extraction is formulaic (high acceptance rate), not creative. Option D would reduce quality unnecessarily when the problem is latency, not capability.';
     }
     document.getElementById('check-btn').style.display='none';
   }
