@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 5.4 - Dynamo vs LLM-d vs DIY</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #4A148C 0%, #6A1B9A 40%, #880E4F 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+  .home-icon { position:absolute; top:16px; right:16px; font-size:24px; color:white; text-decoration:none; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #CFD8DC; background:white; font-family:Arial,sans-serif; font-size:13px; text-decoration:none; display:block; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #BF360C; }
+  .nav-btn.next { text-align:right; border-right:4px solid #4A148C; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout          { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-purple   { background:#F3E8FD; border-left:4px solid #4A148C; }
+  .callout-navy     { background:#E8EAF6; border-left:4px solid #1B1464; }
+  .callout-red      { background:#FBE9E7; border-left:4px solid #BF360C; }
+  .callout-green    { background:#E8F5E9; border-left:4px solid #2E7D32; }
+  .callout-orange   { background:#FFF3E0; border-left:4px solid #E65100; }
+  .callout-teal     { background:#E0F7FA; border-left:4px solid #006064; }
+  .callout-slate    { background:#ECEFF1; border-left:4px solid #546E7A; }
+
+  /* ── Decision tool ── */
+  .decision-wrap { background:#F3E8FD; border:1px solid #CE93D8; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .decision-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#4A148C; margin-bottom:14px; font-weight:bold; }
+  .decision-q { font-size:14px; font-weight:bold; color:#1a1a1a; margin-bottom:10px; }
+  .decision-options { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .decision-option { background:white; border:2px solid #E0E0E0; border-radius:8px; padding:10px 14px; cursor:pointer; font-size:13.5px; font-family:Arial,sans-serif; transition:all 0.15s; }
+  .decision-option:hover { border-color:#4A148C; background:#F3E8FD; }
+  .decision-option.selected { border-color:#4A148C; background:#EDE7F6; font-weight:bold; }
+  .decision-result { background:white; border-radius:10px; padding:16px 18px; }
+  .decision-result-rec { font-size:18px; font-weight:bold; margin-bottom:8px; }
+  .decision-result-why { font-size:13.5px; line-height:1.8; color:#333; }
+  .decision-result-tags { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .decision-result-tag { font-size:12px; border-radius:20px; padding:3px 12px; color:white; font-family:Arial,sans-serif; }
+  .decision-back { background:#E8EAF6; border:none; border-radius:6px; padding:8px 16px; font-size:13px; font-family:Arial,sans-serif; cursor:pointer; margin-top:12px; font-weight:bold; color:#4A148C; }
+
+  /* ── DIY cost model ── */
+  .diy-wrap { background:#ECEFF1; border:1px solid #B0BEC5; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .diy-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#37474F; margin-bottom:14px; font-weight:bold; }
+  .diy-stages { display:flex; flex-direction:column; gap:6px; }
+  .diy-stage { border-radius:8px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+  .diy-stage-name { font-size:13.5px; font-weight:bold; color:white; }
+  .diy-stage-cost { font-size:13px; color:white; opacity:0.8; text-align:right; }
+  .diy-total { background:#263238; border-radius:8px; padding:14px 16px; margin-top:8px; display:flex; justify-content:space-between; align-items:center; }
+  .diy-total-label { font-size:13px; font-weight:bold; color:white; opacity:0.7; }
+  .diy-total-val { font-size:18px; font-weight:bold; color:#FFD54F; font-family:monospace; }
+  .diy-note { font-size:12.5px; color:#444; line-height:1.7; background:white; border-radius:6px; padding:10px 12px; margin-top:10px; }
+
+  /* ── Migration path ── */
+  .mig-track { display:flex; flex-direction:column; gap:0; margin:16px 0; }
+  .mig-row { display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #F0F0F0; }
+  .mig-row:last-child { border-bottom:none; }
+  .mig-step { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; margin-top:2px; }
+  .mig-body { flex:1; }
+  .mig-title { font-size:14px; font-weight:bold; margin-bottom:4px; }
+  .mig-desc  { font-size:13px; line-height:1.7; color:#444; }
+  .mig-gain  { font-size:12.5px; font-weight:bold; font-family:Arial,sans-serif; margin-top:4px; }
+
+  /* ── Objection handler ── */
+  .obj-wrap { background:#E8EAF6; border:1px solid #9FA8DA; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .obj-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#1B1464; margin-bottom:14px; font-weight:bold; }
+  .obj-controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .obj-btn { border:none; border-radius:6px; padding:7px 14px; font-size:12.5px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; opacity:0.65; transition:opacity 0.15s; }
+  .obj-btn.active { opacity:1; }
+  .obj-panel { background:white; border-radius:10px; padding:16px 18px; }
+  .obj-q { font-size:15px; font-weight:bold; margin-bottom:10px; color:#1B1464; }
+  .obj-a { font-size:14px; line-height:1.8; color:#333; }
+  .obj-key { font-size:13px; font-family:Arial,sans-serif; font-weight:bold; padding:8px 12px; border-radius:6px; margin-top:10px; display:block; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:linear-gradient(135deg,#4A148C,#880E4F); border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.09); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#E1BEE7; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.88; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#4A148C; background:#F3E8FD; }
+  .quiz-option.selected { border-color:#4A148C; background:#F3E8FD; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#4A148C; }
+  .quiz-btn  { margin-top:14px; background:#4A148C; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#6A1B9A; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#F3E8FD,#FCE4EC); border:1px solid #CE93D8; display:flex; justify-content:space-between; align-items:center; text-decoration:none; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; color:#1a1a1a; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .cheat-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <a href="index.html" class="home-icon" title="Home">🏠</a>
+    <div class="header-eyebrow">PART 5 · MODULE 5.4</div>
+    <h1>Dynamo vs LLM-d vs DIY - The Decision Framework</h1>
+    <p>When to recommend each approach, how to handle the "we built our own" customer, the real cost of DIY orchestration, and what the convergence between Dynamo and llm-d means for your recommendations.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module5_3.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">5.3 - LLM-d</div>
+    </a>
+    <a href="module5_5.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">5.5 - The Full Modern Stack</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>Modules 5.2 and 5.3 covered what Dynamo and llm-d are. This module is about how to choose between them - and what to say when the answer is neither because the customer has already built something themselves. In practice, the most important conversation is not "Dynamo or llm-d?" but "should this customer adopt any fleet coordination framework at all, and if so, which one fits their existing infrastructure and team?"</p>
+    <p>There is also a third option that appears constantly in customer conversations: the team has already built a bespoke routing and disaggregation layer in-house. Understanding the real cost of that approach - and how to frame a migration conversation - is just as important as knowing the technical differences between the two frameworks. And one more development that shapes all of these conversations: NVIDIA is actively contributing Dynamo components (NIXL, the Planner, the KV Cache Manager) into the llm-d project, which means the two are more complementary than competitive.</p>
+  </div>
+
+  <!-- Section 1: The convergence reality -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#4A148C;">1</span>
+        The Convergence Reality - These Projects Are Collaborating, Not Competing
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>The framing of "Dynamo vs llm-d" is accurate for understanding architectural differences but misleading for understanding the ecosystem trajectory. In August 2025, NVIDIA announced active collaboration with the llm-d community: NIXL is already shared between both, and NVIDIA committed to integrating the Dynamo Planner and KV Cache Manager directly into llm-d. This means llm-d is progressively gaining Dynamo's most advanced capabilities while maintaining its Kubernetes-native operational model.</p>
+
+      <div style="background:#0F172A; border-radius:14px; padding:22px; margin:18px 0; font-family:Arial,sans-serif; color:white;">
+        <div style="font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.35; margin-bottom:16px;">Technology convergence map - what is shared vs distinct</div>
+        <div style="display:grid; grid-template-columns:1fr 80px 1fr; gap:0; align-items:start;">
+          <!-- Dynamo column -->
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:0.4; margin-bottom:4px; text-align:center;">NVIDIA Dynamo</div>
+            <div style="background:rgba(27,20,100,0.6); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">Rust frontend (high perf HTTP)</div>
+            <div style="background:rgba(27,20,100,0.6); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">Centralised Planner &#8594; llm-d</div>
+            <div style="background:rgba(27,20,100,0.6); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">Custom KV-aware router</div>
+            <div style="background:rgba(27,20,100,0.6); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">TRT-LLM + SGLang backend</div>
+            <div style="background:rgba(27,20,100,0.4); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.7; margin-top:4px;">Blackwell-optimised perf</div>
+            <div style="background:rgba(27,20,100,0.4); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.7;">NVIDIA NIM / AI Enterprise</div>
+          </div>
+          <!-- Shared column -->
+          <div style="display:flex; flex-direction:column; gap:6px; padding:0 8px; align-items:center;">
+            <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:0.4; margin-bottom:4px;">Shared</div>
+            <div style="background:rgba(46,125,50,0.5); border-radius:6px; padding:8px 6px; font-size:10.5px; text-align:center; width:100%; opacity:0.9;">NIXL</div>
+            <div style="background:rgba(46,125,50,0.5); border-radius:6px; padding:8px 6px; font-size:10.5px; text-align:center; width:100%; opacity:0.9;">vLLM engine</div>
+            <div style="background:rgba(46,125,50,0.5); border-radius:6px; padding:8px 6px; font-size:10.5px; text-align:center; width:100%; opacity:0.9;">KV Cache Mgr &#8594; llm-d</div>
+            <div style="background:rgba(46,125,50,0.5); border-radius:6px; padding:8px 6px; font-size:10.5px; text-align:center; width:100%; opacity:0.9;">Open source (GitHub)</div>
+          </div>
+          <!-- llm-d column -->
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:0.4; margin-bottom:4px; text-align:center;">llm-d</div>
+            <div style="background:rgba(191,54,12,0.5); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">K8s Inference Gateway + Envoy</div>
+            <div style="background:rgba(191,54,12,0.5); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">EPP inference scheduler</div>
+            <div style="background:rgba(191,54,12,0.5); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">Disagg. sidecar model</div>
+            <div style="background:rgba(191,54,12,0.5); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">InferenceModel/Pool CRDs</div>
+            <div style="background:rgba(191,54,12,0.35); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.7; margin-top:4px;">AMD / Intel / TPU support</div>
+            <div style="background:rgba(191,54,12,0.35); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.7;">Community governed (Red Hat+)</div>
+          </div>
+        </div>
+        <div style="font-size:11px; opacity:0.3; margin-top:14px; line-height:1.7;">NIXL is already shared. Dynamo Planner and KV Cache Manager are planned for llm-d integration per August 2025 NVIDIA announcement. The shared layer is growing. Distinct capabilities remain in routing architecture and hardware focus.</div>
+      </div>
+
+      <div class="callout callout-purple">
+        <strong>What this means for customer conversations:</strong> When a customer asks "should we use Dynamo or llm-d?", the honest answer increasingly is "if you are on NVIDIA hardware and want Kubernetes-native operations, you may be able to get the best of both - llm-d's operational model with Dynamo's performance components integrated." The decision framework still matters, but frame it as "which coordination model fits your infrastructure" rather than "which project is better."
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: The decision tool -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#6A1B9A;">2</span>
+        The Decision Framework - Interactive Recommendation Tool
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>The right choice among Dynamo, llm-d, and a continuation of the current stack depends on four primary factors. Work through them in sequence:</p>
+
+      <div class="decision-wrap">
+        <div class="decision-title">Fleet coordination framework selector</div>
+        <div id="decisionFlow"></div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>The threshold question that overrides everything else:</strong> Before any framework comparison, ask whether the customer has actually hit the scaling problems from Module 5.1 yet. A team with 8 GPUs, a single vLLM replica, and 20 concurrent users does not need any fleet coordination layer - it adds complexity with zero benefit. The correct recommendation for that customer is to stay on the Part 4 stack until they grow into the problems. Recommending Dynamo or llm-d prematurely is just as wrong as recommending nothing to a fleet that clearly needs coordination.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: The DIY problem -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#880E4F;">3</span>
+        The DIY Problem - What "We Built Our Own" Really Costs
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Many teams at large-scale deployments arrive at the fleet coordination problem and solve it in-house - a custom router, some scripts for KV transfer, a homegrown Prefill/Decode coordinator. This is understandable: both Dynamo and llm-d were announced in 2025, and teams with 2023–2024 scale problems had no standard framework to adopt. But the cost of maintaining bespoke orchestration compounds over time in ways that are not obvious at the start.</p>
+
+      <div class="diy-wrap">
+        <div class="diy-title">True cost of bespoke fleet orchestration - typical large-scale deployment</div>
+        <div class="diy-stages">
+          <div class="diy-stage" style="background:#37474F;">
+            <div class="diy-stage-name">Initial build</div>
+            <div class="diy-stage-cost">2–4 senior engineers, 3–6 months<br>Custom router + KV transfer scripts</div>
+          </div>
+          <div class="diy-stage" style="background:#455A64;">
+            <div class="diy-stage-name">Hardware topology changes</div>
+            <div class="diy-stage-cost">1–2 engineers, 4–8 weeks each time<br>Add nodes, change GPU types, adjust NVLink topology</div>
+          </div>
+          <div class="diy-stage" style="background:#546E7A;">
+            <div class="diy-stage-name">Model updates</div>
+            <div class="diy-stage-cost">1 engineer, 1–3 weeks each<br>Re-validate routing, KV block sizes change, engine recompile</div>
+          </div>
+          <div class="diy-stage" style="background:#607D8B;">
+            <div class="diy-stage-name">Traffic pattern shifts</div>
+            <div class="diy-stage-cost">Ongoing firefighting<br>P:D ratio no longer optimal, new workload types break assumptions</div>
+          </div>
+          <div class="diy-stage" style="background:#78909C;">
+            <div class="diy-stage-name">On-call burden</div>
+            <div class="diy-stage-cost">Perpetual<br>Custom code fails in non-obvious ways; only original authors understand it</div>
+          </div>
+          <div class="diy-stage" style="background:#90A4AE;">
+            <div class="diy-stage-name">Ecosystem feature gap</div>
+            <div class="diy-stage-cost">Grows over time<br>New optimisations (predicted latency scheduling, LoRA routing, KV offload tiers) require custom implementation each time</div>
+          </div>
+        </div>
+        <div class="diy-total">
+          <div class="diy-total-label">Ongoing engineering cost vs framework adoption</div>
+          <div class="diy-total-val">3–5 eng-years/year</div>
+        </div>
+        <div class="diy-note">This estimate reflects the experience of teams that have built bespoke fleet orchestration at hyperscaler scale. The initial build cost is visible and planned for. The ongoing maintenance, topology adaptation, and ecosystem feature gap costs are the ones that make DIY uncompetitive over a 2–3 year horizon. By contrast, adopting Dynamo or llm-d means these improvements are contributed upstream - KV offload tiers, predicted latency scheduling, LoRA routing were added by the project communities at zero marginal cost to adopters.</div>
+      </div>
+
+      <div class="callout callout-slate">
+        <strong>The migration conversation framing:</strong> When a customer says "we already built our own," the productive question is not "was that a mistake?" but "how does your solution compare to what Dynamo/llm-d now provides out of the box, and what is your plan to keep pace as these frameworks add capabilities?" Most teams find that their bespoke solution handles 60–70% of what the frameworks now provide - but the remaining 30–40% (predicted latency scheduling, KV offload tiers, LoRA routing, active-active HA) would take significant engineering to build, and the frameworks already have it. The ROI of migration becomes clear when mapped against the roadmap delta.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Migration paths -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">4</span>
+        Migration Paths - From Current Stack to Fleet Coordination
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>Neither Dynamo nor llm-d requires a big-bang migration. Both are designed for incremental adoption. The right migration sequence depends on starting point and urgency - here are the three most common paths:</p>
+
+      <div class="mig-track">
+        <div class="mig-row">
+          <div class="mig-step" style="background:#2E7D32;">1</div>
+          <div class="mig-body">
+            <div class="mig-title">From: vLLM + round-robin LB &rarr; To: llm-d Well-lit Path 1 (intelligent scheduling)</div>
+            <div class="mig-desc">Deploy the Kubernetes Inference Gateway and EPP in front of existing vLLM pods. No changes to vLLM configuration, no new GPU provisioning, no disaggregation. The EPP becomes the new routing layer - existing vLLM pods register with the InferencePool CRD. Existing Kubernetes tooling (Helm, Prometheus, Grafana) continues to work. Lowest risk migration available.</div>
+            <div class="mig-gain" style="color:#2E7D32;">Expected gain: 2–3x TTFT improvement from prefix cache hit restoration. Timeline: 1–2 weeks for a Kubernetes-experienced team.</div>
+          </div>
+        </div>
+        <div class="mig-row">
+          <div class="mig-step" style="background:#1565C0;">2</div>
+          <div class="mig-body">
+            <div class="mig-title">From: vLLM + Triton &rarr; To: Dynamo (router + planner, keep vLLM backend)</div>
+            <div class="mig-desc">Deploy Dynamo's frontend and KV-aware router in front of existing vLLM pods. Triton's serving role is replaced by Dynamo's frontend - existing model configuration moves to Dynamo's backend definitions. vLLM configuration is unchanged. Once stable, add the Planner and enable disaggregation by splitting pods into Prefill and Decode roles. Requires InfiniBand validation before enabling NIXL transfer.</div>
+            <div class="mig-gain" style="color:#1565C0;">Expected gain: 3–4x TTFT (KV router) + 1.5–2x throughput (disaggregation). Timeline: 2–4 weeks for Dynamo router; add 4–6 weeks for disaggregation with testing.</div>
+          </div>
+        </div>
+        <div class="mig-row">
+          <div class="mig-step" style="background:#7B1FA2;">3</div>
+          <div class="mig-body">
+            <div class="mig-title">From: TRT-LLM + Triton &rarr; To: TRT-LLM + Dynamo (full stack)</div>
+            <div class="mig-desc">TRT-LLM stays as the inference engine - Dynamo is positioned as the fleet coordination layer above it, replacing Triton's routing role. TRT-LLM compiled engines are unchanged. Dynamo's router handles multi-replica routing with KV awareness. Planner manages dynamic P:D allocation across engine replicas. This is the highest-performance path but has the most operational change - new frontend process, new routing configuration, new monitoring to set up.</div>
+            <div class="mig-gain" style="color:#7B1FA2;">Expected gain: highest possible throughput on NVIDIA hardware. Timeline: 4–8 weeks. Requires dedicated ML platform engineer with Dynamo familiarity.</div>
+          </div>
+        </div>
+        <div class="mig-row">
+          <div class="mig-step" style="background:#546E7A;">4</div>
+          <div class="mig-body">
+            <div class="mig-title">From: Bespoke DIY orchestration &rarr; To: Framework (either)</div>
+            <div class="mig-desc">The highest-friction migration because the team has existing custom code that the organisation depends on. Best approach: run the framework in shadow mode alongside the bespoke system for 2–4 weeks, comparing routing decisions and validating latency parity. Once the framework matches or exceeds bespoke performance, cut over one replica group at a time. Document the capability delta (what the framework provides that the bespoke system does not) to justify the migration to stakeholders.</div>
+            <div class="mig-gain" style="color:#546E7A;">Expected gain: elimination of ongoing maintenance burden + access to framework roadmap features. Timeline: 6–12 weeks including shadow validation and staged cutover.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Objection handler -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#BF360C;">5</span>
+        Objection Handler - What Customers Actually Say
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>These are the objections that come up most frequently in customer conversations about fleet coordination frameworks, with the accurate, specific responses:</p>
+
+      <div class="obj-wrap">
+        <div class="obj-title">Common objections - click to see the response</div>
+        <div class="obj-controls">
+          <button class="obj-btn active" style="background:#4A148C; color:white;" onclick="showObj('maturity')">Too immature</button>
+          <button class="obj-btn" style="background:#1565C0; color:white;" onclick="showObj('complexity')">Too complex</button>
+          <button class="obj-btn" style="background:#2E7D32; color:white;" onclick="showObj('perf')">30x is marketing</button>
+          <button class="obj-btn" style="background:#E65100; color:white;" onclick="showObj('diy')">We already built it</button>
+          <button class="obj-btn" style="background:#546E7A; color:white;" onclick="showObj('lockin')">Vendor lock-in</button>
+        </div>
+        <div class="obj-panel" id="objPanel"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: The three-question diagnostic -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#37474F;">6</span>
+        The Three-Question Diagnostic - Identifying the Right Answer Quickly
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>In a customer conversation, you rarely have time to work through a full framework comparison. These three questions surface the most important decision factors in under two minutes:</p>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin:16px 0;">
+        <div style="background:#F3E8FD; border-radius:12px; padding:18px 20px; border-left:4px solid #4A148C;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#4A148C; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Question 1 - What is your GPU fleet?</div>
+          <div style="font-size:14px; line-height:1.8; color:#333;">
+            <strong>All NVIDIA?</strong> Both Dynamo and llm-d are viable. Go to Question 2.<br>
+            <strong>Mixed or non-NVIDIA?</strong> llm-d is the only viable fleet coordination framework. Dynamo is not designed for AMD/Intel/TPU.<br>
+            <strong>Fewer than 16 GPUs?</strong> Neither framework is justified yet. The Part 4 stack is right for this scale.
+          </div>
+        </div>
+        <div style="background:#E3F2FD; border-radius:12px; padding:18px 20px; border-left:4px solid #1565C0;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#1565C0; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Question 2 - Do you already run Kubernetes for your ML workloads?</div>
+          <div style="font-size:14px; line-height:1.8; color:#333;">
+            <strong>Yes, with active K8s operations:</strong> llm-d fits their existing tooling - Helm, CRDs, Prometheus, GitOps. Lowest adoption friction.<br>
+            <strong>No, or K8s is minimal:</strong> Dynamo may be simpler to deploy as a new fleet coordination system without fitting into existing K8s workflows.<br>
+            <strong>Yes, but also want TRT-LLM:</strong> Dynamo is stronger here - native TRT-LLM support, Blackwell optimisation, NVIDIA AI Enterprise support.
+          </div>
+        </div>
+        <div style="background:#E8F5E9; border-radius:12px; padding:18px 20px; border-left:4px solid #2E7D32;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Question 3 - What is the primary symptom driving the conversation?</div>
+          <div style="font-size:14px; line-height:1.8; color:#333;">
+            <strong>TTFT variance / prefix cache not working at scale:</strong> Either framework - KV-aware routing is the fix. Go with whichever fits Q1 and Q2.<br>
+            <strong>Maximum throughput on reasoning models:</strong> Dynamo on Blackwell is the strongest answer. The 30x claim is real for this specific case.<br>
+            <strong>Disaggregation coordination too complex / manual:</strong> Either framework solves this, llm-d via sidecar + scheduler, Dynamo via Planner.<br>
+            <strong>Operational complexity reduction / standardisation:</strong> llm-d's well-lit paths and Kubernetes-native ops model is specifically designed for this.
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-orange">
+        <strong>The answer that is almost never wrong:</strong> When in doubt, recommend llm-d Well-lit Path 1 as the first step for any Kubernetes-native team with multiple vLLM replicas and prefix cache problems. It is the lowest-risk adoption, it directly addresses the most common symptom (TTFT variance from routing blindness), and it does not lock the team out of adopting Dynamo components later - because NVIDIA is actively contributing Dynamo capabilities into llm-d anyway.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr7" onclick="toggle(7)">
+      <div class="section-title">
+        <span class="section-num" style="background:#4A148C;">7</span>
+        4 Key Ideas for Customer Conversations
+      </div>
+      <span class="chevron" id="chv7">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy7">
+      <div class="key-item">
+        <div class="key-num" style="color:#4A148C;">01</div>
+        <div>
+          <div class="key-title">The first question is scale - neither framework adds value below ~16 GPUs with multiple replicas. Don't recommend fleet coordination to teams that haven't hit fleet-scale problems</div>
+          <div class="key-desc">Dynamo and llm-d both add operational complexity. That complexity is justified by the performance gains at fleet scale. Below the threshold where Module 5.1's problems manifest, the Part 4 stack is right, and adding a coordination layer is premature optimisation. The diagnostic conversation should establish scale before any framework discussion.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#BF360C;">02</div>
+        <div>
+          <div class="key-title">GPU fleet composition is the tie-breaker - any non-NVIDIA hardware in the fleet makes llm-d the only viable choice</div>
+          <div class="key-desc">Dynamo's performance advantages are real on NVIDIA, especially Blackwell. But they are NVIDIA-specific. A team with AMD MI300X, Google TPU, or Intel GPU in the fleet cannot use Dynamo to coordinate the full fleet. llm-d is the only fleet coordination framework designed for hardware-agnostic operation. This is a hard constraint, not a preference.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">03</div>
+        <div>
+          <div class="key-title">DIY orchestration has a compounding cost that is not visible at build time - the migration conversation should focus on the roadmap delta, not the initial build quality</div>
+          <div class="key-desc">Bespoke fleet orchestration teams have usually built something functional. The productive question is not whether it was worth building, but whether the team can afford to keep it at parity with what Dynamo and llm-d are adding to their roadmaps each quarter - predicted latency scheduling, KV offload tiers, LoRA routing, active-active HA. Most teams cannot, and the maintenance burden grows each time a new optimisation is needed.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#1565C0;">04</div>
+        <div>
+          <div class="key-title">Dynamo and llm-d are converging - NVIDIA is contributing Dynamo components into llm-d, so the choice is increasingly about operational model, not technology access</div>
+          <div class="key-desc">NIXL is already in llm-d. The Dynamo Planner and KV Cache Manager are planned for llm-d integration. This means teams choosing llm-d for its Kubernetes-native operations model are not sacrificing Dynamo's performance technology - they are getting it through a different operational interface. The enduring choice is between centralised Planner coordination (Dynamo) and Kubernetes-native sidecar coordination (llm-d), not between accessing good or bad technology.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 5.4 - DECISION FRAMEWORK CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">Scale threshold</div>
+        <div class="cheat-def">Fleet coordination frameworks add value at ~16+ GPUs with multiple replicas. Below this, the Part 4 stack is sufficient. Never recommend Dynamo or llm-d to a single-node team.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">GPU fleet hard rule</div>
+        <div class="cheat-def">Any AMD, Intel, or Google TPU in the fleet = llm-d only. Dynamo is NVIDIA-optimised. This is a constraint, not a preference. Mixed fleets have no Dynamo option.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Kubernetes expertise rule</div>
+        <div class="cheat-def">Strong K8s operations + vLLM = llm-d fits naturally. No K8s or minimal K8s = Dynamo may be simpler as a new system. TRT-LLM + NVIDIA focus = Dynamo stronger.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Convergence reality</div>
+        <div class="cheat-def">NVIDIA contributes NIXL, Planner, and KV Cache Manager into llm-d. The technology gap is closing. The enduring difference is coordination model: centralised Planner (Dynamo) vs K8s-native sidecar (llm-d).</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">DIY migration trigger</div>
+        <div class="cheat-def">Ask: "Can your team maintain parity with the framework roadmap?" If not, the migration ROI is the delta between ongoing maintenance cost vs framework adoption. Roadmap features already in frameworks: predicted latency scoring, KV offload tiers, LoRA routing, HA.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Safest first recommendation</div>
+        <div class="cheat-def">llm-d Well-lit Path 1 (intelligent scheduling only) for any Kubernetes team with multiple vLLM replicas + TTFT variance. Lowest risk, directly fixes routing blindness, does not block future Dynamo component adoption.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">When 30x is real</div>
+        <div class="cheat-def">DeepSeek-R1 671B, NVIDIA GB200 NVL72, full disaggregation enabled. H100 realistic range: 3–6x with KV router + disaggregation. Still significant - but context matters in customer conversations.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Migration order</div>
+        <div class="cheat-def">1. KV-aware router (immediate win, lowest risk). 2. Add Planner/disaggregation after InfiniBand validated. 3. Full P/D split last - most complex, highest gain. Never skip to step 3 without step 1 showing value.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer has 64x NVIDIA H100 SXM GPUs across 8 nodes, running a mix of vLLM and TRT-LLM deployments. They currently use a bespoke Python routing script written 18 months ago that does basic load-balancing and a static 2:6 Prefill:Decode split. The script requires a senior engineer to manually adjust the P:D ratio when traffic patterns change, and has broken twice in the past 6 months when they updated TRT-LLM. They ask: "Should we adopt Dynamo, llm-d, or fix our existing script?" Which response most accurately represents the full picture?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Fix the existing script - it already does basic load-balancing and P:D splitting, and the frameworks are too new to trust with production traffic at this scale.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        Adopt llm-d - it is Kubernetes-native and therefore fits any team's operations.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        This fleet crosses every threshold where a framework is justified: 64 GPUs, mixed vLLM and TRT-LLM, manual P:D adjustment, and demonstrated breakage on engine updates. The bespoke script is exactly the DIY problem described in this module - functional for 60–70% of the job, but with compounding maintenance cost and a growing gap against framework capabilities. The question is which framework. Since this is an all-NVIDIA fleet with both vLLM and TRT-LLM in use, Dynamo is the stronger fit: it natively supports both engines, its Planner provides the dynamic P:D adjustment that currently requires manual intervention, and NVIDIA AI Enterprise provides the enterprise support contract that justifies replacing production-critical bespoke code. The migration path: deploy Dynamo's KV-aware router in shadow mode alongside the existing script for 2–4 weeks, validate parity, then cut over. Add the Planner for dynamic P:D after the router is stable.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        Standardise on vLLM only and remove TRT-LLM - using both engines adds complexity and is the root cause of the script breakage.
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <a href="module5_5.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next - Module 5.5</div>
+      <div class="next-title">The Full Modern Stack</div>
+      <div class="next-sub">End-to-end architecture walkthrough incorporating the frontier frameworks - every component from Parts 1–5 in its correct position, with a real customer scenario from API request to final token</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var sColors={1:'#4A148C',2:'#6A1B9A',3:'#880E4F',4:'#1565C0',5:'#BF360C',6:'#37474F',7:'#4A148C'};
+  var sBgs   ={1:'#F3E8FD',2:'#EDE7F6',3:'#FCE4EC',4:'#E3F2FD',5:'#FBE9E7',6:'#ECEFF1',7:'#F3E8FD'};
+  function toggle(n){
+    var b=document.getElementById('bdy'+n),c=document.getElementById('chv'+n),h=document.getElementById('hdr'+n);
+    var open=b.classList.contains('open');
+    b.classList.toggle('open'); c.classList.toggle('open');
+    h.style.borderLeftColor=open?'#E8E8E8':sColors[n];
+    h.style.background=open?'white':sBgs[n];
+  }
+
+  /* ── Decision tree ── */
+  var decisionTree = {
+    q1: {
+      question: 'Q1 - What is the size of the GPU fleet?',
+      options: [
+        { text: 'Fewer than 16 GPUs / single replica', next: 'r_small' },
+        { text: '16–64 GPUs / 4–16 replicas', next: 'q2' },
+        { text: '64+ GPUs / fleet-scale deployment', next: 'q2' }
+      ]
+    },
+    q2: {
+      question: 'Q2 - What GPU hardware is in the fleet?',
+      options: [
+        { text: 'All NVIDIA (H100, H200, A100, B200)', next: 'q3' },
+        { text: 'Mixed - includes AMD, Intel, or Google TPU', next: 'r_llmd_hw' },
+        { text: 'Non-NVIDIA only', next: 'r_llmd_hw' }
+      ]
+    },
+    q3: {
+      question: 'Q3 - What is the team\'s infrastructure context?',
+      options: [
+        { text: 'Strong Kubernetes ops - Helm, GitOps, Prometheus already in use', next: 'q4_llmd' },
+        { text: 'TRT-LLM in stack + NVIDIA-focused team', next: 'r_dynamo' },
+        { text: 'New deployment - no strong existing tooling preference', next: 'q4_either' }
+      ]
+    },
+    q4_llmd: {
+      question: 'Q4 - What is the primary problem to solve?',
+      options: [
+        { text: 'TTFT variance / prefix cache hit rates low at scale', next: 'r_llmd_p1' },
+        { text: 'Disaggregation coordination is manual or broken', next: 'r_llmd_p2' },
+        { text: 'Maximum throughput on reasoning models (DeepSeek, o-series)', next: 'r_dynamo_consider' }
+      ]
+    },
+    q4_either: {
+      question: 'Q4 - Which better describes the workload?',
+      options: [
+        { text: 'Long-context RAG, agentic, or shared system prompts', next: 'r_llmd_p1' },
+        { text: 'Reasoning models at extreme scale (100B+ parameters)', next: 'r_dynamo' },
+        { text: 'Mixed workload types, need specialised pools', next: 'r_either' }
+      ]
+    },
+    r_small:       { rec:'Current stack is right - no fleet coordination needed yet', color:'#2E7D32', why:'Below ~16 GPUs with a single replica, the Part 4 stack (vLLM or TRT-LLM + Triton) provides everything needed. Adding Dynamo or llm-d adds operational complexity without addressing any real problem at this scale. Revisit when concurrency, replica count, or prefix cache hit rates become issues.', tags:['vLLM or TRT-LLM','Triton or vLLM API','No coordination layer needed'] },
+    r_llmd_hw:     { rec:'llm-d - hardware-agnostic fleet coordination', color:'#BF360C', why:'Any non-NVIDIA hardware in the fleet makes llm-d the only viable option. Dynamo is NVIDIA-optimised and its performance technology (NIXL GPUDirect, Planner topology awareness) is designed for NVIDIA hardware. llm-d supports NVIDIA A100+, AMD MI250+, Intel GPU Max, and Google TPU v5e+ in a single fleet with consistent operational tooling.', tags:['llm-d','Hardware-agnostic','K8s-native','vLLM engine'] },
+    r_llmd_p1:     { rec:'llm-d Well-lit Path 1 - intelligent scheduling first', color:'#BF360C', why:'Deploy the Kubernetes Inference Gateway and EPP scheduler in front of existing vLLM pods. This directly fixes routing blindness, restores prefix cache hit rates to 85–95%, and delivers 2–3x TTFT improvement with zero changes to vLLM configuration or GPU provisioning. Lowest-risk migration available. Add Path 2 (disaggregation) when ready.', tags:['llm-d WLP1','IGW + EPP','2–3x TTFT gain','vLLM unchanged'] },
+    r_llmd_p2:     { rec:'llm-d Well-lit Path 2 - disaggregated P/D with sidecar', color:'#BF360C', why:'The disaggregated serving sidecar and IGW scheduler provide automatic P:D routing without the static ratio management that characterises manual configurations. Validate InfiniBand bandwidth before enabling NIXL transfer. This replaces bespoke P:D coordination scripts with a tested, Kubernetes-native implementation.', tags:['llm-d WLP2','Disagg sidecar','Dynamic P/D routing','NIXL validated'] },
+    r_dynamo:      { rec:'Dynamo - full fleet coordination for NVIDIA-focused deployments', color:'#1B1464', why:'TRT-LLM support, Blackwell optimisation, dynamic Planner, NIXL transfer, and NVIDIA AI Enterprise support all point to Dynamo for NVIDIA-first teams. Deploy the KV-aware router first, validate performance, then add the Planner for dynamic P:D. Best-in-class throughput on NVIDIA hardware, especially for reasoning models.', tags:['Dynamo','TRT-LLM native','Planner P/D','NVIDIA AI Enterprise'] },
+    r_dynamo_consider: { rec:'Consider Dynamo - but validate reasoning model workload first', color:'#1B1464', why:'Dynamo\'s 30x throughput claim is specific to reasoning models (DeepSeek-R1, o-series) on Blackwell hardware with very long thinking chains. On H100 with standard chat or RAG workloads, the improvement is 3–6x - still significant but not differentiated enough from llm-d to override Kubernetes operational preference. If the workload is reasoning-model-heavy with H100+ hardware, Dynamo is the stronger choice.', tags:['Dynamo (if H100+)','Reasoning models','Validate workload type'] },
+    r_either:      { rec:'Either framework - choose based on operational model', color:'#4A148C', why:'Both Dynamo and llm-d handle mixed workload routing with specialised pools. For Kubernetes teams, llm-d\'s operational simplicity wins. For teams building new NVIDIA-optimised infrastructure, Dynamo\'s performance ceiling is higher. Remember: NVIDIA is contributing Dynamo components into llm-d, so the technology gap is closing.', tags:['llm-d (K8s teams)','Dynamo (NVIDIA-focused)','Either viable'] }
+  };
+
+  var decisionState = { current: 'q1', history: [] };
+
+  function renderDecision() {
+    var node = decisionTree[decisionState.current];
+    var html = '';
+    if (node.rec) {
+      // Result node
+      html = '<div class="decision-result">'+
+        '<div class="decision-result-rec" style="color:'+node.color+';">'+node.rec+'</div>'+
+        '<div class="decision-result-why">'+node.why+'</div>'+
+        '<div class="decision-result-tags">'+node.tags.map(function(t){return '<span class="decision-result-tag" style="background:'+node.color+';">'+t+'</span>';}).join('')+'</div>'+
+        '</div>'+
+        '<button class="decision-back" onclick="decisionBack()">&#8592; Back</button>';
+    } else {
+      html = '<div class="decision-q">'+node.question+'</div>'+
+        '<div class="decision-options">'+
+        node.options.map(function(o,i){
+          return '<div class="decision-option" onclick="decisionNext(\''+o.next+'\','+i+')">'+o.text+'</div>';
+        }).join('')+
+        '</div>';
+      if (decisionState.history.length > 0) {
+        html += '<button class="decision-back" onclick="decisionBack()">&#8592; Back</button>';
+      }
+    }
+    document.getElementById('decisionFlow').innerHTML = html;
+  }
+
+  function decisionNext(next, idx) {
+    decisionState.history.push(decisionState.current);
+    decisionState.current = next;
+    renderDecision();
+  }
+
+  function decisionBack() {
+    if (decisionState.history.length > 0) {
+      decisionState.current = decisionState.history.pop();
+      renderDecision();
+    }
+  }
+
+  renderDecision();
+
+  /* ── Objection handler ── */
+  var objData = {
+    maturity: {
+      q: '"These frameworks were just announced in 2025 - they\'re not mature enough for production."',
+      a: 'llm-d reached v0.5 in February 2026 with validated benchmark results: 3,100 tokens per second per B200 Decode GPU and 40% TPOT reduction on H200 in production-representative configurations. Dynamo was announced at GTC March 2025 and is available today under NVIDIA AI Enterprise with enterprise support, SLAs, and security patching. Both projects have active engineering teams from major organisations - Red Hat, Google, IBM, and NVIDIA - with committed roadmaps. The more relevant maturity question is: is your bespoke routing script or static Triton configuration more reliable than a tested, benchmarked framework backed by major vendors?',
+      key: 'Counter: ask what "maturity" means for their bespoke alternative. Framework maturity is measurable; bespoke script maturity is not.',
+      keyColor: '#4A148C'
+    },
+    complexity: {
+      q: '"Adding another layer just means more things to break."',
+      a: 'This is a valid concern that maps to the choice between Dynamo and llm-d. llm-d\'s Well-lit Path 1 (intelligent scheduling only) adds one new component - the Inference Gateway EPP - and zero changes to existing vLLM configuration. It plugs into Kubernetes tooling the team already operates. The operational surface increase is deliberately minimal. Dynamo adds more new components (frontend, router, planner) and does have a meaningful learning curve. For teams where operational simplicity is the priority, llm-d is specifically designed around minimising new operational surface. But the comparison should be against the alternative: the current routing blindness problem at scale is also "something breaking" - it just breaks more slowly and less visibly.',
+      key: 'Route to llm-d WLP1 for complexity-averse teams. Frame it as: one new K8s resource versus the ongoing breakage cost of routing blindness.',
+      keyColor: '#1565C0'
+    },
+    perf: {
+      q: '"The 30x number is marketing - what are the real performance gains?"',
+      a: 'Correct: 30x is specific to DeepSeek-R1 671B on NVIDIA GB200 NVL72 with full disaggregation. This is a real result for that specific configuration, not fabricated. For H100 hardware with typical RAG or chat workloads: the KV-aware router alone restores prefix cache hit rates from near zero to 85–95%, delivering 2–4x TTFT improvement. Adding disaggregation typically adds 1.5–2x throughput on top of that. Combined realistic improvement on H100: 3–6x versus vanilla vLLM with round-robin routing. These are still significant and translate directly to either better SLAs at the same cost or the same SLAs at lower GPU cost. The 30x number is a ceiling for optimal conditions, not a floor for all conditions.',
+      key: 'Acknowledge the 30x ceiling is hardware-specific. Lead with H100 realistic range: 3–6x. Anchor to cost-per-token reduction, not just throughput claims.',
+      keyColor: '#2E7D32'
+    },
+    diy: {
+      q: '"We already built our own routing and disaggregation layer - migration is too disruptive."',
+      a: 'The question is not whether to migrate immediately, but whether the bespoke system can be maintained at parity with the frameworks\' roadmaps going forward. In 2025 alone, Dynamo and llm-d added: predicted latency scheduling, KV Cache tiered offload (GPU → CPU RAM → NVMe), cache-aware LoRA routing, active-active HA, and scale-to-zero autoscaling. How much engineering did your team spend implementing equivalent features - and what is the plan for the next set? The migration conversation works best in shadow mode: run the framework alongside the existing system for 2–4 weeks, compare routing decisions and latency, and let the data justify the migration to stakeholders. The goal is not to say the bespoke system was wrong - it was the right decision when built. The question is whether it remains the right decision going forward.',
+      key: 'Never challenge the original build decision. Frame it as: "What is your maintenance plan going forward, given the framework roadmap velocity?"',
+      keyColor: '#E65100'
+    },
+    lockin: {
+      q: '"Using NVIDIA Dynamo locks us into NVIDIA hardware."',
+      a: 'Mostly true, and it is worth acknowledging directly. Dynamo is optimised for NVIDIA hardware - its performance advantages (NIXL GPUDirect, Blackwell-specific kernels, NVLink-aware Planner) are NVIDIA-specific. However, Dynamo supports vLLM and SGLang as backends, and vLLM runs on AMD and other hardware. Dynamo itself, as a coordination layer, could technically be deployed on non-NVIDIA systems with reduced benefit. If hardware-agnosticism is a genuine requirement, llm-d is the better choice - it is explicitly designed to support AMD, Intel, and Google TPU. The more important lock-in question is the inference engine: TRT-LLM compiled engines are GPU-specific. If the team ever needs to switch GPU vendors, TRT-LLM requires full engine rebuilds. vLLM (used by llm-d) does not. This engine-level lock-in is the more significant concern, and it predates Dynamo entirely.',
+      key: 'Separate Dynamo lock-in (coordination layer) from TRT-LLM lock-in (inference engine). The more significant concern is TRT-LLM, not Dynamo.',
+      keyColor: '#546E7A'
+    }
+  };
+
+  function showObj(key) {
+    var d = objData[key];
+    document.getElementById('objPanel').innerHTML =
+      '<div class="obj-q">'+d.q+'</div>'+
+      '<div class="obj-a">'+d.a+'</div>'+
+      '<span class="obj-key" style="background:'+d.keyColor+'22; color:'+d.keyColor+';">'+d.key+'</span>';
+    document.querySelectorAll('.obj-btn').forEach(function(b,i) {
+      b.classList.toggle('active', ['maturity','complexity','perf','diy','lockin'][i] === key);
+    });
+  }
+  showObj('maturity');
+
+  /* ── Quiz ── */
+  var selected=null, answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    document.querySelectorAll('.quiz-option').forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      var l=['a','b','c','d'][i];
+      if(l==='c')o.classList.add('correct');
+      else if(l===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='c'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct - and the framework choice reasoning is the part that matters most.</strong><br><br><strong>Why a framework is clearly justified:</strong> 64 GPUs crosses the scale threshold. Manual P:D ratio adjustment is the textbook disaggregation coordination gap from Module 5.1. The script breaking twice on TRT-LLM updates is the DIY maintenance cost becoming visible. These three signals together make the case for framework adoption unambiguous.<br><br><strong>Why Dynamo specifically:</strong> This is an all-NVIDIA fleet, which makes both Dynamo and llm-d viable - so the tie-breaker is the second question: the fleet runs both vLLM and TRT-LLM. Dynamo supports both as backends natively. llm-d\'s primary engine is vLLM - while it can work with TRT-LLM through a custom integration, the mixed-engine fleet is a native Dynamo use case. The Planner directly solves the manual P:D ratio problem that is the customer\'s stated pain point - it dynamically adjusts the split based on real-time queue depth, eliminating the need for manual intervention. NVIDIA AI Enterprise provides the support contract that justifies replacing production-critical bespoke code with a new system.<br><br><strong>Why shadow mode first:</strong> The customer has existing production traffic depending on the bespoke script. A shadow mode deployment (running Dynamo in parallel, comparing routing decisions) de-risks the migration and generates the comparative data needed to justify the cutover to stakeholders. This is the migration path for bespoke DIY systems described in Section 4.<br><br><strong>Why not A:</strong> Fixing the existing script does not solve the manual P:D problem or the TRT-LLM update fragility - both are structural limitations of bespoke orchestration, not bugs in the script. The maintenance cost will compound.<br><br><strong>Why not B:</strong> llm-d is a valid recommendation for a Kubernetes team, but this fleet runs TRT-LLM as well as vLLM. Dynamo\'s native TRT-LLM support is the differentiator here. "K8s-native" is not the right primary criterion when the inference engine mix points to Dynamo.<br><br><strong>Why not D:</strong> Removing TRT-LLM to simplify the stack is a significant architecture decision that would degrade performance for the workloads currently served by TRT-LLM. The script breaking on TRT-LLM updates is a maintenance problem with the bespoke script, not a reason to remove the higher-performance inference engine from the stack.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> Option C is correct. The three signals - 64 GPU fleet, manual P:D ratio management, and bespoke script breaking on engine updates - all clearly justify framework adoption. The fleet is all-NVIDIA with both vLLM and TRT-LLM, which makes Dynamo the stronger fit: it natively supports both engines, and its Planner directly solves the manual P:D problem. The migration approach - shadow mode alongside the existing script for 2–4 weeks before cutover - is the standard path for replacing production-critical bespoke orchestration. Option A perpetuates the compounding maintenance problem. Option B is valid for K8s teams but misses the TRT-LLM differentiation. Option D removes the higher-performance inference engine to solve a routing script problem, which is the wrong layer to fix.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>

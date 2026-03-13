@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 5.5 - The Full Modern Stack</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #0D1B2A 0%, #1B263B 40%, #415A77 80%, #778DA9 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:220px; height:220px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:140px; height:140px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+  .home-icon { position:absolute; top:16px; right:16px; font-size:24px; color:white; text-decoration:none; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #CFD8DC; background:white; font-family:Arial,sans-serif; font-size:13px; text-decoration:none; display:block; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #4A148C; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout        { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-dark   { background:#E8EAF6; border-left:4px solid #0D1B2A; }
+  .callout-blue   { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-green  { background:#E8F5E9; border-left:4px solid #2E7D32; }
+  .callout-orange { background:#FFF3E0; border-left:4px solid #E65100; }
+  .callout-purple { background:#F3E8FD; border-left:4px solid #4A148C; }
+  .callout-teal   { background:#E0F7FA; border-left:4px solid #006064; }
+  .callout-slate  { background:#ECEFF1; border-left:4px solid #546E7A; }
+  .callout-red    { background:#FBE9E7; border-left:4px solid #BF360C; }
+
+  /* ── Full modern stack diagram ── */
+  .fullstack-wrap { background:#0A0E1A; border-radius:14px; padding:24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .fs-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.35; margin-bottom:20px; }
+  .fs-layer-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; opacity:0.28; margin:14px 0 6px 0; }
+  .fs-row   { display:flex; gap:7px; margin-bottom:6px; align-items:stretch; }
+  .fs-box   { border-radius:8px; padding:11px 13px; flex:1; }
+  .fs-box-title { font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+  .fs-box-body  { font-size:10.5px; opacity:0.6; line-height:1.6; }
+  .fs-box-mod   { font-size:9.5px; opacity:0.35; margin-top:5px; font-family:monospace; }
+  .fs-arrow { text-align:center; font-size:12px; opacity:0.2; margin:3px 0; }
+  .fs-badge { display:inline-block; font-size:9px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; padding:2px 7px; border-radius:10px; margin-top:4px; font-family:Arial,sans-serif; }
+  .fs-note  { font-size:11px; opacity:0.28; margin-top:14px; line-height:1.7; }
+
+  /* ── Request walkthrough ── */
+  .walk-wrap { background:#E8EAF6; border:1px solid #9FA8DA; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .walk-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#1B263B; margin-bottom:14px; font-weight:bold; }
+  .walk-stepper { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .walk-dot { width:32px; height:32px; border-radius:50%; border:none; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; cursor:pointer; transition:all 0.15s; color:white; }
+  .walk-dot.active { transform:scale(1.15); box-shadow:0 0 0 3px white; }
+  .walk-panel { background:white; border-radius:10px; padding:16px 18px; }
+  .walk-step-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#888; margin-bottom:5px; font-family:Arial,sans-serif; }
+  .walk-step-title  { font-size:16px; font-weight:bold; margin-bottom:8px; }
+  .walk-step-layer  { display:inline-block; font-size:11px; font-family:Arial,sans-serif; font-weight:bold; letter-spacing:1px; text-transform:uppercase; padding:3px 12px; border-radius:20px; color:white; margin-bottom:10px; }
+  .walk-step-body   { font-size:14px; line-height:1.8; color:#333; margin-bottom:10px; }
+  .walk-step-module { font-size:12.5px; font-family:Arial,sans-serif; padding:8px 12px; border-radius:6px; color:#555; }
+  .walk-nav { display:flex; justify-content:space-between; align-items:center; margin-top:14px; }
+  .walk-nav-btn { border:1px solid #9FA8DA; background:white; border-radius:6px; padding:7px 16px; font-size:13px; font-family:Arial,sans-serif; cursor:pointer; color:#333; font-weight:bold; }
+  .walk-nav-btn:disabled { opacity:0.3; cursor:default; }
+  .walk-counter { font-size:12px; font-family:Arial,sans-serif; color:#888; }
+
+  /* ── Concepts across modules ── */
+  .concept-map { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0; }
+  .cmap-card   { background:white; border-radius:10px; padding:14px 16px; border:1px solid #E8E8E8; border-top:3px solid; }
+  .cmap-layer  { font-size:10px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; font-family:Arial,sans-serif; margin-bottom:5px; }
+  .cmap-title  { font-size:14px; font-weight:bold; margin-bottom:5px; }
+  .cmap-body   { font-size:13px; color:#555; line-height:1.6; }
+  .cmap-mods   { font-size:11px; color:#888; font-family:Arial,sans-serif; margin-top:7px; }
+
+  /* ── What's next panel ── */
+  .next-panel { background:white; border-radius:12px; padding:22px 24px; margin:16px 0; border:1px solid #E8E8E8; }
+  .next-panel-title { font-size:14px; font-weight:bold; margin-bottom:14px; font-family:Arial,sans-serif; color:#333; }
+  .horizon-item { display:flex; gap:14px; margin-bottom:14px; align-items:flex-start; }
+  .horizon-dot  { width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:6px; }
+  .horizon-body { flex:1; }
+  .horizon-title { font-size:14px; font-weight:bold; margin-bottom:3px; }
+  .horizon-desc  { font-size:13.5px; line-height:1.7; color:#444; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:linear-gradient(135deg,#0D1B2A,#415A77); border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.09); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#B0BEC5; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.88; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#1B263B; background:#E8EAF6; }
+  .quiz-option.selected { border-color:#1B263B; background:#E8EAF6; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#1B263B; }
+  .quiz-btn  { margin-top:14px; background:#1B263B; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#415A77; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .completion-banner { margin-top:24px; margin-bottom:32px; border-radius:14px; padding:28px; background:linear-gradient(135deg,#0D1B2A,#1B263B,#415A77); color:white; text-align:center; }
+  .completion-banner h2 { font-size:24px; margin-bottom:10px; }
+  .completion-banner p  { opacity:0.8; font-size:15px; line-height:1.7; max-width:560px; margin:0 auto; }
+
+  @media (max-width:620px) {
+    .cheat-grid,.concept-map { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+    .walk-stepper { gap:4px; }
+    .walk-dot { width:26px; height:26px; font-size:11px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <a href="index.html" class="home-icon" title="Home">🏠</a>
+    <div class="header-eyebrow">PART 5 · MODULE 5.5 · COURSE FINALE</div>
+    <h1>The Full Modern Stack - Every Concept in Its Place</h1>
+    <p>A complete end-to-end walkthrough of a production LLM serving architecture incorporating everything from Parts 1–5: transformer internals, inference optimisations, the NVIDIA stack, and frontier fleet coordination frameworks.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module5_4.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">5.4 - Dynamo vs LLM-d vs DIY</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>Module 4.5 assembled a complete production stack from Parts 1–4. This module does the same for the full course - incorporating the fleet coordination layer from Part 5 and showing exactly where Dynamo, llm-d, NIXL, the KV-aware router, and the disaggregated P/D workers sit relative to the concepts from every earlier module.</p>
+    <p>The scenario: a financial services company running a production agentic RAG system. 10,000 daily active users. Each session involves a long shared regulatory document corpus (8,000-token system prompt), multi-turn dialogue, and occasional long-form report generation. The fleet is 32x NVIDIA H100 SXM GPUs across 4 nodes, all-NVIDIA, running Kubernetes. This is a real architecture with real trade-offs - not a textbook optimum. Walk through it step by step, and then walk through the live request that tests everything.</p>
+  </div>
+
+  <!-- Section 1: The full stack diagram -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1B263B;">1</span>
+        The Full Modern Stack - All Layers, All Concepts
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>Every layer of this architecture traces back to a concept from Parts 1–5. The module reference is shown for each component so you can locate the deeper explanation if needed.</p>
+
+      <div class="fullstack-wrap">
+        <div class="fs-title">Full modern LLM serving stack - financial services agentic RAG</div>
+
+        <div class="fs-layer-label">Layer 0 - Clients</div>
+        <div class="fs-row">
+          <div class="fs-box" style="background:rgba(55,71,79,0.3);">
+            <div class="fs-box-title" style="color:#B0BEC5;">Web app / API clients</div>
+            <div class="fs-box-body">10k daily users. OpenAI-compatible POST /v1/chat/completions. Streaming responses. Auth and rate limiting at API gateway.</div>
+            <div class="fs-box-mod">No module - standard API infrastructure</div>
+          </div>
+        </div>
+        <div class="fs-arrow">&#9660;</div>
+
+        <div class="fs-layer-label">Layer 1 - Fleet coordination (Dynamo, because all-NVIDIA + TRT-LLM in stack)</div>
+        <div class="fs-row">
+          <div class="fs-box" style="background:rgba(27,20,100,0.45);">
+            <div class="fs-box-title" style="color:#90CAF9;">Dynamo Frontend (Rust)</div>
+            <div class="fs-box-body">OpenAI-compatible HTTP. Streaming. High throughput entry point.</div>
+            <div class="fs-box-mod">Module 5.2</div>
+          </div>
+          <div class="fs-box" style="background:rgba(10,61,98,0.5);">
+            <div class="fs-box-title" style="color:#80DEEA;">KV Cache-aware Router</div>
+            <div class="fs-box-body">Hashes 8K system prompt prefix. Routes to worker with cache hit. Fleet-wide registry. Fixes routing blindness.</div>
+            <div class="fs-box-mod">Modules 5.1, 5.2</div>
+            <span class="fs-badge" style="background:rgba(46,125,50,0.5);">Restores ~90% cache hit rate</span>
+          </div>
+          <div class="fs-box" style="background:rgba(0,96,100,0.4);">
+            <div class="fs-box-title" style="color:#80CBC4;">Planner / Scheduler</div>
+            <div class="fs-box-body">Dynamic P:D ratio. Monitors queue depth. Adjusts Prefill/Decode worker allocation in real time. Solves static ratio problem.</div>
+            <div class="fs-box-mod">Modules 5.1, 5.2</div>
+          </div>
+        </div>
+        <div class="fs-arrow">&#9660; Requests classified: Prefill workers OR Decode workers &#9660;</div>
+
+        <div class="fs-layer-label">Layer 2 - Disaggregated inference engine (TRT-LLM, chosen for fixed model + 60+ concurrent + tight TPOT SLA)</div>
+        <div class="fs-row">
+          <div class="fs-box" style="background:rgba(191,54,12,0.35);">
+            <div class="fs-box-title" style="color:#FFAB91;">Prefill workers (×8 GPUs, TP=2)</div>
+            <div class="fs-box-body">TRT-LLM FP8 compiled engine. Process 8K-token input in parallel. Build KV Cache. Compute-bound. Lower TP than Decode (less AllReduce overhead).</div>
+            <div class="fs-box-mod">Modules 1.7, 3.1, 3.3, 3.4, 4.3</div>
+          </div>
+          <div class="fs-box" style="background:rgba(21,101,192,0.35);">
+            <div class="fs-box-title" style="color:#90CAF9;">Decode workers (×24 GPUs, TP=4)</div>
+            <div class="fs-box-body">TRT-LLM FP8. Generate tokens. Memory-bandwidth-bound. Higher TP pools more HBM bandwidth. Receive KV blocks via NIXL.</div>
+            <div class="fs-box-mod">Modules 1.7, 2.5, 3.3, 3.4, 4.3</div>
+          </div>
+        </div>
+        <div class="fs-arrow">&#9660; NIXL zero-copy KV block transfer (~2ms NVLink, same rack) &#9660;</div>
+
+        <div class="fs-layer-label">Layer 3 - Inference optimisations (all operating simultaneously inside TRT-LLM)</div>
+        <div class="fs-row">
+          <div class="fs-box" style="background:rgba(0,96,100,0.25);">
+            <div class="fs-box-title" style="color:#80DEEA;">Flash Attention</div>
+            <div class="fs-box-body">Tiled SRAM attention. Enables 8K context. Fast Prefill. No intermediate matrix OOM.</div>
+            <div class="fs-box-mod">Modules 1.3, 3.1</div>
+          </div>
+          <div class="fs-box" style="background:rgba(46,125,50,0.25);">
+            <div class="fs-box-title" style="color:#A5D6A7;">Paged Attention + Prefix Cache</div>
+            <div class="fs-box-body">No KV fragmentation. 8K regulatory corpus cached once per worker. Copy-on-write for multi-turn. TTFT &lt;100ms for cached sessions.</div>
+            <div class="fs-box-mod">Modules 2.2, 3.2</div>
+            <span class="fs-badge" style="background:rgba(46,125,50,0.5);">8K prefix: 1.8s → &lt;100ms TTFT</span>
+          </div>
+          <div class="fs-box" style="background:rgba(123,31,162,0.25);">
+            <div class="fs-box-title" style="color:#CE93D8;">FP8 Quantisation</div>
+            <div class="fs-box-body">Weights + KV Cache. Halves memory read per Decode step. TPOT floor ~10ms. 2x more concurrent sessions in same GPU HBM.</div>
+            <div class="fs-box-mod">Modules 2.5, 3.3, 4.1</div>
+          </div>
+          <div class="fs-box" style="background:rgba(230,81,0,0.25);">
+            <div class="fs-box-title" style="color:#FFAB91;">Continuous Batching</div>
+            <div class="fs-box-body">In-flight batching. GPU never idles between requests. Slots freed immediately on completion. Key throughput driver.</div>
+            <div class="fs-box-mod">Modules 2.3, 4.2, 4.3</div>
+          </div>
+        </div>
+
+        <div class="fs-layer-label">Layer 4 - KV Cache tiered memory (for long multi-turn sessions)</div>
+        <div class="fs-row">
+          <div class="fs-box" style="background:rgba(21,101,192,0.2);">
+            <div class="fs-box-title" style="color:#90CAF9;">GPU HBM (hot)</div>
+            <div class="fs-box-body">Active session KV blocks. 80GB per GPU. ~3 TB/s bandwidth.</div>
+            <div class="fs-box-mod">Modules 2.5, 4.1</div>
+          </div>
+          <div class="fs-box" style="background:rgba(55,71,79,0.2);">
+            <div class="fs-box-title" style="color:#B0BEC5;">CPU RAM (warm)</div>
+            <div class="fs-box-body">Recent turns, idle sessions. ~1 TB capacity per node. NIXL async restore.</div>
+            <div class="fs-box-mod">Module 5.2</div>
+          </div>
+          <div class="fs-box" style="background:rgba(27,94,32,0.2);">
+            <div class="fs-box-title" style="color:#A5D6A7;">NVMe (cold)</div>
+            <div class="fs-box-body">Historical long sessions. Unlimited capacity. Restored on demand for returning users.</div>
+            <div class="fs-box-mod">Module 5.2</div>
+          </div>
+        </div>
+        <div class="fs-arrow">&#9660;</div>
+
+        <div class="fs-layer-label">Layer 5 - Hardware</div>
+        <div class="fs-row">
+          <div class="fs-box" style="background:rgba(27,94,32,0.25);">
+            <div class="fs-box-title" style="color:#A5D6A7;">32x H100 SXM - 4 nodes × 8 GPUs, NVLink 4.0 within nodes, InfiniBand HDR between nodes</div>
+            <div class="fs-box-body">HBM3: 80GB per GPU. 3,350 GB/s bandwidth. NVLink: 900 GB/s for intra-node TP AllReduce and NIXL. InfiniBand: ~25 GB/s for cross-node NIXL (P→D handoff when P and D are on different nodes).</div>
+            <div class="fs-box-mod">Module 4.1</div>
+          </div>
+        </div>
+        <div class="fs-note">Every component in this stack maps to a concept from Modules 1.1–5.4. The module references show where to find the deeper explanation for each layer. A customer conversation about any symptom in this system can be mapped to a specific layer and a specific module.</div>
+      </div>
+
+      <div class="callout callout-dark">
+        <strong>Why this specific configuration:</strong> 8 Prefill GPUs (TP=2, 4 pairs) handle the compute-bound 8K-token Prefill. 24 Decode GPUs (TP=4, 6 groups) handle the memory-bandwidth-bound generation of multi-turn responses. The 1:3 P:D ratio reflects the workload: 8K Prefill is heavy, but multi-turn responses at 200–500 tokens are moderate length. The Planner dynamically adjusts this ratio as traffic shifts between short queries and long report generation sessions.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Live request walkthrough -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#415A77;">2</span>
+        A Live Request - From API Call to Final Token, Every Layer Touched
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>A user sends: <em>"Summarise the key capital requirements from the Basel III section of the document and flag any conflicts with our Q4 positions."</em> This is turn 7 of an ongoing session. The 8,000-token regulatory corpus is the shared system prompt. Their conversation history from turns 1–6 is another 3,200 tokens. Walk through every step:</p>
+
+      <div class="walk-wrap">
+        <div class="walk-title">Live request walkthrough - click a step or navigate through</div>
+        <div class="walk-stepper" id="walkStepper"></div>
+        <div class="walk-panel" id="walkPanel"></div>
+        <div class="walk-nav">
+          <button class="walk-nav-btn" id="walkPrev" onclick="walkNav(-1)">&#8592; Prev</button>
+          <span class="walk-counter" id="walkCounter"></span>
+          <button class="walk-nav-btn" id="walkNext" onclick="walkNav(1)">Next &#8594;</button>
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>The two metrics that matter to this user:</strong> TTFT - how long before the first word appears (target: under 150ms for a returning session with prefix cache hit). TPOT - how fast subsequent tokens arrive (target: under 25ms per token, meaning ~500-token response streams in ~12 seconds). Both are met by this architecture because: prefix caching handles TTFT, FP8 Decode on TP=4 H100 handles TPOT, and disaggregation ensures neither phase blocks the other.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Concept map across the full course -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#1565C0;">3</span>
+        Full-Course Concept Map - Where Everything Lives
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>Every concept from the course lives in a specific layer of the production stack. This map is your reference for placing any customer symptom or question into its correct architectural context:</p>
+
+      <div class="concept-map">
+        <div class="cmap-card" style="border-top-color:#0D1B2A;">
+          <div class="cmap-layer" style="color:#0D1B2A;">Parts 1–2 - Model internals</div>
+          <div class="cmap-title">Transformer, attention, KV Cache, Prefill vs Decode</div>
+          <div class="cmap-body">These concepts explain why the rest of the stack exists. Prefill is compute-bound because of parallel attention across all tokens. Decode is memory-bandwidth-bound because weights are read in full every step. The KV Cache is why memory fills under load. Flash Attention is why long context is possible.</div>
+          <div class="cmap-mods">Modules 1.1–2.5</div>
+        </div>
+        <div class="cmap-card" style="border-top-color:#2E7D32;">
+          <div class="cmap-layer" style="color:#2E7D32;">Part 3 - Optimisations</div>
+          <div class="cmap-title">Flash Attention, Paged Attention, quantisation, parallelism, speculative decoding, disaggregation</div>
+          <div class="cmap-body">Each optimisation targets a specific bottleneck. Flash Attention targets Prefill memory. Paged Attention targets KV fragmentation. Quantisation targets Decode bandwidth. TP targets model memory. Disaggregation targets coupled phase contention. Speculative decoding targets serial token generation at low concurrency.</div>
+          <div class="cmap-mods">Modules 3.1–3.6</div>
+        </div>
+        <div class="cmap-card" style="border-top-color:#BF360C;">
+          <div class="cmap-layer" style="color:#BF360C;">Part 4 - The single-node stack</div>
+          <div class="cmap-title">NVIDIA hardware, vLLM, TRT-LLM, Triton</div>
+          <div class="cmap-body">Hardware sets the physical limits (HBM bandwidth floor for TPOT, Tensor Core throughput for Prefill, NVLink for TP viability). vLLM and TRT-LLM implement the optimisations. Triton serves them. The per-instance stack is complete and production-grade for most deployments.</div>
+          <div class="cmap-mods">Modules 4.1–4.5</div>
+        </div>
+        <div class="cmap-card" style="border-top-color:#4A148C;">
+          <div class="cmap-layer" style="color:#4A148C;">Part 5 - Fleet coordination</div>
+          <div class="cmap-title">Routing blindness, KV locality, disaggregation coordination, Dynamo, llm-d</div>
+          <div class="cmap-body">Fleet coordination addresses the limits of the per-instance stack at scale. Routing blindness negates prefix caching. KV locality creates multi-turn inefficiency. Static disaggregation breaks under dynamic traffic. Dynamo and llm-d provide the coordination layer that fixes these problems without replacing the per-instance stack.</div>
+          <div class="cmap-mods">Modules 5.1–5.5</div>
+        </div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>The through-line across all five parts:</strong> Every concept in this course is ultimately about one of three physical constraints: GPU memory capacity (KV Cache, quantisation, offloading), GPU memory bandwidth (TPOT floor, Decode optimisation, TP for more bandwidth), or GPU compute throughput (Prefill speed, Flash Attention, Tensor Cores). Parts 1–2 explain why these constraints exist at the model level. Parts 3–4 show how to push against them per-instance. Part 5 shows how to operate efficiently when pushing against them across a fleet.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: The SME diagnostic framework -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">4</span>
+        The SME Diagnostic Framework - From Symptom to Root Cause in 60 Seconds
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>An SME's most visible skill in a customer conversation is the ability to hear a symptom and immediately name the layer, component, and concept responsible - and the fix. Here is the complete diagnostic map across every concept in the course:</p>
+
+      <div style="display:flex; flex-direction:column; gap:8px; margin:16px 0; font-family:Arial,sans-serif;">
+
+        <div style="background:#FFEBEE; border-radius:10px; padding:14px 18px; border-left:4px solid #C62828;">
+          <div style="font-size:13px; font-weight:bold; color:#C62828; margin-bottom:5px;">SYMPTOM: High TTFT that varies widely (200ms to 3s for similar prompts)</div>
+          <div style="font-size:13px; color:#333; line-height:1.7;"><strong>Single node:</strong> Head-of-line blocking - long Prefill jobs monopolising the GPU (Module 3.6). Fix: chunked Prefill, disaggregation.<br><strong>Multi-node fleet:</strong> Routing blindness destroying prefix cache hit rates (Module 5.1). Fix: Dynamo KV router or llm-d EPP.</div>
+        </div>
+
+        <div style="background:#FFF3E0; border-radius:10px; padding:14px 18px; border-left:4px solid #E65100;">
+          <div style="font-size:13px; font-weight:bold; color:#E65100; margin-bottom:5px;">SYMPTOM: Slow TPOT at all concurrency levels, even single user</div>
+          <div style="font-size:13px; color:#333; line-height:1.7;"><strong>Root cause:</strong> HBM bandwidth floor (Module 2.5). TPOT minimum = model bytes / HBM bandwidth. No scheduler or software change can go below this.<br><strong>Fix:</strong> Quantise weights (FP16→FP8 halves bytes read), upgrade GPU (A100→H100→H200→B200), or use smaller model.</div>
+        </div>
+
+        <div style="background:#FBE9E7; border-radius:10px; padding:14px 18px; border-left:4px solid #BF360C;">
+          <div style="font-size:13px; font-weight:bold; color:#BF360C; margin-bottom:5px;">SYMPTOM: OOM errors under load despite apparent free GPU memory</div>
+          <div style="font-size:13px; color:#333; line-height:1.7;"><strong>Root cause:</strong> KV Cache pool exhaustion - not raw GPU memory (Module 2.5). vLLM pre-allocates 90% of HBM; KV Cache fills the pool before raw memory appears full.<br><strong>Fix:</strong> Prefix caching, lower --max-model-len, lower --max-num-seqs, KV Cache FP8 quantisation (doubles pool capacity).</div>
+        </div>
+
+        <div style="background:#E8F5E9; border-radius:10px; padding:14px 18px; border-left:4px solid #2E7D32;">
+          <div style="font-size:13px; font-weight:bold; color:#2E7D32; margin-bottom:5px;">SYMPTOM: TPOT spikes mid-stream - tokens arrive then pause for 200–500ms</div>
+          <div style="font-size:13px; color:#333; line-height:1.7;"><strong>Root cause (1):</strong> KV Cache preemption - scheduler swapping sequences to CPU RAM as HBM fills (Module 2.5).<br><strong>Root cause (2):</strong> Long Prefill interrupting Decode on coupled server (Module 3.6).<br><strong>Fix (1):</strong> KV Cache quantisation, lower concurrency limits. <strong>Fix (2):</strong> Disaggregation.</div>
+        </div>
+
+        <div style="background:#E3F2FD; border-radius:10px; padding:14px 18px; border-left:4px solid #1565C0;">
+          <div style="font-size:13px; font-weight:bold; color:#1565C0; margin-bottom:5px;">SYMPTOM: Adding GPUs with TP didn't improve (or worsened) latency</div>
+          <div style="font-size:13px; color:#333; line-height:1.7;"><strong>Root cause:</strong> PCIe interconnect - AllReduce bandwidth (64 GB/s) slower than compute benefit (Module 3.4, 4.1).<br><strong>Fix:</strong> Verify NVLink presence. TP is net-positive only on NVLink-connected GPUs. On PCIe, use Pipeline Parallelism for model-doesn't-fit scenario; use Data Parallelism for throughput scaling.</div>
+        </div>
+
+        <div style="background:#F3E8FD; border-radius:10px; padding:14px 18px; border-left:4px solid #4A148C;">
+          <div style="font-size:13px; font-weight:bold; color:#4A148C; margin-bottom:5px;">SYMPTOM: Prefix caching enabled but TTFT still high across fleet</div>
+          <div style="font-size:13px; color:#333; line-height:1.7;"><strong>Root cause:</strong> Routing blindness at fleet scale - round-robin routing sends requests to replicas without the cache (Module 5.1).<br><strong>Fix:</strong> Dynamo KV-aware router or llm-d EPP. This is the single highest-ROI fix for multi-replica deployments with shared system prompts.</div>
+        </div>
+
+        <div style="background:#ECEFF1; border-radius:10px; padding:14px 18px; border-left:4px solid #546E7A;">
+          <div style="font-size:13px; font-weight:bold; color:#546E7A; margin-bottom:5px;">SYMPTOM: Triton 503 at startup / Kubernetes infinite restart loop</div>
+          <div style="font-size:13px; color:#333; line-height:1.7;"><strong>Root cause:</strong> Kubernetes readiness probe on wrong endpoint or initialDelaySeconds too short (Module 4.4).<br><strong>Fix:</strong> Use /v2/health/ready. Set initialDelaySeconds ≥ 120s for large models. Set failureThreshold ≥ 5 on liveness probe.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: What's on the horizon -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">5</span>
+        What's on the Horizon - Concepts That Will Matter Next
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>The field is moving quickly. These are the developments most likely to surface in customer conversations over the next 6–12 months - and a brief framing for each so you can engage when they come up:</p>
+
+      <div class="next-panel">
+        <div class="next-panel-title">Emerging concepts to watch</div>
+
+        <div class="horizon-item">
+          <div class="horizon-dot" style="background:#1B1464;"></div>
+          <div class="horizon-body">
+            <div class="horizon-title">Disaggregation at rack scale - GB200 NVL72 as a single disaggregated unit</div>
+            <div class="horizon-desc">The GB200 NVL72 connects 72 GPUs with NVLink in a single rack, enabling ~900 GB/s inter-GPU bandwidth across all 72 devices. This makes the entire rack a single disaggregated inference unit where Prefill and Decode workers communicate at NVLink speed - not InfiniBand speed. Dynamo's 30x number is specifically this configuration. As customers upgrade to Blackwell, this architecture becomes the reference design for high-throughput reasoning model serving.</div>
+          </div>
+        </div>
+
+        <div class="horizon-item">
+          <div class="horizon-dot" style="background:#BF360C;"></div>
+          <div class="horizon-body">
+            <div class="horizon-title">Speculative decoding at scale - draft models co-located in disaggregated fleets</div>
+            <div class="horizon-desc">Module 3.5 noted that speculative decoding degrades at high concurrency. Disaggregated serving opens a new configuration: dedicated small draft model workers (Llama 3 8B) that generate candidate tokens in parallel for multiple Decode workers simultaneously, reducing the overhead that makes speculative decoding impractical at high concurrency. Early results suggest this can recover the TPOT benefits of speculative decoding without the concurrency penalty.</div>
+          </div>
+        </div>
+
+        <div class="horizon-item">
+          <div class="horizon-dot" style="background:#2E7D32;"></div>
+          <div class="horizon-body">
+            <div class="horizon-title">Multi-modal inference - KV Cache for vision tokens adds a new memory dimension</div>
+            <div class="horizon-desc">Vision-language models (GPT-4V successors, Llama 3.2 Vision, Gemma 3) process image tokens alongside text tokens. Image tokens can be 1,000–4,000 tokens per image. KV Cache for vision tokens follows the same principles as text, but with different caching opportunities: a document with multiple images across a long session may have vision KV blocks that are even more expensive to recompute than text. Prefix caching for shared image tokens is an active area of development in both vLLM and Dynamo.</div>
+          </div>
+        </div>
+
+        <div class="horizon-item">
+          <div class="horizon-dot" style="background:#7B1FA2;"></div>
+          <div class="horizon-body">
+            <div class="horizon-title">LoRA adapter serving at fleet scale - routing by adapter, not just by model</div>
+            <div class="horizon-desc">Many enterprise customers fine-tune base models with LoRA adapters for specific use cases. Serving dozens of LoRA adapters on a shared base model requires the routing layer to be adapter-aware - routing requests to workers that already have the right adapter loaded, to avoid expensive adapter swaps. llm-d v0.5 added cache-aware LoRA routing (Module 5.3). This is likely to become a standard feature of both frameworks as LoRA-based customisation becomes the dominant enterprise deployment pattern.</div>
+          </div>
+        </div>
+
+        <div class="horizon-item">
+          <div class="horizon-dot" style="background:#006064;"></div>
+          <div class="horizon-body">
+            <div class="horizon-title">Heterogeneous memory pooling - CPU RAM and NVMe as first-class KV Cache tiers</div>
+            <div class="horizon-desc">Both Dynamo and llm-d now support KV Cache offload to CPU RAM and NVMe. The next frontier is making this tiering transparent and automatic at fleet scale - a distributed KV Cache that spans all GPUs in a fleet plus their CPU RAM, managed by a single block manager. This turns the entire fleet's aggregate CPU memory (potentially petabytes across hundreds of nodes) into a KV Cache tier that dramatically reduces recomputation for long-context and multi-session workloads.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: The five-part integration -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#546E7A;">6</span>
+        The Course in Five Sentences
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>If you had to explain everything in this course to someone who had 90 seconds to listen, these five sentences carry the essential knowledge:</p>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin:16px 0;">
+        <div style="background:#E8EAF6; border-radius:10px; padding:16px 20px; border-left:4px solid #1B263B;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#1B263B; margin-bottom:4px;">Part 1–2</div>
+          <div style="font-size:15px; line-height:1.8; color:#1a1a1a;">LLMs have two fundamentally different phases: Prefill (compute-bound, parallel, fast) and Decode (memory-bandwidth-bound, serial, slow) - and the KV Cache is the memory structure that connects them, growing with every token generated.</div>
+        </div>
+        <div style="background:#E8F5E9; border-radius:10px; padding:16px 20px; border-left:4px solid #2E7D32;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; margin-bottom:4px;">Part 3</div>
+          <div style="font-size:15px; line-height:1.8; color:#1a1a1a;">Flash Attention makes long-context Prefill possible, Paged Attention and prefix caching make KV Cache memory efficient and reusable, quantisation lowers the TPOT floor and fits larger models, and disaggregation lets each phase run at its independent optimum.</div>
+        </div>
+        <div style="background:#FBE9E7; border-radius:10px; padding:16px 20px; border-left:4px solid #BF360C;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#BF360C; margin-bottom:4px;">Part 4</div>
+          <div style="font-size:15px; line-height:1.8; color:#1a1a1a;">GPU HBM bandwidth sets the hard TPOT floor, NVLink determines whether tensor parallelism helps or hurts, vLLM is the right default for most teams, TRT-LLM earns its complexity at fixed-model high-scale deployments, and Triton serves both.</div>
+        </div>
+        <div style="background:#F3E8FD; border-radius:10px; padding:16px 20px; border-left:4px solid #4A148C;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#4A148C; margin-bottom:4px;">Part 5</div>
+          <div style="font-size:15px; line-height:1.8; color:#1a1a1a;">At fleet scale, round-robin routing destroys prefix caching, static disaggregation configuration breaks under dynamic traffic, and heterogeneous workloads need specialised pools - Dynamo and llm-d solve these problems as a fleet coordination layer above the existing inference engines.</div>
+        </div>
+        <div style="background:#E0F7FA; border-radius:10px; padding:16px 20px; border-left:4px solid #006064;">
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#006064; margin-bottom:4px;">The meta-principle</div>
+          <div style="font-size:15px; line-height:1.8; color:#1a1a1a;">Every performance problem in LLM inference is ultimately about one of three physical constraints - GPU memory capacity, GPU memory bandwidth, or GPU compute throughput - and the right fix is always the one that directly addresses the constraint that is actually binding.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 5.5 - FULL COURSE INTEGRATION CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">The three physical constraints</div>
+        <div class="cheat-def">All LLM inference problems trace to: GPU memory capacity (OOM, KV size), GPU memory bandwidth (TPOT floor, Decode speed), or GPU compute throughput (Prefill speed, Tensor Core utilisation).</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Prefill vs Decode in one line</div>
+        <div class="cheat-def">Prefill: all tokens in parallel, compute-bound, determines TTFT. Decode: one token per step, memory-bandwidth-bound, determines TPOT. Everything else follows from this.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Optimisation decision order</div>
+        <div class="cheat-def">1. Right GPU. 2. Right inference engine. 3. Quantisation. 4. Parallelism. 5. Prefix caching. 6. Disaggregation. 7. Fleet coordination (KV router, Planner). Never skip ahead.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Prefix caching caveat</div>
+        <div class="cheat-def">Prefix caching only works if requests reach the replica with the cached blocks. At multi-replica scale, a KV-aware router (Dynamo or llm-d EPP) is a prerequisite for prefix caching to deliver its benefits.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Fleet coordination threshold</div>
+        <div class="cheat-def">~16+ GPUs, multiple replicas, shared system prompts, disaggregated P/D, or mixed workload types. Below this, the Part 4 stack is right. Above this, Dynamo or llm-d.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Dynamo vs llm-d in one line</div>
+        <div class="cheat-def">Dynamo: NVIDIA-optimised, centralised Planner, TRT-LLM native, maximum Blackwell performance. llm-d: Kubernetes-native, hardware-agnostic, sidecar disaggregation, vLLM primary. Converging via NIXL and shared KV components.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">The fastest single improvement</div>
+        <div class="cheat-def">For multi-replica deployments with shared system prompts: deploy a KV-aware router. Restores prefix cache hit rates from ~5% to 85–95%. Often delivers 3–4x TTFT improvement with no other changes.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">The meta-answer when uncertain</div>
+        <div class="cheat-def">Identify the binding constraint (memory capacity / bandwidth / compute), confirm the scale (single node vs fleet), match to the layer that owns it, recommend the minimum change that addresses that specific constraint.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Final Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">FINAL INTEGRATION CHECK - PARTS 1–5</div>
+    <div class="quiz-q">A fintech customer runs Llama 3 70B on 16x H100 SXM GPUs across 2 nodes (8 GPUs each, TP=4 per node, 2 replicas). They use vLLM with FP8 quantisation, Triton in front, and round-robin routing. Their workload is a customer-facing chatbot with a 2,500-token shared compliance prompt. At peak (500 concurrent users), they see: TTFT averaging 1.9s, TPOT degrading to 38ms (SLA: 25ms), and OOM errors on roughly 5% of sessions. Their engineering team has strong Kubernetes expertise and wants to fix all three symptoms. Rank the interventions in the correct order and identify which frameworks, if any, they need.</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Deploy Dynamo immediately for all three problems - it handles routing, TPOT via disaggregation, and KV Cache pressure via the Block Manager in one integrated system.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        The three symptoms have three distinct root causes requiring fixes in order. (1) TTFT 1.9s: routing blindness - round-robin across 2 replicas means the 2,500-token compliance prefix cache hit rate is ~50% at best. Fix: deploy llm-d EPP scheduler (Kubernetes-native, fits team expertise) to restore cache hit rates to 90%+, dropping TTFT to under 150ms. (2) TPOT 38ms: the FP8 TPOT floor for 70B on H100 is ~10ms, so 38ms indicates KV Cache pressure forcing preemption - sequences are being swapped as HBM fills at 500 concurrent users. Fix: enable FP8 KV Cache quantisation to double pool capacity; also lower --max-num-seqs to prevent overcommitting. (3) OOM errors: same root cause as (2) - KV Cache pool exhaustion, not raw GPU memory. The FP8 KV Cache fix resolves both (2) and (3) together. No disaggregation is needed yet: with only 2 replicas and the above fixes, headroom is restored. Revisit disaggregation if TPOT SLA is still missed after KV Cache quantisation.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        Upgrade to INT4 quantisation to further reduce model size and fix TPOT, then add more replicas to fix TTFT variance.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        Migrate from vLLM to TRT-LLM - the compiled engine will deliver better TPOT and handle higher concurrency before OOM errors occur.
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <div class="completion-banner">
+    <h2>Course Complete</h2>
+    <p>You have covered the complete LLM inference optimisation stack - from transformer internals through production serving through fleet-scale coordination. Every concept from tokenisation to NIXL, from Flash Attention to Dynamo's Planner, from KV Cache fragmentation to llm-d's EPP scheduler. The concepts compound: understanding why Decode is memory-bandwidth-bound (Part 1) is what makes FP8 quantisation intuitive (Part 3), which is what makes the TPOT floor calculation meaningful (Part 4), which is what makes the fleet coordination problem concrete (Part 5). You now have the full picture.</p>
+  </div>
+
+</div>
+<script>
+  var sColors={1:'#1B263B',2:'#415A77',3:'#1565C0',4:'#2E7D32',5:'#E65100',6:'#546E7A'};
+  var sBgs   ={1:'#E8EAF6',2:'#ECEFF1',3:'#E3F2FD',4:'#E8F5E9',5:'#FFF3E0',6:'#ECEFF1'};
+  function toggle(n){
+    var b=document.getElementById('bdy'+n),c=document.getElementById('chv'+n),h=document.getElementById('hdr'+n);
+    var open=b.classList.contains('open');
+    b.classList.toggle('open'); c.classList.toggle('open');
+    h.style.borderLeftColor=open?'#E8E8E8':sColors[n];
+    h.style.background=open?'white':sBgs[n];
+  }
+
+  /* ── Request walkthrough ── */
+  var walkSteps=[
+    {label:'Step 1 of 12',title:'Request arrives at Dynamo Frontend',layer:'Dynamo Frontend - Layer 1',layerColor:'#1B1464',
+     body:'Turn 7 of an ongoing session. The user\'s message (87 tokens) arrives via HTTP POST to Dynamo\'s Rust-based OpenAI-compatible frontend. The request includes the full session context: system prompt reference (8,000-token regulatory corpus) plus the 3,200-token conversation history from turns 1–6. Dynamo\'s frontend validates the request, begins tracking TTFT clock.',
+     module:'The TTFT clock starts here. Module 5.2'},
+    {label:'Step 2 of 12',title:'KV Cache-aware Router evaluates workers',layer:'Dynamo KV Router - Layer 1',layerColor:'#0a3d62',
+     body:'The router hashes the 8,000-token system prompt prefix. It queries the fleet-wide cache registry: 3 of 8 Prefill workers currently have this prefix cached. It scores the candidates: worker P2 has the prefix cached and is at 55% load (P1 is cached but at 88% load, P4 has no cache). Router selects P2.',
+     module:'Fixes routing blindness (Module 5.1). Without this, ~37.5% chance of cache hit vs 100% now. Module 5.2'},
+    {label:'Step 3 of 12',title:'Planner confirms P/D routing',layer:'Dynamo Planner - Layer 1',layerColor:'#006064',
+     body:'Planner checks current queue depths: Prefill pool has 3 requests queued (normal), Decode pool has 47 requests in flight (near target). P:D ratio is currently 8:24 GPUs (1:3). No rebalancing needed. The request is confirmed for Prefill worker P2, with Decode worker D7 pre-assigned based on D7\'s current load (lowest at 58%).',
+     module:'Dynamic P:D management. Module 5.2'},
+    {label:'Step 4 of 12',title:'Prefill - turn 7 tokens processed (cache hit)',layer:'TRT-LLM Engine - Prefill Worker P2',layerColor:'#BF360C',
+     body:'P2 has the 8,000-token corpus prefix cached. It also has turns 1–6 (3,200 tokens) cached from the earlier turns of this session via copy-on-write Paged Attention blocks. Only the new 87-token user message needs Prefill computation. Flash Attention processes these 87 tokens against the full 11,287-token context in SRAM tiles. First token ready in ~85ms.',
+     module:'Prefix caching (Module 3.2), Flash Attention (Module 3.1), FP8 execution (Module 3.3). TTFT = 85ms vs ~2.1s cold.'},
+    {label:'Step 5 of 12',title:'KV blocks for new tokens appended',layer:'Paged Attention Block Manager',layerColor:'#2E7D32',
+     body:'The 87 new tokens from the user\'s message generate new K and V vectors (87 × 80 layers × KV heads × head_dim × FP8 bytes). Paged Attention allocates new blocks for these tokens only - no pre-allocation for the full 11,374-token context. New blocks are appended to the existing block sequence. Block table updated.',
+     module:'Paged Attention on-demand allocation. Module 3.2'},
+    {label:'Step 6 of 12',title:'KV blocks transferred to Decode worker D7 via NIXL',layer:'NIXL Transfer - Layer 1',layerColor:'#E65100',
+     body:'The freshly built KV blocks (87 new tokens + pointers to existing cached blocks) are transferred from P2 to D7 via NIXL. Because P2 and D7 are on the same physical node (both on Node 2), the transfer uses NVLink at ~900 GB/s. Transfer time: ~2ms for the new token blocks. The existing cached blocks (8,000 + 3,200 tokens) are already on D7 from the previous turns - no re-transfer needed.',
+     module:'NIXL zero-copy transfer (Module 5.2). Cross-turn KV reuse is why tiered KV management matters.'},
+    {label:'Step 7 of 12',title:'Decode begins - first token streamed',layer:'TRT-LLM Engine - Decode Worker D7',layerColor:'#1565C0',
+     body:'D7 receives the KV blocks and begins Decode. TP=4 means the 70B FP8 model weights (35GB) are split across 4 H100s - 8.75GB per GPU. Each decode step reads 35GB total across 4 GPUs at 3,350 GB/s × 4 = ~13,400 GB/s effective bandwidth. TPOT floor: 35GB / 13,400 GB/s ≈ 2.6ms per token. First token streamed to client. Total TTFT: 85ms (Prefill) + 2ms (NIXL) + 2.6ms (first Decode) ≈ 90ms.',
+     module:'TPOT floor calculation (Module 2.5), TP bandwidth pooling (Module 3.4), FP8 (Module 3.3).'},
+    {label:'Step 8 of 12',title:'Decode loop - 420 tokens generated',layer:'TRT-LLM Engine - Decode Worker D7',layerColor:'#1565C0',
+     body:'The response (a Basel III capital requirements summary with Q4 position conflicts flagged) requires 420 tokens. Each step: read 35GB FP8 weights across TP=4, compute attention against 11,374-token context using cached KV blocks, sample next token. 420 steps × ~3ms per step ≈ 1.26 seconds total generation time. Tokens stream to the client in real time.',
+     module:'Continuous batching runs 46 other sessions in the same Decode iterations. Module 2.3'},
+    {label:'Step 9 of 12',title:'Multi-turn KV blocks appended throughout',layer:'Paged Attention Block Manager',layerColor:'#2E7D32',
+     body:'As D7 generates the 420 output tokens, each token\'s K and V vectors are appended to the Paged Attention block sequence. At the end of turn 7, this session now has 11,374 + 420 = 11,794 tokens of KV Cache history. Paged Attention has allocated exactly the blocks needed - no over-reservation, no fragmentation.',
+     module:'Paged Attention dynamic allocation (Module 3.2). Copy-on-write preserves shared blocks if beam search is used.'},
+    {label:'Step 10 of 12',title:'Session KV blocks tiered for next turn',layer:'Dynamo KV Block Manager',layerColor:'#4A148C',
+     body:'After D7 completes, the session KV blocks (11,794 tokens) are evaluated for tiering. The session is active - the user will likely send turn 8 soon. The Planner marks these blocks as "warm" and retains them in D7\'s GPU HBM for now. If the user is idle for >30 seconds, the blocks migrate to CPU RAM. If the session ends, blocks eventually move to NVMe for long-term retention.',
+     module:'KV Cache tiered memory (Module 5.2). Critical for multi-turn agents with long sessions.'},
+    {label:'Step 11 of 12',title:'Response streamed, TPOT recorded',layer:'Dynamo Frontend + Metrics',layerColor:'#1B1464',
+     body:'The 420-token response has been streamed to the client. Dynamo records the request metrics: TTFT 90ms (well under 150ms target), TPOT 3ms average (well under 25ms SLA), total request time 1.35 seconds. These metrics flow to Prometheus via Dynamo\'s metrics endpoint. The nv_trt_llm_kv_cache_utilization metric shows 71% - healthy, below the 90% danger threshold.',
+     module:'Observability (Modules 4.4, 5.2). KV utilisation monitoring prevents OOM before it happens.'},
+    {label:'Step 12 of 12',title:'GPU slots freed, next requests dispatched',layer:'TRT-LLM In-Flight Batching',layerColor:'#2E7D32',
+     body:'D7\'s slot for this session is not freed - the session is ongoing. But the 420 completed decode steps freed throughput capacity that was immediately used by other requests in the continuous batching pool. While this session was running, D7 was also simultaneously running decode steps for 45 other sessions. The GPU never idled between any of them.',
+     module:'Continuous / in-flight batching (Module 2.3). The key to GPU utilisation at scale.'}
+  ];
+  var walkCurrent=0;
+  var stepColors=['#1B1464','#0a3d62','#006064','#BF360C','#2E7D32','#E65100','#1565C0','#1565C0','#2E7D32','#4A148C','#1B1464','#2E7D32'];
+
+  function renderWalk(){
+    var s=walkSteps[walkCurrent];
+    document.getElementById('walkPanel').innerHTML=
+      '<div class="walk-step-label">'+s.label+'</div>'+
+      '<div class="walk-step-title">'+s.title+'</div>'+
+      '<span class="walk-step-layer" style="background:'+s.layerColor+';">'+s.layer+'</span>'+
+      '<div class="walk-step-body">'+s.body+'</div>'+
+      '<div class="walk-step-module" style="background:#F5F5F5;">'+s.module+'</div>';
+    document.getElementById('walkPrev').disabled=walkCurrent===0;
+    document.getElementById('walkNext').disabled=walkCurrent===walkSteps.length-1;
+    document.getElementById('walkCounter').textContent=(walkCurrent+1)+' / '+walkSteps.length;
+    document.querySelectorAll('.walk-dot').forEach(function(d,i){d.classList.toggle('active',i===walkCurrent);});
+  }
+  function walkNav(dir){ walkCurrent=Math.max(0,Math.min(walkSteps.length-1,walkCurrent+dir)); renderWalk(); }
+  function walkJump(i){ walkCurrent=i; renderWalk(); }
+
+  var stepperHtml='';
+  walkSteps.forEach(function(_,i){
+    stepperHtml+='<button class="walk-dot" style="background:'+stepColors[i]+';" onclick="walkJump('+i+')">'+(i+1)+'</button>';
+  });
+  document.getElementById('walkStepper').innerHTML=stepperHtml;
+  renderWalk();
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    document.querySelectorAll('.quiz-option').forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      var l=['a','b','c','d'][i];
+      if(l==='b')o.classList.add('correct');
+      else if(l===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct - this integrates concepts from every part of the course.</strong><br><br><strong>TTFT 1.9s - routing blindness (Modules 5.1, 5.2):</strong> With only 2 replicas and round-robin routing, each request has a 50% chance of landing on the replica without the 2,500-token compliance prefix cached. Cold Prefill for a 2,500-token prompt on 70B FP8 takes roughly 250–400ms. But the 1.9s average suggests something worse - the cold replica is also queued behind other requests, adding wait time. The fix is the KV-aware router: llm-d\'s EPP scheduler fits perfectly given the team\'s Kubernetes expertise and the vLLM backend, and llm-d Well-lit Path 1 is the exact scenario it is designed for. Expected result: TTFT drops to under 200ms.<br><br><strong>TPOT 38ms - KV Cache preemption (Module 2.5, 3.3):</strong> The FP8 TPOT floor for 70B on H100 is (70GB × 0.5 for FP8) / 3,350 GB/s = ~10ms. Observing 38ms means the system is not at the bandwidth floor - it is being artificially slowed. At 500 concurrent users with long sessions, KV Cache blocks are being swapped to CPU RAM (preemption) as HBM pressure rises. Preemption stalls the Decode pipeline while blocks are moved. FP8 KV Cache quantisation doubles the number of concurrent sessions that fit in the pool - at the same 80GB GPU HBM, FP8 KV Cache stores twice as many token blocks as FP16. This directly reduces preemption frequency and restores TPOT toward the floor. Additionally, reducing --max-num-seqs prevents overcommitting slots beyond what the KV pool can support.<br><br><strong>OOM errors - same root cause (Module 2.5):</strong> vLLM\'s pre-allocated pool (90% of HBM = ~72GB per replica) fills completely when KV Cache pressure exceeds it. The OOM is not from model weights - those are fixed. It is from the KV Cache pool being exhausted. FP8 KV Cache quantisation resolves this by doubling pool capacity, and reduced --max-num-seqs prevents scheduling more sessions than the pool can hold simultaneously.<br><br><strong>Why not disaggregation yet:</strong> With only 2 replicas (16 GPUs total), the headroom from fixing KV Cache (symptom 2 and 3) and routing (symptom 1) should bring all three metrics within SLA. Disaggregation adds operational complexity and is justified when the simpler fixes are exhausted. The Planner would add value if P:D ratio imbalance were contributing to TTFT, but with 2 replicas that are not disaggregated, the primary issue is the ones already identified.<br><br><strong>Why not A (Dynamo immediately):</strong> Dynamo is valid for an all-NVIDIA fleet, but it introduces new operational complexity and replaces Triton. The team\'s Kubernetes expertise makes llm-d a lower-risk first step. Deploying a full fleet coordination framework before fixing the more fundamental KV Cache and routing issues is also the wrong order - optimisations must be applied bottom-up.<br><br><strong>Why not C (INT4):</strong> INT4 would further reduce TPOT floor but at significant quality risk. FP8 already halves the memory reads vs FP16. The TPOT problem is preemption-driven, not at the FP8 floor - INT4 would not fix preemption. Adding more replicas with round-robin does not fix routing blindness.<br><br><strong>Why not D (TRT-LLM):</strong> The three symptoms are not caused by vLLM limitations - they are caused by routing configuration, KV Cache quantisation choice, and concurrency settings. TRT-LLM would not fix any of these root causes, and migrating inference engines is a weeks-long effort that delays the actual fixes.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The three symptoms have three distinct root causes, two of which share the same fix. TTFT 1.9s is routing blindness - round-robin across 2 replicas means ~50% cache misses on the 2,500-token compliance prefix. Fix: llm-d EPP scheduler (fits the team\'s Kubernetes expertise, vLLM backend, Well-lit Path 1). TPOT 38ms is KV Cache preemption - the FP8 floor is ~10ms, so 38ms indicates sequences are being swapped as HBM fills. Fix: FP8 KV Cache quantisation doubles pool capacity, plus lower --max-num-seqs. OOM errors are the same root cause as TPOT degradation - the KV pool exhausting completely. FP8 KV Cache quantisation resolves both. Disaggregation is not needed yet - fixing routing and KV Cache pressure should restore all three metrics within SLA, and disaggregation adds complexity that should only be added when simpler fixes are exhausted.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>

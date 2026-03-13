@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 5.3 - LLM-d</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #FAFAF8; color: #1a1a1a; padding: 24px 16px; }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #BF360C 0%, #D84315 40%, #E64A19 100%);
+    border-radius: 16px; padding: 32px 36px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after  { content:''; position:absolute; bottom:-30px; left:40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
+  .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .tags { display:flex; gap:12px; flex-wrap:wrap; }
+  .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+  .home-icon { position:absolute; top:16px; right:16px; font-size:24px; color:white; text-decoration:none; }
+
+  .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #CFD8DC; background:white; font-family:Arial,sans-serif; font-size:13px; text-decoration:none; display:block; }
+  .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
+  .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
+  .nav-btn.prev { text-align:left;  border-left:4px solid #1B1464; }
+  .nav-btn.next { text-align:right; border-right:4px solid #BF360C; }
+
+  .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
+  .intro-card p { margin-bottom:12px; }
+  .intro-card p:last-child { margin-bottom:0; color:#555; }
+
+  .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
+  .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
+  .section-header:hover { background:#FAFAFA; }
+  .section-title  { display:flex; align-items:center; gap:12px; font-weight:bold; font-size:15.5px; }
+  .section-num    { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:white; flex-shrink:0; }
+  .chevron { font-size:16px; color:#999; transition:transform 0.2s; display:inline-block; }
+  .chevron.open { transform:rotate(180deg); }
+  .section-body { padding:20px 24px; border-top:1px solid #F0F0F0; display:none; }
+  .section-body.open { display:block; }
+  .section-body p { line-height:1.8; font-size:15px; margin-bottom:14px; }
+
+  .callout          { border-radius:0 8px 8px 0; padding:14px 18px; font-size:14.5px; line-height:1.7; margin-top:8px; margin-bottom:8px; }
+  .callout-red      { background:#FBE9E7; border-left:4px solid #BF360C; }
+  .callout-blue     { background:#E3F2FD; border-left:4px solid #1565C0; }
+  .callout-green    { background:#E8F5E9; border-left:4px solid #2E7D32; }
+  .callout-orange   { background:#FFF3E0; border-left:4px solid #E65100; }
+  .callout-purple   { background:#F3E8FD; border-left:4px solid #7B1FA2; }
+  .callout-teal     { background:#E0F7FA; border-left:4px solid #006064; }
+  .callout-slate    { background:#ECEFF1; border-left:4px solid #546E7A; }
+  .callout-navy     { background:#E8EAF6; border-left:4px solid #1B1464; }
+
+  /* ── Architecture diagram ── */
+  .arch-wrap { background:#0F172A; border-radius:14px; padding:24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .arch-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:20px; }
+  .arch-layer-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; opacity:0.3; margin:14px 0 6px 0; }
+  .arch-row   { display:flex; gap:8px; margin-bottom:6px; align-items:stretch; }
+  .arch-box   { border-radius:8px; padding:12px 14px; flex:1; }
+  .arch-box-title { font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+  .arch-box-body  { font-size:11px; opacity:0.6; line-height:1.6; }
+  .arch-arrow { text-align:center; font-size:13px; opacity:0.25; margin:3px 0; }
+  .arch-hl    { border:2px solid rgba(255,130,80,0.35); border-radius:10px; padding:4px; }
+  .arch-note  { font-size:11px; opacity:0.35; margin-top:14px; line-height:1.7; }
+
+  /* ── IGW explorer ── */
+  .igw-wrap { background:#FBE9E7; border:1px solid #FFAB91; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .igw-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#BF360C; margin-bottom:14px; font-weight:bold; }
+  .igw-tabs  { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .igw-tab   { border:none; border-radius:6px; padding:7px 14px; font-size:12.5px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; transition:opacity 0.15s; opacity:0.65; }
+  .igw-tab.active { opacity:1; }
+  .igw-panel { background:white; border-radius:10px; padding:18px 20px; }
+  .igw-panel-name  { font-size:17px; font-weight:bold; margin-bottom:6px; }
+  .igw-panel-sub   { font-size:12px; font-family:Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; color:#888; margin-bottom:12px; }
+  .igw-panel-body  { font-size:14px; line-height:1.8; color:#333; margin-bottom:10px; }
+  .igw-panel-tags  { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .igw-panel-tag   { font-size:12px; font-family:Arial,sans-serif; border-radius:20px; padding:3px 12px; color:white; }
+
+  /* ── Scheduler sim ── */
+  .sched-wrap { background:#E8F5E9; border:1px solid #A5D6A7; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
+  .sched-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#1B5E20; margin-bottom:14px; font-weight:bold; }
+  .sched-controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .sched-btn { border:none; border-radius:6px; padding:7px 14px; font-size:13px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; }
+  .sched-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+  .sched-pod  { border-radius:8px; padding:12px 10px; text-align:center; transition:all 0.25s; }
+  .sched-pod-label { font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:1px; color:white; margin-bottom:5px; opacity:0.85; }
+  .sched-pod-stats { font-size:11px; color:white; opacity:0.65; line-height:1.7; }
+  .sched-pod-score { font-size:14px; font-weight:bold; color:white; margin-top:5px; }
+  .sched-note { background:white; border-radius:8px; padding:12px 14px; font-size:13px; color:#333; line-height:1.7; }
+
+  /* ── Well-lit paths ── */
+  .path-item { background:white; border-radius:12px; padding:18px 20px; margin-bottom:10px; border-left:4px solid; }
+  .path-num  { font-size:11px; font-weight:bold; font-family:Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+  .path-title { font-size:15px; font-weight:bold; margin-bottom:6px; }
+  .path-body  { font-size:13.5px; line-height:1.8; color:#333; }
+  .path-perf  { font-size:12.5px; font-family:Arial,sans-serif; font-weight:bold; margin-top:8px; }
+
+  /* ── Release timeline ── */
+  .timeline { display:flex; flex-direction:column; gap:0; margin:16px 0; position:relative; }
+  .timeline::before { content:''; position:absolute; left:16px; top:0; bottom:0; width:2px; background:#E0E0E0; }
+  .tl-item { display:flex; gap:16px; padding:12px 0; position:relative; }
+  .tl-dot  { width:32px; height:32px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; font-family:Arial,sans-serif; color:white; z-index:1; }
+  .tl-body { flex:1; padding-top:4px; }
+  .tl-date  { font-size:11px; font-family:Arial,sans-serif; color:#888; margin-bottom:3px; letter-spacing:1px; text-transform:uppercase; }
+  .tl-title { font-size:14px; font-weight:bold; margin-bottom:4px; }
+  .tl-desc  { font-size:13px; line-height:1.7; color:#444; }
+
+  /* comparison table */
+  .cmp-table { width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:13px; margin:16px 0; }
+  .cmp-table th { background:#BF360C; color:white; padding:10px 12px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .cmp-table td { padding:11px 12px; border-bottom:1px solid #F0F0F0; vertical-align:top; line-height:1.6; }
+  .cmp-table tr:nth-child(even) td { background:#FFF8F6; }
+  .cmp-table tr:last-child td { border-bottom:none; }
+  .cmp-dim { font-weight:bold; color:#BF360C; }
+
+  /* Key items */
+  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
+  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
+  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
+  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
+
+  /* Cheat sheet */
+  .cheatsheet { background:linear-gradient(135deg,#BF360C,#6A1B9A); border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
+  .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
+  .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cheat-item { background:rgba(255,255,255,0.09); border-radius:8px; padding:12px 14px; border-left:3px solid rgba(255,255,255,0.3); }
+  .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#FFCCBC; font-family:Arial,sans-serif; }
+  .cheat-def  { font-size:13px; opacity:0.88; line-height:1.5; }
+
+  /* Quiz */
+  .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
+  .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+  .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
+  .quiz-option:hover    { border-color:#BF360C; background:#FBE9E7; }
+  .quiz-option.selected { border-color:#BF360C; background:#FBE9E7; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .opt-letter { font-weight:bold; color:#999; min-width:20px; }
+  .opt-letter.active { color:#BF360C; }
+  .quiz-btn  { margin-top:14px; background:#BF360C; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
+  .quiz-btn:hover { background:#D84315; }
+  .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
+
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:12px; padding:18px 22px; background:linear-gradient(135deg,#FBE9E7,#E8EAF6); border:1px solid #FFAB91; display:flex; justify-content:space-between; align-items:center; text-decoration:none; }
+  .next-label  { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#777; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .next-title  { font-weight:bold; font-size:15px; color:#1a1a1a; }
+  .next-sub    { font-size:13px; color:#666; margin-top:2px; font-family:Arial,sans-serif; }
+  .next-arrow  { font-size:28px; color:#555; }
+
+  @media (max-width:620px) {
+    .cheat-grid { grid-template-columns:1fr; }
+    .header { padding:24px 20px; }
+    .nav-bar { flex-direction:column; }
+    .sched-grid { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <a href="index.html" class="home-icon" title="Home">🏠</a>
+    <div class="header-eyebrow">PART 5 · MODULE 5.3</div>
+    <h1>LLM-d - Kubernetes-Native Distributed LLM Inference</h1>
+    <p>Where Dynamo is NVIDIA's fleet coordination layer, llm-d is the open-source, hardware-agnostic, Kubernetes-native answer - built by Red Hat, Google, and IBM on top of vLLM and the Kubernetes Inference Gateway.</p>
+    <div class="tags">
+      <span class="tag">~10 min read</span>
+      <span class="tag">Concept level</span>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <a href="module5_2.html" class="nav-btn prev">
+      <div class="nav-dir">&#8592; Previous</div>
+      <div class="nav-title">5.2 - NVIDIA Dynamo</div>
+    </a>
+    <a href="module5_4.html" class="nav-btn next">
+      <div class="nav-dir">Next &#8594;</div>
+      <div class="nav-title">5.4 - Dynamo vs LLM-d vs DIY</div>
+    </a>
+  </div>
+
+  <div class="intro-card">
+    <p>llm-d was announced in mid-2025 by Red Hat, Google, and IBM as an open-source project for high-performance distributed LLM inference on Kubernetes. It targets the same fleet-scale problems Dynamo addresses - routing blindness, disaggregation coordination, heterogeneous workloads - but from a fundamentally different starting point: instead of building a new coordination layer on top of existing tools, llm-d extends the tools and standards that Kubernetes teams already operate.</p>
+    <p>The key distinction is the deployment model. Dynamo introduces a new fleet-level process (the Dynamo router, planner, and NIXL transfer system) that teams adopt alongside their existing stack. llm-d routes through Kubernetes-native infrastructure - the Inference Gateway, Envoy proxy, and standard Kubernetes APIs - so teams already running LLM workloads on Kubernetes can adopt it incrementally without introducing a new system to operate. By February 2026, llm-d had reached v0.5, validating roughly 3,100 tokens/sec per B200 Decode GPU and order-of-magnitude TTFT reduction versus round-robin baseline.</p>
+  </div>
+
+  <!-- Section 1: Philosophy -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
+      <div class="section-title">
+        <span class="section-num" style="background:#BF360C;">1</span>
+        The Core Philosophy - Extend Kubernetes, Don't Replace It
+      </div>
+      <span class="chevron" id="chv1">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy1">
+      <p>The name "well-lit paths" is llm-d's own description of its goal: tested, benchmarked deployment patterns that teams can follow without building bespoke infrastructure. The phrase reflects the project's philosophy - rather than providing a novel system that teams must learn and operate, llm-d provides Kubernetes-native implementations of proven inference optimisations that plug into tooling teams already know.</p>
+
+      <p>This matters practically. A team running LLM workloads on Kubernetes already has Helm charts, Prometheus monitoring, Grafana dashboards, Kubernetes RBAC, and standard GitOps workflows. Adding Dynamo means adopting a new process with its own operational surface. Adding llm-d means installing a Helm chart that deploys the Inference Gateway scheduler and a configured vLLM deployment - things that look and behave like the Kubernetes resources the team already manages.</p>
+
+      <div class="arch-wrap">
+        <div class="arch-title">llm-d architecture - extending Kubernetes with inference-aware components</div>
+
+        <div class="arch-layer-label">External traffic</div>
+        <div class="arch-row">
+          <div class="arch-box" style="background:rgba(55,71,79,0.35);">
+            <div class="arch-box-title" style="color:#B0BEC5;">Client application</div>
+            <div class="arch-box-body">OpenAI-compatible HTTP. No changes to client code - llm-d presents the same API surface as a standard vLLM deployment.</div>
+          </div>
+        </div>
+        <div class="arch-arrow">&#9660;</div>
+
+        <div class="arch-layer-label">NEW - Kubernetes Inference Gateway (IGW) - the llm-d control plane</div>
+        <div class="arch-row arch-hl">
+          <div class="arch-box" style="background:rgba(191,54,12,0.4);">
+            <div class="arch-box-title" style="color:#FFAB91;">Gateway API Inference Extension</div>
+            <div class="arch-box-body">Official Kubernetes project. Extends standard Gateway API with LLM-specific concepts: InferenceModel, InferencePool, serving priority. Control plane for the load balancer.</div>
+          </div>
+          <div class="arch-box" style="background:rgba(216,67,21,0.4);">
+            <div class="arch-box-title" style="color:#FFAB91;">Inference Scheduler (EPP)</div>
+            <div class="arch-box-body">Endpoint Picker Protocol. Built on Envoy proxy. Implements KV Cache-aware, P/D-aware, SLA-aware, and load-aware scoring and filtering. Customisable scorers.</div>
+          </div>
+          <div class="arch-box" style="background:rgba(230,74,25,0.4);">
+            <div class="arch-box-title" style="color:#FFAB91;">Disaggregated Serving Sidecar</div>
+            <div class="arch-box-body">Sidecar container alongside each Decode worker. Coordinates Prefill-to-Decode handoff. Routes Prefill requests via x-prefiller-host-port HTTP header.</div>
+          </div>
+        </div>
+        <div class="arch-arrow">&#9660;</div>
+
+        <div class="arch-layer-label">Inference engine layer (vLLM with llm-d optimisations)</div>
+        <div class="arch-row">
+          <div class="arch-box" style="background:rgba(123,31,162,0.25);">
+            <div class="arch-box-title" style="color:#CE93D8;">Prefill pods (vLLM)</div>
+            <div class="arch-box-body">Standard vLLM pods with llm-d KV connector patches. Handle compute-bound Prefill. Report cache state to scheduler via metrics.</div>
+          </div>
+          <div class="arch-box" style="background:rgba(21,101,192,0.25);">
+            <div class="arch-box-title" style="color:#90CAF9;">Decode pods (vLLM)</div>
+            <div class="arch-box-body">Standard vLLM pods. Handle memory-bandwidth-bound Decode. Each has the disaggregated serving sidecar. Receive KV blocks via NIXL or vLLM KV connector.</div>
+          </div>
+          <div class="arch-box" style="background:rgba(46,125,50,0.25);">
+            <div class="arch-box-title" style="color:#A5D6A7;">Standard vLLM replicas</div>
+            <div class="arch-box-body">Undisaggregated replicas for simpler workloads. Managed by Kubernetes Deployment. Autoscaled via HPA or llm-d workload autoscaler.</div>
+          </div>
+        </div>
+        <div class="arch-arrow">&#9660;</div>
+
+        <div class="arch-layer-label">Kubernetes infrastructure (unchanged)</div>
+        <div class="arch-row">
+          <div class="arch-box" style="background:rgba(27,94,32,0.2);">
+            <div class="arch-box-title" style="color:#A5D6A7;">Kubernetes - pods, deployments, HPA, Prometheus, Grafana, RBAC, Helm</div>
+            <div class="arch-box-body">All standard Kubernetes tooling continues to work. llm-d adds inference-specific resources (InferenceModel, InferencePool CRDs) but does not replace existing infrastructure.</div>
+          </div>
+        </div>
+        <div class="arch-note">llm-d adds the shaded components above the existing Kubernetes and vLLM layer. Everything outside the shaded region is standard Kubernetes infrastructure the team already operates. This is the "extend Kubernetes, don't replace it" principle in practice.</div>
+      </div>
+
+      <div class="callout callout-red">
+        <strong>The foundational choice that shapes everything:</strong> llm-d chose vLLM as its primary inference engine, not TRT-LLM. This is a deliberate stance for hardware-agnosticism - vLLM supports NVIDIA A100+, AMD MI250, Google TPU v5e+, and Intel GPU Max without recompilation. TRT-LLM produces GPU-specific compiled binaries. For teams running mixed-accelerator infrastructure or non-NVIDIA hardware, llm-d is the only viable option among these two frameworks.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: IGW and the Inference Scheduler -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#D84315;">2</span>
+        The Inference Gateway and Scheduler - Smart Routing the Kubernetes Way
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>The Kubernetes Inference Gateway (IGW) is an official Kubernetes project - not just a llm-d component - that extends the standard Gateway API with LLM-specific concepts. llm-d builds on IGW rather than building its own routing layer, which means teams get a routing system that integrates with standard Kubernetes tooling and will be maintained upstream as the Kubernetes ecosystem evolves.</p>
+
+      <div class="igw-wrap">
+        <div class="igw-title">IGW and scheduler components - click to explore</div>
+        <div class="igw-tabs">
+          <button class="igw-tab active" style="background:#BF360C; color:white;" onclick="showIGW('igw')">Inference Gateway</button>
+          <button class="igw-tab" style="background:#1565C0; color:white;" onclick="showIGW('epp')">Endpoint Picker (EPP)</button>
+          <button class="igw-tab" style="background:#2E7D32; color:white;" onclick="showIGW('envoy')">Envoy proxy</button>
+          <button class="igw-tab" style="background:#7B1FA2; color:white;" onclick="showIGW('crds')">CRDs</button>
+        </div>
+        <div class="igw-panel" id="igwPanel"></div>
+      </div>
+
+      <p>The Endpoint Picker Protocol (EPP) is where llm-d's intelligence lives. Rather than reimplementing a full-featured load balancer, the EPP plugs into Envoy's extensible balancing policies as a custom filter. This design means llm-d inherits Envoy's production-grade flow control, connection management, circuit breaking, and observability - while adding the LLM-specific scoring logic on top.</p>
+
+      <div class="callout callout-blue">
+        <strong>Why Envoy matters here:</strong> Envoy is the data plane used by Istio, Linkerd-compatible configurations, and virtually every service mesh deployed in production Kubernetes environments. By building on Envoy, llm-d integrates naturally with existing service mesh deployments. A team already running Istio gets llm-d's inference-aware routing without replacing any networking infrastructure - they add the EPP filter to the existing Envoy configuration.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Scheduler scoring -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">3</span>
+        How the Inference Scheduler Scores Pods - Filter, Score, Select
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>When a request arrives at the Inference Gateway, the scheduler does not pick a pod arbitrarily. It runs a two-phase process: first it filters out pods that cannot serve the request (overloaded, wrong model version, unhealthy), then it scores the remaining candidates across multiple dimensions and routes to the highest-scoring pod.</p>
+
+      <div class="sched-wrap">
+        <div class="sched-title">Scheduler scoring - select a request type to see how pods are evaluated</div>
+        <div class="sched-controls">
+          <button class="sched-btn" style="background:#BF360C; color:white;" onclick="showSched('rag')">RAG request (6K-token prefix)</button>
+          <button class="sched-btn" style="background:#1565C0; color:white;" onclick="showSched('chat')">Short chat request</button>
+          <button class="sched-btn" style="background:#7B1FA2; color:white;" onclick="showSched('lora')">LoRA adapter request</button>
+        </div>
+        <div class="sched-grid" id="schedGrid"></div>
+        <div class="sched-note" id="schedNote"></div>
+      </div>
+
+      <p>Teams can customise the scoring algorithm by implementing their own scorer plugins - the EPP defines an interface that any scorer must implement, allowing organisations to add business-specific logic (e.g., prefer pods in a specific availability zone, penalise pods with recent errors) without forking the core scheduler. The default scorers cover KV Cache-awareness, load balancing, SLA priority, and P/D disaggregation routing.</p>
+
+      <div class="callout callout-green">
+        <strong>Predicted latency balancing (v0.3+):</strong> From the v0.3 release onwards, llm-d's scheduler gained a predicted latency scorer - rather than just looking at current load and cache state, it estimates the expected completion time for each pod given the request's input/output length and the pod's current queue. Benchmarks showed up to 3x P90 latency improvement in long-Prefill workloads compared to load-only balancing. This is a meaningful capability gap versus simple round-robin: a pod with low connection count but a large in-flight long-context request may have worse predicted latency than a busier pod with shorter requests.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Disaggregation in llm-d -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">4</span>
+        Disaggregated Serving in llm-d - The Sidecar Model
+      </div>
+      <span class="chevron" id="chv4">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy4">
+      <p>llm-d implements disaggregation differently from Dynamo. Rather than a dedicated fleet-level coordination process, disaggregation in llm-d is implemented via a sidecar container that runs alongside each Decode pod. The scheduler decides which Prefill pod should handle the Prefill phase and encodes that decision in an HTTP header (<code>x-prefiller-host-port</code>). The sidecar on the Decode pod reads this header and proxies the Prefill portion to the designated Prefill worker, then coordinates the KV Cache transfer back.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
+        <div style="background:#0F172A; border-radius:10px; padding:16px; color:white; font-family:Arial,sans-serif;">
+          <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:0.4; margin-bottom:12px;">Dynamo disaggregation model</div>
+          <div style="font-size:13px; line-height:1.9; opacity:0.85;">
+            Dedicated Dynamo Planner process<br>
+            Monitors P/D pool health centrally<br>
+            Dynamic worker role reassignment<br>
+            NIXL: purpose-built transfer library<br>
+            Fleet-wide KV Block Manager<br>
+            New process to deploy and operate
+          </div>
+        </div>
+        <div style="background:#1B0A00; border-radius:10px; padding:16px; color:white; font-family:Arial,sans-serif;">
+          <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:0.4; margin-bottom:12px;">llm-d disaggregation model</div>
+          <div style="font-size:13px; line-height:1.9; opacity:0.85;">
+            Sidecar container per Decode pod<br>
+            Scheduler makes routing decision<br>
+            x-prefiller-host-port header routing<br>
+            vLLM KV connector or NIXL transfer<br>
+            Kubernetes-native pod lifecycle<br>
+            Fits existing Kubernetes operations
+          </div>
+        </div>
+      </div>
+
+      <p>For KV Cache transfer, llm-d supports both its own vLLM KV connector interface and NIXL - so teams using NVIDIA hardware get the same high-bandwidth RDMA transfer that Dynamo uses for its inter-node handoff. The v0.4 release extended disaggregation support beyond NVIDIA to Intel XPU and Google TPU, reflecting the hardware-agnostic design principle.</p>
+
+      <div class="callout callout-purple">
+        <strong>The sidecar trade-off:</strong> The sidecar model has a smaller operational surface than a dedicated fleet coordinator - there is no new central process to deploy, monitor, or scale. But it also means disaggregation decisions are made per-request by the scheduler rather than by a planner with persistent state about worker health and queue depth. For very dynamic traffic patterns where Prefill pool capacity needs to be rapidly rebalanced, Dynamo's Planner has more flexibility. For teams who prioritise Kubernetes-native operations over maximum dynamic flexibility, the sidecar model is simpler to manage.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Well-lit paths and releases -->
+  <div class="section-card">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
+      <div class="section-title">
+        <span class="section-num" style="background:#E65100;">5</span>
+        Well-Lit Paths - llm-d's Tested Deployment Blueprints
+      </div>
+      <span class="chevron" id="chv5">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy5">
+      <p>llm-d organises its capabilities around "well-lit paths" - pre-tested, benchmarked deployment configurations for specific goals. Each path comes with Helm charts, a deployment guide, and benchmark results so teams can validate expected performance before committing. As of v0.5 (February 2026), three primary well-lit paths are supported:</p>
+
+      <div class="path-item" style="border-left-color:#BF360C; background:#FBE9E7;">
+        <div class="path-num" style="color:#BF360C;">Well-lit path 1</div>
+        <div class="path-title">Intelligent Inference Scheduling</div>
+        <div class="path-body">Deploy vLLM with the IGW Inference Scheduler - KV Cache-aware, load-aware, SLA-aware routing - without any disaggregation. The simplest adoption path: existing vLLM deployments add the scheduler and immediately get smarter routing. Recommended starting point for any Kubernetes team with multiple vLLM replicas.</div>
+        <div class="path-perf" style="color:#BF360C;">Benchmark: up to 3x TTFT improvement vs round-robin; doubles throughput under SLO constraints.</div>
+      </div>
+
+      <div class="path-item" style="border-left-color:#7B1FA2; background:#F3E8FD;">
+        <div class="path-num" style="color:#7B1FA2;">Well-lit path 2</div>
+        <div class="path-title">Disaggregated Prefill / Decode</div>
+        <div class="path-body">Deploy dedicated Prefill and Decode vLLM pods with the disaggregated sidecar and IGW scheduler routing between them. Requires InfiniBand or sufficient network bandwidth for KV transfer. Validated on NVIDIA H100/H200, Intel XPU, and Google TPU. The v0.4 release showed 40% reduction in TPOT for DeepSeek V3.1 on H200 GPUs with this configuration.</div>
+        <div class="path-perf" style="color:#7B1FA2;">Benchmark: 40% TPOT reduction (DeepSeek V3.1, H200); order-of-magnitude TTFT reduction vs round-robin at scale.</div>
+      </div>
+
+      <div class="path-item" style="border-left-color:#1565C0; background:#E3F2FD;">
+        <div class="path-num" style="color:#1565C0;">Well-lit path 3</div>
+        <div class="path-title">MoE / Large Model Serving (Expert Parallelism)</div>
+        <div class="path-body">Native vLLM support for very large Mixture of Experts models (DeepSeek-R1, DeepSeek V3) with wide expert parallelism (EP) scaling. v0.3 validated 2,200 tokens/sec/GPU on H200. v0.5 reached 3,100 tokens/sec per B200 Decode GPU with wide-EP and 50,000 output tokens/sec on a 16x16 B200 Prefill/Decode topology.</div>
+        <div class="path-perf" style="color:#1565C0;">Benchmark: 3,100 tok/s per B200 Decode GPU; 50k output tok/s on 16x16 B200 topology (v0.5).</div>
+      </div>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot" style="background:#546E7A;">0.1</div>
+          <div class="tl-body">
+            <div class="tl-date">Jun 2025</div>
+            <div class="tl-title">Initial release - intelligent scheduling path</div>
+            <div class="tl-desc">IGW integration, EPP, KV Cache-aware routing. Red Hat, Google, IBM announcement.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:#BF360C;">0.2</div>
+          <div class="tl-body">
+            <div class="tl-date">Sep 2025</div>
+            <div class="tl-title">Disaggregation + MoE</div>
+            <div class="tl-desc">Disaggregated serving sidecar, DeepSeek-R1 vLLM support, improved deployment tooling.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:#D84315;">0.3</div>
+          <div class="tl-body">
+            <div class="tl-date">Oct 2025</div>
+            <div class="tl-title">Predicted latency balancing + IGW v1.0 GA</div>
+            <div class="tl-desc">P90 latency up to 3x better on long-Prefill workloads. Wide expert parallelism to 2,200 tok/s/GPU H200.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:#E64A19;">0.4</div>
+          <div class="tl-body">
+            <div class="tl-date">Dec 2025</div>
+            <div class="tl-title">Multi-accelerator disaggregation + KV offload</div>
+            <div class="tl-desc">Intel XPU + Google TPU disaggregation. 40% TPOT reduction DeepSeek V3.1 H200. CPU memory tiering for KV offload.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:#FF6D00;">0.5</div>
+          <div class="tl-body">
+            <div class="tl-date">Feb 2026</div>
+            <div class="tl-title">Scale-to-zero, HA, LoRA routing, UCCL transport</div>
+            <div class="tl-desc">Hierarchical KV offload, active-active HA, cache-aware LoRA routing, scale-to-zero autoscaling. 3,100 tok/s per B200 Decode GPU validated.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: llm-d vs Dynamo -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
+      <div class="section-title">
+        <span class="section-num" style="background:#546E7A;">6</span>
+        llm-d vs Dynamo - The Meaningful Differences
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>These two projects solve the same set of problems with different design philosophies. Neither is universally superior - the right choice depends on the customer's infrastructure context, hardware, and operational preferences.</p>
+
+      <div style="overflow-x:auto;">
+        <table class="cmp-table">
+          <thead>
+            <tr><th>Dimension</th><th>NVIDIA Dynamo</th><th>llm-d</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="cmp-dim">Primary backer</td>
+              <td>NVIDIA</td>
+              <td>Red Hat, Google, IBM - community governed</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Inference engine</td>
+              <td>TRT-LLM, vLLM, SGLang (backend-agnostic)</td>
+              <td>vLLM primary; SGLang roadmap</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Hardware support</td>
+              <td>NVIDIA-optimised (H100, H200, B200, GB200 NVL72)</td>
+              <td>NVIDIA A100+, AMD MI250, Google TPU v5e+, Intel GPU Max</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Deployment model</td>
+              <td>New fleet coordination processes (router, planner, NIXL)</td>
+              <td>Kubernetes-native: Helm charts, CRDs, extends existing K8s</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Routing layer</td>
+              <td>Dynamo's custom Rust-based KV-aware router</td>
+              <td>Kubernetes Inference Gateway + Envoy EPP</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Disaggregation coord.</td>
+              <td>Centralised Planner - dynamic P:D ratio, fleet-wide state</td>
+              <td>Sidecar per Decode pod - scheduler-driven, per-request</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">KV transfer</td>
+              <td>NIXL - purpose-built, GPUDirect RDMA</td>
+              <td>vLLM KV connector or NIXL (v0.5+); UCCL transport (v0.5)</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">KV Cache offload</td>
+              <td>NIXL tiered: GPU → CPU RAM → NVMe → object storage</td>
+              <td>Hierarchical KV offload (v0.5): GPU → CPU memory tiering</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Observability</td>
+              <td>Custom Dynamo metrics + TRT-LLM/vLLM metrics</td>
+              <td>Prometheus + Grafana dashboards out of the box; standard K8s</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Operational surface</td>
+              <td>Medium-high: new components, new ops patterns</td>
+              <td>Low: Helm charts, Kubernetes CRDs, existing tooling</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">Best peak performance</td>
+              <td>Higher ceiling on NVIDIA hardware, especially Blackwell</td>
+              <td>Competitive on H100/H200; hardware-agnostic ceiling</td>
+            </tr>
+            <tr>
+              <td class="cmp-dim">When to choose</td>
+              <td>NVIDIA-only fleet, TRT-LLM in stack, maximum performance, new deployment</td>
+              <td>Existing K8s infrastructure, mixed accelerators, vLLM-based, operational simplicity</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-slate">
+        <strong>They are converging, not diverging:</strong> llm-d v0.5 adopted NIXL for KV transfer, the same library Dynamo uses. Dynamo supports vLLM as a backend, the same engine llm-d uses. Both use Kubernetes for deployment. The meaningful differentiation is in the routing and coordination architecture - Dynamo's centralised Planner versus llm-d's Kubernetes-native scheduler - and in hardware scope. Teams should expect continued convergence on the transport and engine layers while the coordination models remain distinct.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Key ideas -->
+  <div class="section-card">
+    <div class="section-header" id="hdr7" onclick="toggle(7)">
+      <div class="section-title">
+        <span class="section-num" style="background:#37474F;">7</span>
+        4 Key Ideas to Carry into Module 5.4
+      </div>
+      <span class="chevron" id="chv7">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy7">
+      <div class="key-item">
+        <div class="key-num" style="color:#BF360C;">01</div>
+        <div>
+          <div class="key-title">llm-d is the Kubernetes-native path - it extends what teams already operate rather than introducing new systems to learn</div>
+          <div class="key-desc">Teams running LLM workloads on Kubernetes can adopt llm-d with a Helm chart. The routing layer is Kubernetes Inference Gateway, the data plane is Envoy, the inference engine is vLLM - all standard components. This is the primary differentiator from Dynamo, which introduces new processes with their own operational surface.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#D84315;">02</div>
+        <div>
+          <div class="key-title">Hardware-agnosticism is llm-d's structural advantage - the only choice for teams with AMD, Intel, or Google TPU alongside NVIDIA</div>
+          <div class="key-desc">Dynamo is NVIDIA-optimised. llm-d actively tests and supports NVIDIA A100+, AMD MI250, Google TPU v5e+, and Intel GPU Max. For any customer running multi-cloud or multi-vendor GPU infrastructure, llm-d is the only framework in this module that covers the full fleet without vendor lock-in.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#E65100;">03</div>
+        <div>
+          <div class="key-title">The well-lit paths approach means adoption is incremental - start with intelligent scheduling, add disaggregation when justified</div>
+          <div class="key-desc">Path 1 (inference scheduling alone) delivers 3x TTFT improvement and doubled throughput under SLO with minimal operational change. Paths 2 and 3 add disaggregation and MoE support for teams ready for more complexity. No team has to adopt the full stack on day one - each path is independently deployable and benchmarked.</div>
+        </div>
+      </div>
+      <div class="key-item">
+        <div class="key-num" style="color:#546E7A;">04</div>
+        <div>
+          <div class="key-title">llm-d and Dynamo are converging on transport and engine while remaining distinct on coordination - the right choice depends on existing infrastructure, not performance alone</div>
+          <div class="key-desc">Both now use NIXL for KV transfer. Both support vLLM. The enduring difference is the coordination model (centralised Planner vs sidecar + K8s scheduler) and hardware scope. Performance on NVIDIA hardware is competitive. The decision is primarily operational: does the customer already run Kubernetes with standard tooling, or are they building a new NVIDIA-focused fleet from scratch?</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cheat sheet -->
+  <div class="cheatsheet">
+    <div class="cheatsheet-label">MODULE 5.3 - LLM-D CHEAT SHEET</div>
+    <div class="cheat-grid">
+      <div class="cheat-item">
+        <div class="cheat-term">What llm-d is</div>
+        <div class="cheat-def">Kubernetes-native distributed LLM inference framework. Red Hat + Google + IBM. Open-source (llm-d/llm-d). Uses vLLM as primary engine, Kubernetes Inference Gateway for routing, Envoy for data plane.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Inference Gateway (IGW)</div>
+        <div class="cheat-def">Official Kubernetes project. Extends Gateway API with LLM concepts: InferenceModel, InferencePool CRDs, serving priority. GA as of IGW v1.0 (Oct 2025). Control plane for llm-d's scheduler.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Endpoint Picker Protocol (EPP)</div>
+        <div class="cheat-def">llm-d's inference scheduler. Runs as Envoy plugin. Filter phase removes unavailable pods. Scoring phase ranks remaining by: KV cache hit, load, predicted latency, SLA priority, P/D assignment. Customisable with own scorers.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Disaggregation sidecar</div>
+        <div class="cheat-def">Container alongside each Decode pod. Receives x-prefiller-host-port header from scheduler. Proxies Prefill to designated Prefill worker. Coordinates KV transfer back. Kubernetes-native - no separate fleet coordinator needed.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Well-lit paths</div>
+        <div class="cheat-def">Tested deployment blueprints: (1) Intelligent scheduling only - 3x TTFT, 2x throughput. (2) Disaggregated P/D - 40% TPOT reduction. (3) MoE wide-EP - 3,100 tok/s per B200 Decode GPU. Each independently deployable via Helm.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Hardware support</div>
+        <div class="cheat-def">NVIDIA A100+, AMD MI250, Google TPU v5e+, Intel GPU Max. The only framework in Part 5 supporting non-NVIDIA hardware. Critical differentiator for multi-cloud or mixed-vendor fleets.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">v0.5 highlights (Feb 2026)</div>
+        <div class="cheat-def">Hierarchical KV offload, active-active HA, cache-aware LoRA routing, scale-to-zero autoscaling, UCCL transport. Validated 3,100 tok/s per B200 Decode GPU and 50k output tok/s on 16x16 B200 P/D topology.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Choose llm-d when</div>
+        <div class="cheat-def">Team already runs Kubernetes with standard tooling. vLLM is the inference engine. Non-NVIDIA hardware in the fleet. Operational simplicity is a priority. Prefer community-governed open-source over vendor-led project.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-section">
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A customer's platform engineering team runs all their ML workloads on Kubernetes and has strong Kubernetes expertise. They serve Llama 3 70B on a mixed fleet - 12x NVIDIA H100 GPUs and 8x AMD MI300X GPUs. They are experiencing the same routing blindness and disaggregation coordination problems described in Module 5.1. A colleague recommends deploying NVIDIA Dynamo for its 30x performance claims. What is the most accurate assessment and recommendation?</div>
+    <div id="quiz-options">
+      <div class="quiz-option" onclick="selectOption(this,'a')">
+        <span class="opt-letter" id="lbl-a">A.</span>
+        Deploy Dynamo - the 30x performance improvement outweighs any hardware compatibility concern, and Dynamo's vLLM backend support means it will work on AMD GPUs.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'b')">
+        <span class="opt-letter" id="lbl-b">B.</span>
+        llm-d is the right choice for three compounding reasons. First, the fleet includes AMD MI300X GPUs - Dynamo is NVIDIA-optimised and its maximum performance numbers assume NVIDIA hardware, particularly Blackwell; llm-d actively tests and supports AMD MI250+ and would serve the full mixed fleet. Second, the team has strong Kubernetes expertise and existing K8s tooling - llm-d's Helm chart deployment and IGW integration fits their operational model without introducing new processes to learn. Third, llm-d's Well-lit Path 1 (intelligent scheduling alone) already addresses the routing blindness problem with a 3x TTFT improvement and delivers comparable benefits to Dynamo's KV-aware router on H100 hardware. The correct recommendation is llm-d starting with Well-lit Path 1 (inference scheduling), migrating to Path 2 (disaggregated P/D) when the team is ready for additional complexity.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'c')">
+        <span class="opt-letter" id="lbl-c">C.</span>
+        Neither Dynamo nor llm-d is production-ready - both were announced in 2025 and lack the maturity for enterprise deployment. The customer should wait for more stable releases.
+      </div>
+      <div class="quiz-option" onclick="selectOption(this,'d')">
+        <span class="opt-letter" id="lbl-d">D.</span>
+        Separate the fleet - deploy Dynamo on the NVIDIA H100 nodes and a standalone vLLM with Triton on the AMD nodes, with a custom load balancer routing between them.
+      </div>
+    </div>
+    <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
+    <div class="quiz-result" id="quiz-result" style="display:none;"></div>
+  </div>
+
+  <a href="module5_4.html" class="next-module">
+    <div>
+      <div class="next-label">Up Next - Module 5.4</div>
+      <div class="next-title">Dynamo vs LLM-d vs DIY</div>
+      <div class="next-sub">Side-by-side decision framework - when to recommend each, what the operational models look like, and how to handle the "we built our own" customer</div>
+    </div>
+    <div class="next-arrow">&#8594;</div>
+  </a>
+
+</div>
+<script>
+  var sColors={1:'#BF360C',2:'#D84315',3:'#2E7D32',4:'#7B1FA2',5:'#E65100',6:'#546E7A',7:'#37474F'};
+  var sBgs   ={1:'#FBE9E7',2:'#FFF3E0',3:'#E8F5E9',4:'#F3E8FD',5:'#FFF3E0',6:'#ECEFF1',7:'#ECEFF1'};
+  function toggle(n){
+    var b=document.getElementById('bdy'+n),c=document.getElementById('chv'+n),h=document.getElementById('hdr'+n);
+    var open=b.classList.contains('open');
+    b.classList.toggle('open'); c.classList.toggle('open');
+    h.style.borderLeftColor=open?'#E8E8E8':sColors[n];
+    h.style.background=open?'white':sBgs[n];
+  }
+
+  /* ── IGW explorer ── */
+  var igwData={
+    igw:{
+      name:'Kubernetes Inference Gateway (IGW)',
+      sub:'Official Kubernetes project - Gateway API inference extension',
+      body:'IGW extends the standard Kubernetes Gateway API with LLM-specific resource types and concepts. It reached GA with IGW v1.0 in October 2025. Being an official Kubernetes project means it will be maintained by the Kubernetes community, not just llm-d, and will evolve with the Kubernetes ecosystem. It integrates with any Gateway API-compatible implementation - Envoy (kgateway), Istio, and others.',
+      tags:[{c:'#BF360C',t:'Official K8s project'},{c:'#1565C0',t:'Gateway API extension'},{c:'#2E7D32',t:'v1.0 GA Oct 2025'}]
+    },
+    epp:{
+      name:'Endpoint Picker Protocol (EPP)',
+      sub:'llm-d\'s inference-aware scoring and filtering logic',
+      body:'The EPP is an Envoy filter plugin that implements llm-d\'s smart scheduling logic. For each incoming request, EPP runs two phases: (1) Filter - removes pods that are overloaded, unhealthy, or lack the required model version. (2) Score - ranks remaining pods across dimensions: KV cache prefix match, current load, predicted latency, SLA serving priority, and P/D role assignment. The highest-scoring pod receives the request. Teams can implement custom scorer plugins to add organisation-specific routing logic without modifying the core EPP.',
+      tags:[{c:'#BF360C',t:'Filter + Score phases'},{c:'#7B1FA2',t:'Custom scorer plugins'},{c:'#E65100',t:'Predicted latency scoring'}]
+    },
+    envoy:{
+      name:'Envoy Proxy',
+      sub:'Data plane - production-grade traffic management',
+      body:'Envoy is the battle-hardened proxy used by Istio, AWS App Mesh, and most production service meshes. llm-d uses Envoy (via kgateway) as its data plane rather than building a custom HTTP server. This gives llm-d circuit breaking, connection management, flow control, TLS termination, and rich observability for free. Teams already running Istio or kgateway get llm-d\'s inference-aware routing by adding the EPP filter to their existing Envoy configuration - no new infrastructure.',
+      tags:[{c:'#546E7A',t:'Production-grade proxy'},{c:'#1565C0',t:'Istio compatible'},{c:'#2E7D32',t:'Flow control + circuit breaking'}]
+    },
+    crds:{
+      name:'Custom Resource Definitions (CRDs)',
+      sub:'Kubernetes-native model and pool configuration',
+      body:'llm-d defines two primary CRDs that extend the Kubernetes API. InferenceModel declares a model\'s name, serving priority (Critical, Standard, Sheddable), and which InferencePool serves it. InferencePool declares a set of vLLM pods that serve a given model, with target average load thresholds. These resources are managed like any other Kubernetes resource - kubectl, GitOps, RBAC. Model updates are rolling Kubernetes Deployment updates. No novel configuration system to learn.',
+      tags:[{c:'#BF360C',t:'InferenceModel CRD'},{c:'#D84315',t:'InferencePool CRD'},{c:'#546E7A',t:'Standard K8s management'}]
+    }
+  };
+  function showIGW(key){
+    var d=igwData[key];
+    var tagHtml=d.tags.map(function(t){return '<span class="igw-panel-tag" style="background:'+t.c+';">'+t.t+'</span>';}).join('');
+    document.getElementById('igwPanel').innerHTML=
+      '<div class="igw-panel-name">'+d.name+'</div>'+
+      '<div class="igw-panel-sub">'+d.sub+'</div>'+
+      '<div class="igw-panel-body">'+d.body+'</div>'+
+      '<div class="igw-panel-tags">'+tagHtml+'</div>';
+    document.querySelectorAll('.igw-tab').forEach(function(t,i){
+      t.classList.toggle('active',['igw','epp','envoy','crds'][i]===key);
+    });
+  }
+  showIGW('igw');
+
+  /* ── Scheduler scoring ── */
+  var schedData={
+    rag:{
+      pods:[
+        {color:'rgba(191,54,12,0.85)', label:'Pod A', stats:'KV hit: YES (6K prefix)\nLoad: 60%\nPred. latency: 180ms', score:'Score: 94  SELECTED'},
+        {color:'rgba(84,110,122,0.5)',  label:'Pod B', stats:'KV hit: NO\nLoad: 35%\nPred. latency: 620ms', score:'Score: 41  skipped'},
+        {color:'rgba(84,110,122,0.5)',  label:'Pod C', stats:'KV hit: YES (6K prefix)\nLoad: 88%\nPred. latency: 390ms', score:'Score: 58  skipped'},
+      ],
+      note:'RAG request with 6,000-token system prompt: Pod A has the prefix cached and a reasonable load - it wins with a high composite score. Pod C also has the cache hit but is overloaded (88% load, high predicted latency). Pod B has no cache and would pay full Prefill cost. The scheduler correctly prioritises cache locality over raw load when load is within acceptable bounds.'
+    },
+    chat:{
+      pods:[
+        {color:'rgba(84,110,122,0.5)',  label:'Pod A', stats:'KV hit: NO (short prompt)\nLoad: 72%\nPred. latency: 85ms', score:'Score: 61  skipped'},
+        {color:'rgba(21,101,192,0.85)', label:'Pod B', stats:'KV hit: NO (short prompt)\nLoad: 28%\nPred. latency: 42ms', score:'Score: 91  SELECTED'},
+        {color:'rgba(84,110,122,0.5)',  label:'Pod C', stats:'KV hit: NO (short prompt)\nLoad: 55%\nPred. latency: 67ms', score:'Score: 74  skipped'},
+      ],
+      note:'Short chat request with no shared prefix: KV cache score is equal across all pods (none has a hit). Load and predicted latency become the primary discriminators. Pod B has the lowest load and fastest predicted latency and wins. This is the same behaviour as a smart load balancer - the KV cache dimension adds no signal for short unique prompts, but also adds no overhead.'
+    },
+    lora:{
+      pods:[
+        {color:'rgba(84,110,122,0.5)',  label:'Pod A', stats:'LoRA: customer-a loaded\nKV hit: NO\nLoad: 45%', score:'Score: 38  filtered out'},
+        {color:'rgba(46,125,50,0.85)',  label:'Pod B', stats:'LoRA: customer-b loaded\nKV hit: YES\nLoad: 50%', score:'Score: 96  SELECTED'},
+        {color:'rgba(84,110,122,0.5)',  label:'Pod C', stats:'LoRA: customer-b loaded\nKV hit: NO\nLoad: 30%', score:'Score: 72  skipped'},
+      ],
+      note:'LoRA adapter request for customer-b: Pod A is filtered out in the first phase because it has the wrong LoRA adapter loaded (customer-a) - serving the request would require an adapter swap, which is expensive. Among remaining pods, Pod B has both the right adapter AND a KV cache hit, winning despite slightly higher load than Pod C. The v0.5 cache-aware LoRA routing ensures adapter-compatible pods are always preferred, and cache hits within that set are a secondary optimisation.'
+    }
+  };
+  function showSched(key){
+    var d=schedData[key];
+    var html=d.pods.map(function(p){
+      var isSelected=p.score.includes('SELECTED');
+      return '<div class="sched-pod" style="background:'+p.color+';"><div class="sched-pod-label">'+p.label+'</div>'+
+             '<div class="sched-pod-stats">'+p.stats.replace(/\n/g,'<br>')+'</div>'+
+             '<div class="sched-pod-score" style="color:'+(isSelected?'#FFD54F':'rgba(255,255,255,0.5)')+';">'+p.score+'</div></div>';
+    }).join('');
+    document.getElementById('schedGrid').innerHTML=html;
+    document.getElementById('schedNote').textContent=d.note;
+  }
+  showSched('rag');
+
+  /* ── Quiz ── */
+  var selected=null,answered=false;
+  function selectOption(el,id){
+    if(answered)return;
+    document.querySelectorAll('.quiz-option').forEach(function(o){o.classList.remove('selected');o.querySelector('.opt-letter').classList.remove('active');});
+    el.classList.add('selected'); el.querySelector('.opt-letter').classList.add('active');
+    selected=id; document.getElementById('check-btn').style.display='inline-block';
+  }
+  function checkAnswer(){
+    if(!selected||answered)return; answered=true;
+    document.querySelectorAll('.quiz-option').forEach(function(o,i){
+      o.style.cursor='default'; o.onclick=null;
+      var l=['a','b','c','d'][i];
+      if(l==='b')o.classList.add('correct');
+      else if(l===selected)o.classList.add('wrong');
+    });
+    var r=document.getElementById('quiz-result'); r.style.display='block';
+    if(selected==='b'){
+      r.style.background='#E8F5E9';
+      r.innerHTML='<strong>Correct - and the AMD hardware detail is the deciding factor that many people miss.</strong><br><br><strong>Why not Dynamo:</strong> Dynamo is NVIDIA-optimised. While it supports vLLM as a backend and vLLM does run on AMD, Dynamo\'s performance optimisations - NIXL\'s GPUDirect RDMA, the Planner\'s GPU-topology-aware scheduling, and the headline performance numbers - are built around NVIDIA hardware. The 30x claim requires NVIDIA Blackwell. On AMD MI300X, Dynamo would work with vLLM as the backend but would not provide its full performance benefits and would require the team to manage a new coordination layer they cannot easily debug on non-NVIDIA hardware. More fundamentally, recommending a tool primarily because of performance numbers that apply to different hardware than the customer has is a credibility risk.<br><br><strong>Why llm-d:</strong> llm-d actively tests and validates on AMD MI250+ (covering MI300X), and v0.4 added Intel XPU and Google TPU disaggregation support. It is the only framework in Part 5 designed for hardware-agnostic operation across the full fleet - NVIDIA and AMD together, managed through the same Kubernetes resources. The team\'s existing Kubernetes expertise means adoption through a Helm chart fits their operational model exactly, with no new processes to learn. Well-lit Path 1 (intelligent scheduling alone) addresses the routing blindness problem with documented 3x TTFT improvement - the same root cause fix as Dynamo\'s KV-aware router.<br><br><strong>Why not Option A:</strong> Dynamo\'s vLLM backend support does not mean it is optimised for AMD. The GPU-topology-aware features, NIXL\'s RDMA path, and performance claims are NVIDIA-specific. Recommending it for a mixed fleet creates a two-tier system where half the GPUs are underserved.<br><br><strong>Why not Option C:</strong> llm-d v0.5 (February 2026) and Dynamo (March 2025) are both active, production-validated projects. llm-d v0.4 demonstrated 40% TPOT reduction on H200 in December 2025. Enterprise readiness is not a concern.<br><br><strong>Why not Option D:</strong> Splitting the fleet between Dynamo (NVIDIA) and standalone Triton (AMD) creates two separate operational models, two separate monitoring systems, and a custom load balancer with no intelligence about either system\'s internal state. This is precisely the bespoke orchestration problem that both Dynamo and llm-d exist to avoid.';
+    } else {
+      r.style.background='#FFF3E0';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The AMD MI300X GPUs are the decisive factor. Dynamo is NVIDIA-optimised - its NIXL RDMA transfers, Planner topology-awareness, and 30x performance numbers all assume NVIDIA hardware. llm-d actively validates on AMD MI250+ and provides a unified Kubernetes-native management layer across the full mixed fleet. The team\'s Kubernetes expertise means llm-d\'s Helm chart adoption is straightforward, and Well-lit Path 1 (intelligent scheduling) directly addresses the routing blindness problem with documented 3x TTFT improvement. Option A overstates Dynamo\'s AMD compatibility. Option C incorrectly treats both projects as immature - llm-d v0.5 and Dynamo are both production-validated. Option D reintroduces exactly the bespoke operational complexity that both frameworks exist to eliminate.';
+    }
+    document.getElementById('check-btn').style.display='none';
+  }
+</script>
+</body>
+</html>
