@@ -18,12 +18,12 @@
   .header-eyebrow { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:0.7; margin-bottom:8px; font-family:Arial,sans-serif; }
   .header h1 { font-size:28px; margin-bottom:8px; line-height:1.2; }
   .header p  { opacity:0.85; font-size:15px; line-height:1.6; margin-bottom:16px; }
-  .header-badge { display:inline-block; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); border-radius:8px; padding:6px 14px; font-size:13px; font-family:Arial,sans-serif; font-weight:bold; letter-spacing:0.5px; }
   .tags { display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; }
   .tag  { background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 14px; font-size:13px; font-family:Arial,sans-serif; }
+  .home-icon { position:absolute; top:16px; right:16px; font-size:24px; color:white; text-decoration:none; }
 
   .nav-bar { display:flex; justify-content:space-between; margin-bottom:16px; gap:12px; }
-  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #C5CAE9; background:white; font-family:Arial,sans-serif; font-size:13px; }
+  .nav-btn  { flex:1; border-radius:10px; padding:12px 16px; border:1px solid #C5CAE9; background:white; font-family:Arial,sans-serif; font-size:13px; text-decoration:none; display:block; }
   .nav-btn .nav-dir   { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:3px; }
   .nav-btn .nav-title { font-weight:bold; color:#333; font-size:13.5px; }
   .nav-btn.prev { text-align:left;  border-left:4px solid #004D40; }
@@ -32,12 +32,6 @@
   .intro-card { background:white; border-radius:12px; padding:24px 28px; margin-bottom:16px; border:1px solid #E8E8E8; line-height:1.8; font-size:15.5px; }
   .intro-card p { margin-bottom:12px; }
   .intro-card p:last-child { margin-bottom:0; color:#555; }
-
-  /* Part 1 complete banner */
-  .part-complete { background:linear-gradient(135deg,#1A237E,#283593); border-radius:12px; padding:20px 24px; margin-bottom:16px; color:white; display:flex; align-items:center; gap:16px; }
-  .pc-icon  { width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; font-family:Arial,sans-serif; font-weight:bold; }
-  .pc-title { font-weight:bold; font-size:15px; margin-bottom:3px; }
-  .pc-sub   { font-size:13px; opacity:0.8; font-family:Arial,sans-serif; line-height:1.5; }
 
   .section-card   { background:white; border-radius:12px; margin-bottom:12px; border:1px solid #E8E8E8; overflow:hidden; }
   .section-header { padding:16px 22px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid #E8E8E8; transition:all 0.2s; user-select:none; }
@@ -58,8 +52,45 @@
   .callout-purple { background:#F3E8FD; border-left:4px solid #7B1FA2; }
   .callout-red    { background:#FFEBEE; border-left:4px solid #C62828; }
   .callout-teal   { background:#E0F2F1; border-left:4px solid #00796B; }
+  .callout-slate  { background:#ECEFF1; border-left:4px solid #546E7A; }
 
-  /* ── Side-by-side phase cards ── */
+  /* ── Block diagram ── */
+  .block-diagram { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .bd-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.35; margin-bottom:18px; }
+  .bd-cols  { display:grid; grid-template-columns:1fr 32px 1fr; gap:0; align-items:start; }
+  .bd-col-label { font-size:11px; letter-spacing:1px; text-transform:uppercase; text-align:center; margin-bottom:12px; font-weight:bold; }
+  .bd-center { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:32px; }
+  .bd-vs { font-size:13px; font-weight:bold; color:rgba(255,255,255,0.25); margin-bottom:6px; }
+  .bd-connector { width:1px; flex:1; background:rgba(255,255,255,0.08); }
+  .bd-step { border-radius:8px; padding:10px 13px; margin-bottom:6px; }
+  .bd-step-label { font-size:10px; letter-spacing:1px; text-transform:uppercase; opacity:0.55; margin-bottom:3px; }
+  .bd-step-title { font-size:13px; font-weight:bold; margin-bottom:3px; }
+  .bd-step-note  { font-size:11px; opacity:0.6; line-height:1.5; }
+  .bd-arrow { text-align:center; font-size:11px; opacity:0.3; margin:2px 0; }
+  .bd-result { border-radius:8px; padding:10px 13px; margin-top:6px; text-align:center; }
+  .bd-result-label { font-size:10px; letter-spacing:1px; text-transform:uppercase; opacity:0.5; margin-bottom:3px; }
+  .bd-result-val   { font-size:13px; font-weight:bold; }
+  .bd-note { font-size:11px; opacity:0.28; margin-top:16px; line-height:1.7; }
+
+  /* ── HBM diagram ── */
+  .hbm-wrap { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
+  .hbm-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.35; margin-bottom:18px; }
+  .hbm-gpu   { border:2px solid rgba(255,255,255,0.12); border-radius:12px; padding:16px; position:relative; }
+  .hbm-gpu-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; opacity:0.35; margin-bottom:14px; }
+  .hbm-inner { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .hbm-box   { border-radius:8px; padding:14px 14px; }
+  .hbm-box-title { font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+  .hbm-box-body  { font-size:11px; opacity:0.6; line-height:1.6; }
+  .hbm-arrow-row { display:flex; align-items:center; gap:8px; margin:12px 0; }
+  .hbm-arrow-line { flex:1; height:2px; background:rgba(255,255,255,0.15); position:relative; }
+  .hbm-arrow-line::after { content:''; position:absolute; right:-9px; top:-4px; border:5px solid transparent; border-left-color:rgba(255,255,255,0.3); }
+  .hbm-arrow-label { font-size:11px; opacity:0.4; white-space:nowrap; }
+  .hbm-bandwidth { background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); border-radius:8px; padding:10px 14px; margin-top:12px; text-align:center; }
+  .hbm-bandwidth-val   { font-size:16px; font-weight:bold; color:#A5B4FC; }
+  .hbm-bandwidth-label { font-size:11px; opacity:0.45; margin-top:2px; }
+  .hbm-note { font-size:11px; opacity:0.28; margin-top:14px; line-height:1.7; }
+
+  /* ── Phase grid ── */
   .phase-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:18px 0; }
   .phase-card { border-radius:12px; padding:20px 18px; }
   .phase-badge { display:inline-block; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:bold; font-family:Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
@@ -68,34 +99,31 @@
   .phase-row { font-size:13.5px; line-height:1.65; margin-bottom:7px; padding-left:14px; position:relative; }
   .phase-row::before { content:'–'; position:absolute; left:0; color:#999; }
 
-  /* ── Live animation ── */
+  /* ── Simulation ── */
   .sim-wrap { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; color:white; font-family:Arial,sans-serif; }
   .sim-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.45; margin-bottom:16px; }
   .sim-prompt-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:18px; }
-  .sim-token { border-radius:5px; padding:4px 9px; font-size:12.5px; font-family:monospace; transition:all 0.3s; opacity:0.35; }
+  .sim-token { border-radius:5px; padding:4px 9px; font-size:12.5px; font-family:monospace; transition:all 0.3s; opacity:0.3; }
   .sim-token.processed { opacity:1; }
-  .sim-token.current   { box-shadow:0 0 0 2px white; opacity:1; transform:scale(1.08); }
   .sim-phase-bar { display:flex; gap:10px; margin-bottom:14px; align-items:center; }
   .sim-phase-label { font-size:12px; font-weight:bold; min-width:80px; }
   .sim-phase-fill  { height:6px; border-radius:3px; transition:width 0.4s ease; }
   .sim-status { font-size:13px; opacity:0.7; margin-bottom:14px; min-height:20px; }
   .sim-controls { display:flex; gap:10px; }
   .sim-btn { border:none; border-radius:7px; padding:8px 18px; font-size:13px; font-weight:bold; cursor:pointer; font-family:Arial,sans-serif; transition:all 0.15s; }
-  .sim-btn:hover { opacity:0.85; }
   .sim-output-row { display:flex; flex-wrap:wrap; gap:6px; min-height:30px; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); }
   .sim-out-token { border-radius:5px; padding:4px 9px; font-size:12.5px; font-family:monospace; background:rgba(99,102,241,0.25); color:#A5B4FC; animation:popIn 0.2s ease; }
-  @keyframes popIn { from { transform:scale(0.8); opacity:0; } to { transform:scale(1); opacity:1; } }
+  @keyframes popIn { from{transform:scale(0.8);opacity:0;} to{transform:scale(1);opacity:1;} }
 
-  /* ── Resource comparison bars ── */
+  /* ── Resource bars ── */
   .resource-table { margin:18px 0; }
   .rt-header { display:grid; grid-template-columns:140px 1fr 1fr; gap:8px; margin-bottom:6px; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; padding:0 4px; }
   .rt-row    { display:grid; grid-template-columns:140px 1fr 1fr; gap:8px; margin-bottom:8px; align-items:center; }
   .rt-label  { font-size:13px; font-family:Arial,sans-serif; font-weight:bold; }
-  .rt-bar-wrap { position:relative; }
   .rt-bar-bg   { background:#F0F0F0; border-radius:4px; height:24px; overflow:hidden; }
-  .rt-bar-fill { height:24px; border-radius:4px; display:flex; align-items:center; padding-left:8px; font-size:11px; font-weight:bold; font-family:Arial,sans-serif; color:white; transition:width 0.6s ease; }
+  .rt-bar-fill { height:24px; border-radius:4px; display:flex; align-items:center; padding-left:8px; font-size:11px; font-weight:bold; font-family:Arial,sans-serif; color:white; }
 
-  /* ── KV Cache growth visual ── */
+  /* ── KV growth visual ── */
   .kv-growth { background:#F8F9FF; border:1px solid #C5CAE9; border-radius:12px; padding:20px 22px; margin:18px 0; }
   .kv-growth-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#555; font-family:Arial,sans-serif; margin-bottom:14px; }
   .kv-step { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
@@ -104,7 +132,7 @@
   .kv-block  { width:20px; height:20px; border-radius:3px; }
   .kv-new    { border:2px solid rgba(255,255,255,0.6); }
 
-  /* ── Disaggregation bridge ── */
+  /* ── Disagg bridge ── */
   .disagg-bridge { background:linear-gradient(135deg,#E8EAF6,#F3E8FD); border:1px solid #9FA8DA; border-radius:14px; padding:22px 24px; margin:18px 0; }
   .db-title { font-weight:bold; font-size:16px; margin-bottom:14px; color:#1A237E; font-family:Arial,sans-serif; }
   .db-row   { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:start; margin-bottom:14px; }
@@ -115,20 +143,14 @@
   .db-arrow { display:flex; align-items:center; justify-content:center; font-size:28px; color:#7B1FA2; padding-top:14px; }
   .db-solution { background:white; border-radius:10px; padding:14px 16px; border-left:4px solid #7B1FA2; font-size:13.5px; line-height:1.7; }
 
-  /* ── Part 1 summary grid ── */
+  /* ── Summary grid ── */
   .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:18px 0; }
   .sg-card { background:white; border-radius:10px; padding:14px 16px; border:1px solid #E0E0E0; border-left:4px solid #ccc; }
   .sg-module { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; margin-bottom:4px; }
   .sg-title  { font-weight:bold; font-size:13.5px; margin-bottom:4px; }
   .sg-hook   { font-size:12.5px; color:#555; line-height:1.5; }
 
-  /* Key items */
-  .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
-  .key-num   { font-size:22px; font-weight:bold; font-family:monospace; min-width:36px; padding-top:2px; }
-  .key-title { font-weight:bold; font-size:15px; margin-bottom:4px; }
-  .key-desc  { font-size:14px; line-height:1.7; color:#444; }
-
-  /* Cheat sheet */
+  /* ── Cheat sheet ── */
   .cheatsheet { background:#1A237E; border-radius:14px; padding:24px 28px; margin-top:24px; color:white; }
   .cheatsheet-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:14px; font-family:Arial,sans-serif; }
   .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -136,43 +158,35 @@
   .cheat-term { font-weight:bold; font-size:13px; margin-bottom:4px; color:#9FA8DA; font-family:Arial,sans-serif; }
   .cheat-def  { font-size:13px; opacity:0.85; line-height:1.5; }
 
-  /* Quiz */
+  /* ── Quiz ── */
   .quiz-section  { background:white; border-radius:14px; padding:24px 28px; margin-top:16px; border:1px solid #E8E8E8; }
   .quiz-label    { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#999; margin-bottom:10px; font-family:Arial,sans-serif; }
   .quiz-q        { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
   .quiz-option   { padding:12px 16px; border-radius:8px; border:2px solid #E0E0E0; background:#F8F8F8; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.15s; font-size:14px; line-height:1.6; margin-bottom:10px; font-family:Arial,sans-serif; }
-  .quiz-option:hover   { border-color:#3949AB; background:#E8EAF6; }
-  .quiz-option.selected{ border-color:#3949AB; background:#E8EAF6; }
-  .quiz-option.correct { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
-  .quiz-option.wrong   { border-color:#EF5350 !important; background:#FFEBEE !important; }
+  .quiz-option:hover    { border-color:#3949AB; background:#E8EAF6; }
+  .quiz-option.selected { border-color:#3949AB; background:#E8EAF6; }
+  .quiz-option.correct  { border-color:#4CAF50 !important; background:#E8F5E9 !important; }
+  .quiz-option.wrong    { border-color:#EF5350 !important; background:#FFEBEE !important; }
   .opt-letter { font-weight:bold; color:#999; min-width:20px; }
   .opt-letter.active { color:#3949AB; }
   .quiz-btn  { margin-top:14px; background:#1A237E; color:white; border:none; border-radius:8px; padding:10px 24px; cursor:pointer; font-size:14px; font-weight:bold; font-family:Arial,sans-serif; }
   .quiz-btn:hover { background:#283593; }
   .quiz-result { margin-top:14px; border-radius:8px; padding:12px 16px; font-size:14px; line-height:1.7; color:#333; font-family:Arial,sans-serif; }
 
-  /* Next part banner */
-  .next-part { margin-top:16px; margin-bottom:32px; border-radius:14px; padding:22px 24px; background:linear-gradient(135deg,#1A237E,#3949AB); color:white; display:flex; justify-content:space-between; align-items:center; }
-  .np-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:4px; font-family:Arial,sans-serif; }
-  .np-title { font-weight:bold; font-size:17px; margin-bottom:4px; }
-  .np-sub   { font-size:13px; opacity:0.75; font-family:Arial,sans-serif; }
-  .np-arrow { font-size:32px; opacity:0.7; }
+  /* ── Next module ── */
+  .next-module { margin-top:16px; margin-bottom:32px; border-radius:14px; padding:22px 24px; background:linear-gradient(135deg,#1A237E,#3949AB); color:white; display:flex; justify-content:space-between; align-items:center; text-decoration:none; }
+  .nm-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.6; margin-bottom:4px; font-family:Arial,sans-serif; }
+  .nm-title { font-weight:bold; font-size:17px; margin-bottom:4px; }
+  .nm-sub   { font-size:13px; opacity:0.75; font-family:Arial,sans-serif; }
+  .nm-arrow { font-size:32px; opacity:0.7; }
 
   @media (max-width:620px) {
-    .phase-grid, .summary-grid, .cheat-grid { grid-template-columns:1fr; }
+    .phase-grid,.summary-grid,.cheat-grid,.bd-cols,.hbm-inner { grid-template-columns:1fr; }
     .db-row { grid-template-columns:1fr; }
-    .db-arrow { display:none; }
-    .rt-header, .rt-row { grid-template-columns:100px 1fr 1fr; }
+    .db-arrow,.bd-center { display:none; }
+    .rt-header,.rt-row { grid-template-columns:100px 1fr 1fr; }
     .header { padding:24px 20px; }
     .nav-bar { flex-direction:column; }
-  }
-  .home-icon {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    font-size: 24px;
-    color: white;
-    text-decoration: none;
   }
 </style>
 </head>
@@ -180,10 +194,11 @@
 <div class="container">
 
   <!-- Header -->
-  <div class="header"><a href="index.html" class="home-icon" title="Home">🏠</a>
+  <div class="header">
+    <a href="index.html" class="home-icon" title="Home">&#127968;</a>
     <div class="header-eyebrow">PART 1 · MODULE 1.7</div>
     <h1>The Two Phases: Prefill vs Decode</h1>
-    <p>The most important concept for inference optimisation - and your direct bridge to disaggregation, KV Cache management, and everything in Part 2</p>
+    <p>The transformer block you learned in 1.6 runs in two distinct operating modes - understanding the difference is the foundation for every inference optimisation technique in Parts 2 through 5</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -198,77 +213,246 @@
     </a>
     <a href="module2_1.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
-      <div class="nav-title">Part 2 - How Inference Actually Works</div>
+      <div class="nav-title">2.1 - What Is Inference?</div>
     </a>
   </div>
 
   <!-- Intro -->
   <div class="intro-card">
-    <p>Every time a model generates a response, it goes through exactly two phases: <strong>Prefill</strong> and <strong>Decode</strong>. These two phases are fundamentally different in what they demand from hardware - and understanding this difference is what unlocks the ability to explain almost every major inference optimisation technique to a customer.</p>
-    <p>This is the module where the entire Part 1 foundation comes together. By the end, you will understand not just what disaggregation is - but <em>why</em> it exists, why it works, and how to explain it confidently without notes.</p>
+    <p>In Module 1.6 you saw the complete transformer block: LayerNorm, Multi-Head Attention, residual connection, LayerNorm again, FFN, residual again - repeated N times. That architecture does not change, what changes is <strong>how it runs</strong> depending on what it is doing.</p>
+    <p>Every time a model processes a request, the transformer block operates in two distinct phases: <strong>Prefill</strong>, where it processes the entire input at once, and <strong>Decode</strong>, where it generates one output token at a time. These two phases stress the hardware in completely different ways - and that difference is the root cause behind almost every optimisation technique covered in this course.</p>
+    <p>This module makes that difference concrete, corrects a common misconception about where the bottleneck actually lives inside the GPU, and shows how Prefill and Decode map directly to the two latency metrics that surface in every inference conversation.</p>
   </div>
 
-  <!-- Section 1: The two phases side by side -->
+  <!-- Section 1: Same block, two modes -->
   <div class="section-card">
-    <div class="section-header" id="hdr1" onclick="toggle(1)" style="border-left-color:#E8E8E8;">
+    <div class="section-header" id="hdr1" onclick="toggle(1)">
       <div class="section-title">
         <span class="section-num" style="background:#1565C0;">1</span>
-        The Two Phases - Side by Side
+        Same Transformer Block, Two Operating Modes
       </div>
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>When you send a prompt to an LLM, the model does not generate the entire response at once. It works in two distinct phases with completely different characteristics:</p>
+      <p>The transformer block from Module 1.6 runs identically in both phases - the same LayerNorm, attention, residual, and FFN operations, repeated across all N layers. What differs is what the block is given as input and what it is asked to produce.</p>
+
+      <div class="block-diagram">
+        <div class="bd-title">The same transformer block - two operating modes</div>
+        <div class="bd-cols">
+
+          <!-- Prefill column -->
+          <div>
+            <div class="bd-col-label" style="color:#60A5FA;">PREFILL MODE</div>
+            <div class="bd-step" style="background:rgba(96,165,250,0.12); border:1px solid rgba(96,165,250,0.25);">
+              <div class="bd-step-label">Input</div>
+              <div class="bd-step-title" style="color:#93C5FD;">All input tokens at once</div>
+              <div class="bd-step-note">e.g. a 500-token prompt enters as a single batch</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-step" style="background:rgba(96,165,250,0.08);">
+              <div class="bd-step-label">LayerNorm</div>
+              <div class="bd-step-title" style="color:#BAE6FD;">Applied to all 500 positions</div>
+              <div class="bd-step-note">Runs in parallel across every token position</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-step" style="background:rgba(96,165,250,0.08);">
+              <div class="bd-step-label">Multi-Head Attention</div>
+              <div class="bd-step-title" style="color:#BAE6FD;">Q, K, V computed for all 500 tokens</div>
+              <div class="bd-step-note">Full attention matrix - every token attends to every other. K and V written to KV Cache.</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-step" style="background:rgba(96,165,250,0.08);">
+              <div class="bd-step-label">Residual + LayerNorm</div>
+              <div class="bd-step-title" style="color:#BAE6FD;">Applied to all 500 positions</div>
+              <div class="bd-step-note">Parallel across positions</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-step" style="background:rgba(96,165,250,0.08);">
+              <div class="bd-step-label">FFN</div>
+              <div class="bd-step-title" style="color:#BAE6FD;">Runs on all 500 positions</div>
+              <div class="bd-step-note">Each token processed independently - fully parallel</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-step" style="background:rgba(96,165,250,0.08);">
+              <div class="bd-step-label">Residual - repeat N layers</div>
+              <div class="bd-step-title" style="color:#BAE6FD;">All N blocks run in sequence</div>
+              <div class="bd-step-note">Same N layers as always</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-result" style="background:rgba(96,165,250,0.18); border:1px solid rgba(96,165,250,0.3);">
+              <div class="bd-result-label">Result</div>
+              <div class="bd-result-val" style="color:#60A5FA;">KV Cache fully populated + first token produced</div>
+            </div>
+          </div>
+
+          <!-- Centre divider -->
+          <div class="bd-center">
+            <div class="bd-vs">VS</div>
+            <div class="bd-connector"></div>
+          </div>
+
+          <!-- Decode column -->
+          <div>
+            <div class="bd-col-label" style="color:#FB923C;">DECODE MODE</div>
+            <div class="bd-step" style="background:rgba(251,146,60,0.12); border:1px solid rgba(251,146,60,0.25);">
+              <div class="bd-step-label">Input</div>
+              <div class="bd-step-title" style="color:#FED7AA;">One new token only</div>
+              <div class="bd-step-note">The token just generated - one position</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-step" style="background:rgba(251,146,60,0.08);">
+              <div class="bd-step-label">LayerNorm</div>
+              <div class="bd-step-title" style="color:#FED7AA;">Applied to 1 position</div>
+              <div class="bd-step-note">Trivially fast - one token only</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-step" style="background:rgba(251,146,60,0.08);">
+              <div class="bd-step-label">Multi-Head Attention</div>
+              <div class="bd-step-title" style="color:#FED7AA;">Q, K, V computed for the 1 new token</div>
+              <div class="bd-step-note">No recomputation for previous tokens. All prior K and V are loaded from the KV Cache.</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-step" style="background:rgba(251,146,60,0.08);">
+              <div class="bd-step-label">Residual + LayerNorm</div>
+              <div class="bd-step-title" style="color:#FED7AA;">Applied to 1 position</div>
+              <div class="bd-step-note">One token</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-step" style="background:rgba(251,146,60,0.08);">
+              <div class="bd-step-label">FFN</div>
+              <div class="bd-step-title" style="color:#FED7AA;">Runs on 1 position only</div>
+              <div class="bd-step-note">All model weights read, one token processed</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-step" style="background:rgba(251,146,60,0.08);">
+              <div class="bd-step-label">Residual - repeat N layers</div>
+              <div class="bd-step-title" style="color:#FED7AA;">Same N layers - one token through each</div>
+              <div class="bd-step-note">N full passes, one token position</div>
+            </div>
+            <div class="bd-arrow">&#9660;</div>
+            <div class="bd-result" style="background:rgba(251,146,60,0.18); border:1px solid rgba(251,146,60,0.3);">
+              <div class="bd-result-label">Result</div>
+              <div class="bd-result-val" style="color:#FB923C;">One new output token + KV Cache extended by 1</div>
+            </div>
+          </div>
+        </div>
+        <div class="bd-note">The transformer block architecture is identical in both modes. The difference is the batch size entering it: all input tokens at once during Prefill, one token per step during Decode. This single difference produces two completely different hardware bottlenecks.</div>
+      </div>
+
+      <div class="callout callout-indigo">
+        <strong>The key insight:</strong> Prefill and Decode are not two different systems. They are the same transformer block running with a different batch size. Prefill runs with batch size equal to the full input length - massive parallelism, high GPU utilisation. Decode runs with batch size of one - serial, low GPU compute utilisation, dominated instead by the cost of reading data.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Phase characteristics -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2" onclick="toggle(2)">
+      <div class="section-title">
+        <span class="section-num" style="background:#7B1FA2;">2</span>
+        The Two Phases - Characteristics and Bottlenecks
+      </div>
+      <span class="chevron" id="chv2">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy2">
+      <p>Because the batch size entering the transformer block is so different between phases, the hardware bottleneck is completely different in each one.</p>
 
       <div class="phase-grid">
         <div class="phase-card" style="background:#E3F2FD; border:1px solid #90CAF9;">
           <div class="phase-badge" style="background:#1565C0; color:white;">Phase 1</div>
           <div class="phase-title" style="color:#1565C0;">Prefill</div>
-          <div class="phase-subtitle">Processing your input</div>
-          <div class="phase-row">Reads and processes all input tokens <strong>at once</strong> in parallel</div>
-          <div class="phase-row">Builds the KV Cache - one entry per input token</div>
-          <div class="phase-row">Happens <strong>once</strong> per request, before any output appears</div>
-          <div class="phase-row">Duration: milliseconds to seconds (depends on prompt length)</div>
-          <div class="phase-row">Bottleneck: <strong>compute</strong> - the GPU is doing massive parallel maths</div>
-          <div class="phase-row">Hardware need: high <strong>FLOPS</strong> (raw computing power)</div>
+          <div class="phase-subtitle">Processing the input</div>
+          <div class="phase-row">All input tokens processed <strong>in parallel</strong> in one pass</div>
+          <div class="phase-row">K and V vectors written to the KV Cache for every input token</div>
+          <div class="phase-row">Runs <strong>once</strong> per request before any output appears</div>
+          <div class="phase-row">Bottleneck: <strong>compute (FLOPS)</strong> - the GPU is doing large parallel matrix multiplications</div>
+          <div class="phase-row">Hardware need: high Tensor Core throughput</div>
+          <div class="phase-row">GPU utilisation: high - Tensor Cores are working hard</div>
         </div>
         <div class="phase-card" style="background:#FFF3E0; border:1px solid #FFCC80;">
           <div class="phase-badge" style="background:#E65100; color:white;">Phase 2</div>
           <div class="phase-title" style="color:#E65100;">Decode</div>
-          <div class="phase-subtitle">Generating your output</div>
-          <div class="phase-row">Generates output tokens <strong>one at a time</strong>, sequentially</div>
-          <div class="phase-row">Each step reads the full KV Cache to maintain context</div>
-          <div class="phase-row">Repeats for every single output token - 500 tokens = 500 iterations</div>
-          <div class="phase-row">Duration: seconds to minutes (depends on output length)</div>
-          <div class="phase-row">Bottleneck: <strong>memory bandwidth</strong> - constantly reading the KV Cache</div>
-          <div class="phase-row">Hardware need: high <strong>memory bandwidth</strong> (GB/s throughput)</div>
+          <div class="phase-subtitle">Generating the output</div>
+          <div class="phase-row">One token generated per step - strictly <strong>sequential</strong></div>
+          <div class="phase-row">Each step reads the full KV Cache for all previous tokens</div>
+          <div class="phase-row">Repeats for every output token - 500 tokens means 500 iterations</div>
+          <div class="phase-row">Bottleneck: <strong>HBM bandwidth</strong> - the compute cores wait for data reads</div>
+          <div class="phase-row">Hardware need: high HBM memory bandwidth (GB/s)</div>
+          <div class="phase-row">GPU Tensor Core utilisation: low - cores sit idle waiting for data</div>
         </div>
       </div>
 
-      <div class="callout callout-indigo">
-        <strong>The single most important takeaway:</strong> Prefill and Decode are not just different speeds - they are bottlenecked by <em>different hardware resources</em>. Prefill needs raw compute (FLOPS). Decode needs memory bandwidth. This is why running them on the same hardware is inherently a compromise - and exactly why disaggregation exists.
+      <div class="callout callout-orange">
+        <strong>The core trade-off:</strong> Prefill wants raw compute throughput. Decode wants memory read speed. These are different hardware properties - and they cannot both be maximised on the same GPU at the same time. This is the fundamental tension that drives disaggregation, specialised hardware configurations, and most of the optimisation techniques in Part 3.
       </div>
     </div>
   </div>
 
-  <!-- Section 2: Animated simulation -->
+  <!-- Section 3: Inside the GPU - HBM explained -->
   <div class="section-card">
-    <div class="section-header" id="hdr2" onclick="toggle(2)" style="border-left-color:#E8E8E8;">
+    <div class="section-header" id="hdr3" onclick="toggle(3)">
       <div class="section-title">
-        <span class="section-num" style="background:#7B1FA2;">2</span>
+        <span class="section-num" style="background:#B71C1C;">3</span>
+        Inside the GPU: Why Decode Is Memory-Bandwidth-Bound
+      </div>
+      <span class="chevron" id="chv3">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy3">
+      <p>A common point of confusion: if the bottleneck during Decode is memory, and the KV Cache is stored on the GPU, why is there a bottleneck at all? The answer requires understanding that a GPU is not one homogeneous thing - it has two distinct internal components that matter here.</p>
+
+      <div class="hbm-wrap">
+        <div class="hbm-title">Inside the GPU package - compute cores and HBM are separate components</div>
+        <div class="hbm-gpu">
+          <div class="hbm-gpu-label">GPU package (e.g. H100 SXM)</div>
+          <div class="hbm-inner">
+            <div class="hbm-box" style="background:rgba(96,165,250,0.12); border:1px solid rgba(96,165,250,0.25);">
+              <div class="hbm-box-title" style="color:#93C5FD;">Compute Cores (SM)</div>
+              <div class="hbm-box-body">Streaming Multiprocessors - where all matrix multiplications and attention calculations actually happen. Extremely fast. Only a few MB of on-chip SRAM (registers and shared memory). Cannot store the KV Cache here - it is far too small.</div>
+            </div>
+            <div class="hbm-box" style="background:rgba(251,146,60,0.12); border:1px solid rgba(251,146,60,0.25);">
+              <div class="hbm-box-title" style="color:#FED7AA;">HBM (High Bandwidth Memory)</div>
+              <div class="hbm-box-body">The GPU's main memory - the "80 GB" in an H100. Physically adjacent to the compute dies but a separate component. This is where model weights, the KV Cache, and activations are stored. Fast relative to system RAM, but reading from it takes time.</div>
+            </div>
+          </div>
+          <div class="hbm-arrow-row">
+            <div class="hbm-arrow-label">Every decode step:</div>
+            <div class="hbm-arrow-line"></div>
+            <div class="hbm-arrow-label">KV Cache transferred from HBM to compute cores</div>
+          </div>
+          <div class="hbm-bandwidth">
+            <div class="hbm-bandwidth-val">3.35 TB/s</div>
+            <div class="hbm-bandwidth-label">H100 SXM HBM3 bandwidth - the speed of this internal transfer is the Decode bottleneck</div>
+          </div>
+        </div>
+        <div class="hbm-note">The compute cores and HBM are on the same physical package but are distinct components connected by a high-bandwidth bus. The bottleneck during Decode is the speed of that internal bus - not the compute cores themselves, and not HBM capacity. This is why HBM bandwidth (TB/s) is the critical spec for Decode performance, and why quantising the KV Cache (reducing bytes per entry) directly reduces Decode latency.</div>
+      </div>
+
+      <p>During every single Decode step, the compute cores must read the entire accumulated KV Cache from HBM across this internal bus, perform the attention calculation, and produce one token. As the response grows longer, the KV Cache grows, and each step requires transferring more data across the same bus. The compute cores are fast enough - they are waiting for the data to arrive.</p>
+
+      <div class="callout callout-slate">
+        <strong>A more precise analogy:</strong> Think of the compute cores as a chef at a preparation station with almost no counter space. HBM is a large pantry in the same building - nearby and fast, but a separate room. Every Decode step, an assistant must carry all the accumulated ingredients from the pantry to the counter, the chef uses them in seconds, and then the next step starts. As the recipe grows longer, there are more ingredients to carry each trip. The chef is never the bottleneck. The carrying is.
+      </div>
+
+      <p>This is also why the fix for slow Decode is not a faster GPU in terms of raw FLOPS - it is higher HBM bandwidth, or reducing the amount of data that needs to cross the bus per step. KV Cache quantisation (covered in Module 3.3) directly addresses this by shrinking the size of each KV entry.</p>
+    </div>
+  </div>
+
+  <!-- Section 4: Interactive simulation -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4" onclick="toggle(4)">
+      <div class="section-title">
+        <span class="section-num" style="background:#4A148C;">4</span>
         Interactive: Watch Both Phases Run
       </div>
-      <span class="chevron" id="chv2">&#9662;</span>
+      <span class="chevron" id="chv4">&#9662;</span>
     </div>
-    <div class="section-body" id="bdy2">
-      <p>Press Run to watch the Prefill phase process all input tokens in parallel, then watch Decode generate output tokens one by one. Notice how the KV Cache grows during Prefill and is read during every Decode step.</p>
+    <div class="section-body" id="bdy4">
+      <p>Press Run to watch the Prefill phase process all input tokens in parallel, then watch Decode generate output tokens one by one. The status line shows exactly what the transformer block is doing on each step.</p>
 
       <div class="sim-wrap">
         <div class="sim-title">Inference simulation - "Explain why GPU memory matters for LLM inference"</div>
-
         <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:0.4; margin-bottom:8px; font-family:Arial,sans-serif;">Input tokens (prompt)</div>
         <div class="sim-prompt-row" id="sim-prompt"></div>
-
         <div class="sim-phase-bar">
           <span class="sim-phase-label" style="color:#60A5FA;">Prefill</span>
           <div style="flex:1; background:rgba(255,255,255,0.08); border-radius:3px; height:6px; overflow:hidden;">
@@ -281,289 +465,135 @@
             <div class="sim-phase-fill" id="decode-bar" style="background:#FB923C; width:0%;"></div>
           </div>
         </div>
-
         <div class="sim-status" id="sim-status">Press Run to start the simulation.</div>
-
         <div class="sim-controls">
           <button class="sim-btn" id="runBtn" style="background:#6366F1; color:white;" onclick="runSim()">Run Simulation</button>
           <button class="sim-btn" id="resetBtn" style="background:rgba(255,255,255,0.1); color:white;" onclick="resetSim()">Reset</button>
         </div>
-
         <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:0.4; margin-top:16px; margin-bottom:6px; font-family:Arial,sans-serif;">Output tokens (generated one by one)</div>
         <div class="sim-output-row" id="sim-output"></div>
       </div>
 
       <div class="callout callout-purple">
-        <strong>What you just saw:</strong> During Prefill, all input tokens lit up nearly simultaneously - the GPU processed them in a single large parallel batch. During Decode, each output token appeared one at a time - strictly sequential, each one depending on the last. This is why even a fast GPU can feel "slow" during long generation: the decode phase is fundamentally serial.
+        <strong>What the simulation shows:</strong> During Prefill, all input tokens light up in a fast sweep - the full transformer block processes all of them in a single parallel pass, writing K and V to the cache. During Decode, each output token appears one at a time. Each step runs the full transformer block once for one token, reading the entire accumulated KV Cache from HBM. This is why even a fast GPU can feel slow during long generation: the Decode phase is fundamentally serial and its cost grows with every token produced.
       </div>
     </div>
   </div>
 
-  <!-- Section 3: Resource demands -->
+  <!-- Section 5: TTFT and TPOT -->
   <div class="section-card">
-    <div class="section-header" id="hdr3" onclick="toggle(3)" style="border-left-color:#E8E8E8;">
-      <div class="section-title">
-        <span class="section-num" style="background:#E65100;">3</span>
-        Why They Need Different Hardware Resources
-      </div>
-      <span class="chevron" id="chv3">&#9662;</span>
-    </div>
-    <div class="section-body" id="bdy3">
-      <p>The reason Prefill and Decode feel so different is because they stress the GPU in completely different ways. Here is a direct comparison of the four key resource dimensions:</p>
-
-      <div class="resource-table">
-        <div class="rt-header">
-          <span>Resource</span>
-          <span>Prefill</span>
-          <span>Decode</span>
-        </div>
-        <div class="rt-row">
-          <span class="rt-label">GPU Compute</span>
-          <div class="rt-bar-wrap">
-            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#1565C0; width:92%;">Very High</div></div>
-          </div>
-          <div class="rt-bar-wrap">
-            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#1565C0; width:22%;">Low</div></div>
-          </div>
-        </div>
-        <div class="rt-row">
-          <span class="rt-label">Memory BW</span>
-          <div class="rt-bar-wrap">
-            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#E65100; width:40%;">Moderate</div></div>
-          </div>
-          <div class="rt-bar-wrap">
-            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#E65100; width:90%;">Very High</div></div>
-          </div>
-        </div>
-        <div class="rt-row">
-          <span class="rt-label">GPU Util %</span>
-          <div class="rt-bar-wrap">
-            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#7B1FA2; width:85%;">~85%</div></div>
-          </div>
-          <div class="rt-bar-wrap">
-            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#7B1FA2; width:30%;">~30%</div></div>
-          </div>
-        </div>
-        <div class="rt-row">
-          <span class="rt-label">KV Cache Use</span>
-          <div class="rt-bar-wrap">
-            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#2E7D32; width:50%;">Write only</div></div>
-          </div>
-          <div class="rt-bar-wrap">
-            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#2E7D32; width:90%;">Read every step</div></div>
-          </div>
-        </div>
-      </div>
-
-      <p>During Decode, the GPU compute utilisation drops to around 30% - not because the GPU is slow, but because it is <strong>waiting for memory reads</strong>. The GPU has to load the entire KV Cache from HBM (High Bandwidth Memory) for every single token it generates. This is the memory bandwidth bottleneck in action.</p>
-
-      <div class="callout callout-orange">
-        <strong>The restaurant analogy:</strong> Prefill is like a chef who gets all the ingredients delivered at once and does intense prep work - chopping, mixing, marinating - all in parallel. Decode is like a chef who must run back to the walk-in fridge for one ingredient before every single step of cooking. The fridge trips (memory reads) are what slow things down, not the actual cooking.
-      </div>
-    </div>
-  </div>
-
-  <!-- Section 4: KV Cache growth -->
-  <div class="section-card">
-    <div class="section-header" id="hdr4" onclick="toggle(4)" style="border-left-color:#E8E8E8;">
-      <div class="section-title">
-        <span class="section-num" style="background:#2E7D32;">4</span>
-        How the KV Cache Grows Through Both Phases
-      </div>
-      <span class="chevron" id="chv4">&#9662;</span>
-    </div>
-    <div class="section-body" id="bdy4">
-      <p>You learned in Module 1.3 that the KV Cache stores Key and Value vectors so they do not need to be recomputed. Now you can see exactly when and how it grows:</p>
-
-      <div class="kv-growth">
-        <div class="kv-growth-title">KV Cache growth - 6-token prompt, 4-token output</div>
-
-        <div class="kv-step">
-          <div class="kv-step-label" style="color:#1565C0; font-weight:bold;">Prefill starts</div>
-          <div class="kv-blocks">
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-          </div>
-          <span style="font-size:12px; color:#888; font-family:Arial,sans-serif; margin-left:8px;">6 KV entries written at once</span>
-        </div>
-
-        <div class="kv-step">
-          <div class="kv-step-label" style="color:#E65100; font-weight:bold;">Decode step 1</div>
-          <div class="kv-blocks">
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block kv-new" style="background:#E65100;"></div>
-          </div>
-          <span style="font-size:12px; color:#888; font-family:Arial,sans-serif; margin-left:8px;">+1 entry (new output token)</span>
-        </div>
-
-        <div class="kv-step">
-          <div class="kv-step-label" style="color:#E65100; font-weight:bold;">Decode step 2</div>
-          <div class="kv-blocks">
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#E65100;"></div>
-            <div class="kv-block kv-new" style="background:#E65100;"></div>
-          </div>
-          <span style="font-size:12px; color:#888; font-family:Arial,sans-serif; margin-left:8px;">+1 entry (reads all 7 previous)</span>
-        </div>
-
-        <div class="kv-step">
-          <div class="kv-step-label" style="color:#E65100; font-weight:bold;">Decode step 4</div>
-          <div class="kv-blocks">
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#1565C0;"></div>
-            <div class="kv-block" style="background:#E65100;"></div>
-            <div class="kv-block" style="background:#E65100;"></div>
-            <div class="kv-block" style="background:#E65100;"></div>
-            <div class="kv-block kv-new" style="background:#E65100;"></div>
-          </div>
-          <span style="font-size:12px; color:#888; font-family:Arial,sans-serif; margin-left:8px;">Reads all 9 to generate token 10</span>
-        </div>
-
-        <div style="font-size:12.5px; color:#666; font-family:Arial,sans-serif; margin-top:10px; line-height:1.6; padding-top:10px; border-top:1px solid #E0E0E0;">
-          Blue = prompt tokens. Orange = generated tokens. Each decode step reads the <em>entire</em> growing cache - this is why decode gets progressively slower as the response gets longer, and why KV Cache memory management is critical.
-        </div>
-      </div>
-
-      <div class="callout callout-teal">
-        <strong>The compounding problem:</strong> A 1,000-token output on a 4,000-token prompt means the decode phase eventually reads a 5,000-entry KV Cache on every single step. The last tokens take longer to generate than the first. For applications with long outputs - code generation, long-form writing, chain-of-thought reasoning - this KV Cache growth is the dominant inference cost driver.
-      </div>
-    </div>
-  </div>
-
-  <!-- Section 5: The TTFT and TPOT metrics -->
-  <div class="section-card">
-    <div class="section-header" id="hdr5" onclick="toggle(5)" style="border-left-color:#E8E8E8;">
+    <div class="section-header" id="hdr5" onclick="toggle(5)">
       <div class="section-title">
         <span class="section-num" style="background:#00796B;">5</span>
-        The Two Metrics Every Customer Cares About
+        The Two Metrics - TTFT and TPOT
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
-      <p>Because Prefill and Decode are separate phases, they map directly to two distinct latency metrics that come up in almost every customer conversation about inference performance:</p>
+      <p>Because Prefill and Decode are distinct phases with different bottlenecks, they map to two distinct latency metrics that appear in almost every inference performance discussion.</p>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
         <div style="background:#E3F2FD; border-radius:12px; padding:18px; border-top:4px solid #1565C0;">
           <div style="font-size:12px; font-family:Arial,sans-serif; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:#1565C0; margin-bottom:6px;">TTFT</div>
           <div style="font-weight:bold; font-size:15px; margin-bottom:8px;">Time to First Token</div>
-          <div style="font-size:13.5px; line-height:1.7; color:#333; margin-bottom:10px;">How long the user waits before <em>anything</em> appears on screen. Driven entirely by the Prefill phase. Long prompts = longer TTFT.</div>
-          <div style="font-size:12.5px; font-family:Arial,sans-serif; background:white; border-radius:6px; padding:8px 10px; color:#555;">Typical target: under 500ms for chat applications</div>
+          <div style="font-size:13.5px; line-height:1.7; color:#333; margin-bottom:10px;">Time from sending the prompt to receiving the first output token. Driven entirely by the Prefill phase. Longer input sequences produce higher TTFT.</div>
+          <div style="font-size:12.5px; font-family:Arial,sans-serif; background:white; border-radius:6px; padding:8px 10px; color:#555;">Bottleneck: Prefill compute - Tensor Core throughput</div>
         </div>
         <div style="background:#FFF3E0; border-radius:12px; padding:18px; border-top:4px solid #E65100;">
           <div style="font-size:12px; font-family:Arial,sans-serif; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:#E65100; margin-bottom:6px;">TPOT</div>
           <div style="font-weight:bold; font-size:15px; margin-bottom:8px;">Time per Output Token</div>
-          <div style="font-size:13.5px; line-height:1.7; color:#333; margin-bottom:10px;">How fast each subsequent token appears after the first. Driven by the Decode phase. Determines how "smooth" the stream feels to the user.</div>
-          <div style="font-size:12.5px; font-family:Arial,sans-serif; background:white; border-radius:6px; padding:8px 10px; color:#555;">Typical target: under 30ms per token for real-time feel</div>
+          <div style="font-size:13.5px; line-height:1.7; color:#333; margin-bottom:10px;">Time between each successive output token after the first. Driven entirely by the Decode phase. Longer responses accumulate a larger KV Cache, which increases TPOT over time.</div>
+          <div style="font-size:12.5px; font-family:Arial,sans-serif; background:white; border-radius:6px; padding:8px 10px; color:#555;">Bottleneck: HBM bandwidth - KV Cache read per step</div>
         </div>
       </div>
 
       <div class="callout callout-green">
-        <strong>Connecting to optimisation techniques:</strong> When a customer says "our model feels slow", you need to ask <em>which</em> type of slow. High TTFT? Focus on Prefill optimisation - chunked prefill, prefill-specific hardware, or Flash Attention. High TPOT? Focus on Decode optimisation - KV Cache management, Paged Attention, memory bandwidth improvements. They have different solutions.
+        <strong>Diagnosing performance problems:</strong> When a system feels slow, identifying which metric is high determines which phase to investigate. High TTFT with acceptable TPOT points to a Prefill bottleneck - long input, insufficient compute throughput, or Prefill interference from concurrent requests. High TPOT with acceptable TTFT points to a Decode bottleneck - large KV Cache, insufficient HBM bandwidth, or memory pressure from too many concurrent sessions. The solutions are different for each.
       </div>
     </div>
   </div>
 
   <!-- Section 6: Bridge to disaggregation -->
   <div class="section-card">
-    <div class="section-header" id="hdr6" onclick="toggle(6)" style="border-left-color:#E8E8E8;">
+    <div class="section-header" id="hdr6" onclick="toggle(6)">
       <div class="section-title">
         <span class="section-num" style="background:#7B1FA2;">6</span>
-        Your Bridge to Disaggregation - Why It Exists
+        Why Disaggregation Exists - Built From First Principles
       </div>
       <span class="chevron" id="chv6">&#9662;</span>
     </div>
     <div class="section-body" id="bdy6">
-      <p>You told me at the start that you are working on disaggregation but could not explain the foundation. You now have everything you need. Here is how it all connects:</p>
+      <p>Now that Prefill and Decode are concrete, the logic behind disaggregation follows directly. The question is simply: if these two phases need different hardware resources and run at different times, why force them to share the same GPU?</p>
 
       <div class="disagg-bridge">
-        <div class="db-title">The logical case for disaggregation - built from first principles</div>
-
+        <div class="db-title">The case for disaggregation - from first principles</div>
         <div class="db-row">
           <div class="db-box" style="background:#E3F2FD; border:1px solid #90CAF9;">
-            <div class="db-box-title" style="color:#1565C0;">Prefill requirements</div>
-            <div class="db-item">Processes all tokens at once - massive parallelism</div>
-            <div class="db-item">Bottlenecked by GPU compute (FLOPS)</div>
-            <div class="db-item">Ideal GPU: high core count, high FLOPS</div>
-            <div class="db-item">Runs once per request, then done</div>
-            <div class="db-item">KV Cache written, then handed off</div>
+            <div class="db-box-title" style="color:#1565C0;">Prefill needs</div>
+            <div class="db-item">All tokens processed in one parallel pass</div>
+            <div class="db-item">Bottleneck: Tensor Core compute (FLOPS)</div>
+            <div class="db-item">Ideal GPU: high FLOPS, many compute cores</div>
+            <div class="db-item">Runs once per request then hands off</div>
+            <div class="db-item">KV Cache written, then transferred</div>
           </div>
           <div class="db-arrow">&#8800;</div>
           <div class="db-box" style="background:#FFF3E0; border:1px solid #FFCC80;">
-            <div class="db-box-title" style="color:#E65100;">Decode requirements</div>
-            <div class="db-item">Generates one token at a time - serial</div>
-            <div class="db-item">Bottlenecked by memory bandwidth</div>
-            <div class="db-item">Ideal GPU: high HBM bandwidth, large cache</div>
+            <div class="db-box-title" style="color:#E65100;">Decode needs</div>
+            <div class="db-item">One token generated per step, serially</div>
+            <div class="db-item">Bottleneck: HBM bandwidth (TB/s)</div>
+            <div class="db-item">Ideal GPU: high HBM bandwidth, large HBM</div>
             <div class="db-item">Runs hundreds of times per request</div>
             <div class="db-item">KV Cache read on every single step</div>
           </div>
         </div>
-
         <div class="db-solution">
-          <strong style="color:#7B1FA2;">The disaggregation insight:</strong> If Prefill and Decode need different hardware and run at different times, why force them to share the same GPU? <strong>Disaggregation separates Prefill and Decode onto dedicated GPU pools.</strong> Prefill GPUs are optimised for compute throughput. Decode GPUs are optimised for memory bandwidth. Once a request finishes Prefill, its KV Cache is transferred to a Decode GPU to complete generation. Each pool can be scaled independently based on workload - more Prefill capacity for bursty chatbot loads, more Decode capacity for long-form generation workloads.
+          <strong style="color:#7B1FA2;">The disaggregation approach:</strong> Separate Prefill and Decode onto dedicated GPU pools, each configured for its specific bottleneck. Prefill GPUs handle only the compute-intensive first phase. Decode GPUs handle only the bandwidth-intensive generation phase. Once a request finishes Prefill, its KV Cache is transferred to a Decode GPU to complete generation. Each pool can be scaled independently based on the workload profile.
         </div>
       </div>
 
       <div class="callout callout-purple">
-        <strong>Why this matters in your customer conversations:</strong> When a customer asks "what is disaggregation and why should I care?", you can now answer from first principles - Prefill is compute-bound, Decode is memory-bound, they need different hardware, disaggregation lets you optimise each independently. You can also explain the trade-off: disaggregation adds complexity (KV Cache transfer overhead, more infra to manage) but unlocks significant throughput and cost improvements at scale.
+        <strong>The trade-off to acknowledge:</strong> Disaggregation introduces KV Cache transfer overhead - the cache built during Prefill must be moved to the Decode GPU before generation can begin. Whether this trade-off is worth it depends on scale, input length, and the network fabric between nodes. Module 3.6 covers this in detail. The foundation you need to understand that module is exactly what this one provides.
       </div>
     </div>
   </div>
 
   <!-- Section 7: Part 1 summary -->
   <div class="section-card">
-    <div class="section-header" id="hdr7" onclick="toggle(7)" style="border-left-color:#E8E8E8;">
+    <div class="section-header" id="hdr7" onclick="toggle(7)">
       <div class="section-title">
         <span class="section-num" style="background:#283593;">7</span>
-        Part 1 Complete - What You Now Know
+        Part 1 Complete - The Foundation in One View
       </div>
       <span class="chevron" id="chv7">&#9662;</span>
     </div>
     <div class="section-body" id="bdy7">
-      <p>You have built the complete foundation. Here is what each module gave you and how it connects forward:</p>
+      <p>Part 1 has built a complete picture of how a transformer processes a request - from the architecture itself to the two operating modes that drive every inference decision. Here is what each module contributed:</p>
 
       <div class="summary-grid">
         <div class="sg-card" style="border-left-color:#1565C0;">
           <div class="sg-module">Module 1.1</div>
           <div class="sg-title">What Is a Transformer?</div>
-          <div class="sg-hook">Reads all tokens at once using Attention. Two phases: Prefill and Decode. KV Cache is the central bottleneck.</div>
+          <div class="sg-hook">Processes all tokens using Attention. Generates output one token at a time. KV Cache is the central cost structure.</div>
         </div>
         <div class="sg-card" style="border-left-color:#00796B;">
           <div class="sg-module">Module 1.2</div>
-          <div class="sg-title">Tokens &amp; Embeddings</div>
-          <div class="sg-hook">Tokens are the unit of cost. Embeddings are the numerical form of meaning. Context window = max token count.</div>
+          <div class="sg-title">Tokens and Embeddings</div>
+          <div class="sg-hook">Tokens are the unit of compute cost. Embeddings are their numerical representation. Context window is the token limit.</div>
         </div>
         <div class="sg-card" style="border-left-color:#7B1FA2;">
           <div class="sg-module">Module 1.3</div>
           <div class="sg-title">Attention Mechanism</div>
-          <div class="sg-hook">Q, K, V framework. Quadratic scaling with sequence length. KV Cache stores K and V to avoid recomputation.</div>
+          <div class="sg-hook">Q, K, V framework. Quadratic scaling with sequence length. KV Cache stores K and V to avoid recomputing them in Decode.</div>
         </div>
         <div class="sg-card" style="border-left-color:#0D47A1;">
           <div class="sg-module">Module 1.4</div>
           <div class="sg-title">Multi-Head Attention</div>
-          <div class="sg-hook">Parallel attention heads, each specialising in different relationships. GQA reduces KV Cache size. MHA vs MQA vs GQA.</div>
+          <div class="sg-hook">Parallel attention heads, each capturing different relationships. GQA reduces KV Cache size. MHA vs MQA vs GQA.</div>
         </div>
         <div class="sg-card" style="border-left-color:#C62828;">
           <div class="sg-module">Module 1.5</div>
           <div class="sg-title">Feed Forward Network</div>
-          <div class="sg-hook">Holds ~65% of model parameters. Expand-contract processing per token. MoE activates only relevant experts. FFN = weight bottleneck.</div>
+          <div class="sg-hook">Holds roughly 65% of model parameters. Expand-contract per token. MoE activates only relevant experts. The weight bottleneck.</div>
         </div>
         <div class="sg-card" style="border-left-color:#004D40;">
           <div class="sg-module">Module 1.6</div>
@@ -573,97 +603,96 @@
         <div class="sg-card" style="border-left-color:#1A237E; grid-column:1 / span 2;">
           <div class="sg-module">Module 1.7 - This module</div>
           <div class="sg-title">Prefill vs Decode</div>
-          <div class="sg-hook">Prefill = compute-bound, runs once, builds KV Cache. Decode = memory-bound, runs per output token, reads KV Cache. TTFT measures Prefill speed. TPOT measures Decode speed. Disaggregation separates them onto specialised hardware.</div>
+          <div class="sg-hook">The same transformer block runs in two modes: Prefill processes all input tokens in parallel (compute-bound, runs once, builds KV Cache) and Decode generates one token per step (HBM-bandwidth-bound, reads KV Cache every step). TTFT measures Prefill. TPOT measures Decode. Disaggregation separates them onto hardware optimised for each.</div>
         </div>
       </div>
 
       <div class="callout callout-indigo" style="margin-top:16px;">
-        <strong>You are now ready for Part 2.</strong> Everything in Part 2 (KV Cache, batching, throughput vs latency) and Part 3 (Flash Attention, Paged Attention, quantisation, disaggregation) builds directly on what you have learned here. The concepts will feel familiar - you will be deepening understanding, not starting from scratch.
+        <strong>Ready for Part 2.</strong> Everything in Part 2 - KV Cache deep dive, batching strategies, throughput vs latency, GPU memory bottlenecks - builds directly on this foundation. The concepts will deepen what is already here rather than introducing entirely new ground.
       </div>
     </div>
   </div>
 
-  <!-- Cheat Sheet -->
+  <!-- Cheat sheet -->
   <div class="cheatsheet">
     <div class="cheatsheet-label">MODULE 1.7 - CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Prefill Phase</div>
-        <div class="cheat-def">Processes all input tokens in parallel. Compute-bound. Runs once. Builds the KV Cache. Determines TTFT.</div>
+        <div class="cheat-def">The transformer block runs on all input tokens simultaneously. Compute-bound. Runs once per request. Writes K and V to the KV Cache. Determines TTFT.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Decode Phase</div>
-        <div class="cheat-def">Generates output one token at a time. Memory-bandwidth-bound. Reads full KV Cache every step. Determines TPOT.</div>
+        <div class="cheat-def">The transformer block runs once per output token. HBM-bandwidth-bound. Reads the full KV Cache on every step. Determines TPOT. Gets slower as responses grow longer.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">Compute cores vs HBM</div>
+        <div class="cheat-def">Compute cores (SMs) do the maths - fast but tiny on-chip memory. HBM stores the KV Cache and model weights - large but a separate component. Decode is slow because cores wait for HBM reads, not because cores are slow.</div>
+      </div>
+      <div class="cheat-item">
+        <div class="cheat-term">HBM Bandwidth</div>
+        <div class="cheat-def">The speed of the internal transfer between HBM and compute cores. Measured in TB/s. The key spec for Decode performance. Quantising the KV Cache reduces bytes transferred per step, directly improving TPOT.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">TTFT (Time to First Token)</div>
-        <div class="cheat-def">Latency from sending prompt to first output token appearing. Driven by Prefill. Critical for interactive applications.</div>
+        <div class="cheat-def">Latency from sending the prompt to receiving the first output token. Driven by Prefill. Bottleneck: Tensor Core compute throughput.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">TPOT (Time per Output Token)</div>
-        <div class="cheat-def">Latency between each successive output token. Driven by Decode. Determines how smooth generation feels.</div>
+        <div class="cheat-def">Latency between successive output tokens. Driven by Decode. Bottleneck: HBM bandwidth. Grows as KV Cache accumulates across a long response.</div>
       </div>
       <div class="cheat-item">
-        <div class="cheat-term">Compute-bound</div>
-        <div class="cheat-def">The bottleneck is GPU FLOPS - raw calculation speed. Prefill is compute-bound. More FLOPS = faster Prefill.</div>
-      </div>
-      <div class="cheat-item">
-        <div class="cheat-term">Memory-bandwidth-bound</div>
-        <div class="cheat-def">The bottleneck is how fast data can be read from GPU memory. Decode is memory-bound. Higher HBM bandwidth = faster Decode.</div>
-      </div>
-      <div class="cheat-item">
-        <div class="cheat-term">Disaggregation</div>
-        <div class="cheat-def">Separating Prefill and Decode onto dedicated GPU pools, each optimised for its specific bottleneck. Enables independent scaling of each phase.</div>
+        <div class="cheat-term">Why disaggregation exists</div>
+        <div class="cheat-def">Prefill needs Tensor Core throughput. Decode needs HBM bandwidth. These are different hardware properties. Disaggregation puts each phase on GPUs optimised for its specific bottleneck.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">KV Cache Transfer</div>
-        <div class="cheat-def">In disaggregated systems, the KV Cache built during Prefill must be sent from the Prefill GPU to the Decode GPU. This transfer overhead is the main trade-off of disaggregation.</div>
+        <div class="cheat-def">In disaggregated systems, the KV Cache built during Prefill is transferred to the Decode GPU before generation begins. The speed and cost of this transfer is the main operational trade-off of disaggregation.</div>
       </div>
     </div>
   </div>
 
   <!-- Quiz -->
   <div class="quiz-section">
-    <div class="quiz-label">FINAL CHECK - PART 1</div>
-    <div class="quiz-q">A customer runs a coding assistant. Users submit short prompts (~200 tokens) but expect long, detailed code outputs (~2,000 tokens). They report that responses start appearing quickly but the full response takes very long to complete. Which phase is the bottleneck, what is the metric to measure it, and what category of solution should you explore?</div>
+    <div class="quiz-label">QUICK CHECK</div>
+    <div class="quiz-q">A team runs a coding assistant on a single H100 GPU. Users submit short prompts (around 200 tokens) but expect long, detailed code outputs (around 2,000 tokens). They report that the first line of code appears quickly, but the full response takes much longer than expected to complete. Which phase is the likely bottleneck and what is the most accurate explanation?</div>
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        Prefill is the bottleneck - high TTFT - the prompt needs to be compressed to reduce tokenisation time
+        Prefill is the bottleneck. A 200-token prompt is relatively short but the GPU is spending too long computing the initial attention matrix before any output appears.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        Decode is the bottleneck - high TPOT - the KV Cache grows large during a 2,000-token generation and memory bandwidth is being saturated. Solutions include KV Cache quantisation, Paged Attention, and potentially disaggregation to put Decode on memory-bandwidth-optimised GPUs
+        Decode is the bottleneck. With 2,000 output tokens, the KV Cache grows to over 2,200 entries by the end. The compute cores must read this entire cache from HBM on every single step, and HBM bandwidth becomes saturated - causing TPOT to be high even though TTFT is acceptable.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Both phases are equally slow - the model needs to be replaced with a smaller one
+        Both phases are equally slow. The H100 is undersized for this workload and needs to be replaced with a GPU that has both higher FLOPS and more HBM capacity.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        The network connection between the user and server is the bottleneck - streaming needs to be enabled
+        Decode is the bottleneck, but the cause is insufficient Tensor Core compute. The GPU cannot perform the attention calculation fast enough for long output sequences.
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
     <div class="quiz-result" id="quiz-result" style="display:none;"></div>
   </div>
 
-  <!-- Next Part banner -->
-  <a href="module2_1.html" class="next-part">
+  <!-- Next module -->
+  <a href="module2_1.html" class="next-module">
     <div>
-      <div class="np-label">Up Next - Part 2</div>
-      <div class="np-title">How Inference Actually Works</div>
-      <div class="np-sub">KV Cache deep dive, batching strategies, throughput vs latency - the serving layer explained</div>
+      <div class="nm-label">Up Next - Part 2</div>
+      <div class="nm-title">What Is Inference?</div>
+      <div class="nm-sub">How the serving layer works, what happens between an API call and a response, and where the performance levers actually are</div>
     </div>
-    <div class="np-arrow">&#8594;</div>
+    <div class="nm-arrow">&#8594;</div>
   </a>
 
 </div>
 
 <script>
-  /* ── section toggles ── */
-  var colors = {1:'#1565C0',2:'#7B1FA2',3:'#E65100',4:'#2E7D32',5:'#00796B',6:'#7B1FA2',7:'#283593'};
-  var bgs    = {1:'#E3F2FD',2:'#F3E8FD',3:'#FFF3E0',4:'#E8F5E9',5:'#E0F2F1',6:'#F3E8FD',7:'#E8EAF6'};
+  var colors = {1:'#1565C0',2:'#7B1FA2',3:'#B71C1C',4:'#4A148C',5:'#00796B',6:'#7B1FA2',7:'#283593'};
+  var bgs    = {1:'#E3F2FD',2:'#F3E8FD',3:'#FFEBEE',4:'#EDE7F6',5:'#E0F2F1',6:'#F3E8FD',7:'#E8EAF6'};
 
   function toggle(n) {
     var body = document.getElementById('bdy'+n);
@@ -676,25 +705,25 @@
     hdr.style.background      = isOpen ? 'white'   : bgs[n];
   }
 
-  /* ── simulation ── */
+  /* ── Simulation ── */
   var promptTokens = ['Explain','why','GPU','memory','matters','for','LLM','inference','in','detail'];
   var outputTokens = ['GPU','memory','is','critical','because','the','KV','Cache','must','be','read','every','decode','step','consuming','bandwidth'];
   var simRunning = false;
-  var simTimer   = null;
+  var simTimer = null;
 
   function buildPromptChips() {
     var el = document.getElementById('sim-prompt');
     el.innerHTML = '';
-    var colors = ['#3B82F6','#8B5CF6','#06B6D4','#10B981','#F59E0B','#EF4444','#6366F1','#84CC16','#F97316','#EC4899'];
-    promptTokens.forEach(function(t, i) {
+    var chipColors = ['#3B82F6','#8B5CF6','#06B6D4','#10B981','#F59E0B','#EF4444','#6366F1','#84CC16','#F97316','#EC4899'];
+    for (var i = 0; i < promptTokens.length; i++) {
       var chip = document.createElement('span');
       chip.className = 'sim-token';
-      chip.id = 'pt-'+i;
-      chip.textContent = t;
-      chip.style.background = colors[i % colors.length] + '33';
-      chip.style.color = colors[i % colors.length];
+      chip.id = 'pt-' + i;
+      chip.textContent = promptTokens[i];
+      chip.style.background = chipColors[i % chipColors.length] + '33';
+      chip.style.color = chipColors[i % chipColors.length];
       el.appendChild(chip);
-    });
+    }
   }
 
   function resetSim() {
@@ -719,42 +748,40 @@
 
   function runPrefill(i) {
     if (i >= promptTokens.length) {
-      document.getElementById('sim-status').textContent = 'Prefill complete. KV Cache built. Starting Decode...';
+      document.getElementById('sim-status').textContent = 'Prefill complete. KV Cache built for all ' + promptTokens.length + ' tokens. Starting Decode...';
       document.getElementById('prefill-bar').style.width = '100%';
-      simTimer = setTimeout(function(){ runDecode(0); }, 700);
+      simTimer = setTimeout(function() { runDecode(0); }, 700);
       return;
     }
-    // light up all tokens simultaneously in a fast sweep
-    var chip = document.getElementById('pt-'+i);
+    var chip = document.getElementById('pt-' + i);
     if (chip) chip.classList.add('processed');
-    var pct = Math.round(((i+1)/promptTokens.length)*100);
-    document.getElementById('prefill-bar').style.width = pct+'%';
-    document.getElementById('sim-status').textContent = 'Prefill: processing token '+(i+1)+' of '+promptTokens.length+' in parallel...';
-    simTimer = setTimeout(function(){ runPrefill(i+1); }, 80);
+    var pct = Math.round(((i + 1) / promptTokens.length) * 100);
+    document.getElementById('prefill-bar').style.width = pct + '%';
+    document.getElementById('sim-status').textContent = 'Prefill: transformer block processing all ' + promptTokens.length + ' input tokens in parallel - step ' + (i + 1) + ' of ' + promptTokens.length;
+    simTimer = setTimeout(function() { runPrefill(i + 1); }, 80);
   }
 
   function runDecode(i) {
     if (i >= outputTokens.length) {
       document.getElementById('decode-bar').style.width = '100%';
-      document.getElementById('sim-status').textContent = 'Generation complete. '+outputTokens.length+' tokens produced.';
+      document.getElementById('sim-status').textContent = 'Decode complete. ' + outputTokens.length + ' output tokens generated. Total KV Cache: ' + (promptTokens.length + outputTokens.length) + ' entries.';
       return;
     }
-    // highlight current
-    document.querySelectorAll('.sim-token').forEach(function(t){ t.classList.remove('current'); });
     var outEl = document.getElementById('sim-output');
     var chip = document.createElement('span');
     chip.className = 'sim-out-token';
     chip.textContent = outputTokens[i];
     outEl.appendChild(chip);
-    var pct = Math.round(((i+1)/outputTokens.length)*100);
-    document.getElementById('decode-bar').style.width = pct+'%';
-    document.getElementById('sim-status').textContent = 'Decode step '+(i+1)+': reading full KV Cache ('+(promptTokens.length+i)+' entries), generating token "'+ outputTokens[i]+'"';
-    simTimer = setTimeout(function(){ runDecode(i+1); }, 340);
+    var pct = Math.round(((i + 1) / outputTokens.length) * 100);
+    document.getElementById('decode-bar').style.width = pct + '%';
+    var cacheSize = promptTokens.length + i;
+    document.getElementById('sim-status').textContent = 'Decode step ' + (i + 1) + ': compute cores read ' + cacheSize + ' KV entries from HBM, run transformer block, produce "' + outputTokens[i] + '"';
+    simTimer = setTimeout(function() { runDecode(i + 1); }, 340);
   }
 
   buildPromptChips();
 
-  /* ── quiz ── */
+  /* ── Quiz ── */
   var selected = null;
   var answered = false;
 
@@ -773,21 +800,27 @@
   function checkAnswer() {
     if (!selected || answered) return;
     answered = true;
-    var opts    = document.querySelectorAll('.quiz-option');
     var letters = ['a','b','c','d'];
-    opts.forEach(function(o,i){
-      o.style.cursor='default'; o.onclick=null;
-      if(letters[i]==='b') o.classList.add('correct');
-      else if(letters[i]===selected) o.classList.add('wrong');
+    document.querySelectorAll('.quiz-option').forEach(function(o, i) {
+      o.style.cursor = 'default';
+      o.onclick = null;
+      if (letters[i] === 'b') o.classList.add('correct');
+      else if (letters[i] === selected) o.classList.add('wrong');
     });
     var result = document.getElementById('quiz-result');
     result.style.display = 'block';
     if (selected === 'b') {
       result.style.background = '#E8F5E9';
-      result.innerHTML = '<strong>Correct - and well reasoned.</strong> "Starts quickly" tells you TTFT is fine - Prefill is working well. "Takes long to complete" tells you TPOT is the problem - Decode is slow. With 2,000 output tokens, the KV Cache grows to ~2,200 entries by the end, and the Decode GPU is reading all of it on every step. The right investigation path: (1) measure TPOT to quantify the problem, (2) check GPU memory bandwidth utilisation, (3) explore KV Cache quantisation to reduce the data being read per step, (4) consider Paged Attention to manage KV Cache allocation efficiently, (5) at scale, disaggregation would let you put Decode on memory-bandwidth-optimised GPUs while Prefill stays on compute-optimised ones.';
+      result.innerHTML = '<strong>Correct.</strong> "First line appears quickly" means TTFT is fine - the 200-token Prefill is fast. "Full response takes long" means TPOT is high - Decode is the bottleneck. With 2,000 output tokens, each Decode step requires the compute cores to read an increasingly large KV Cache from HBM. By the end, that is over 2,200 entries being transferred across the internal HBM bus on every single step. The compute cores themselves are not the constraint - they finish the calculation in microseconds. The bottleneck is how fast the data can move from HBM to the cores. The right investigation path is to measure TPOT directly, check HBM bandwidth utilisation, and explore KV Cache quantisation (Module 3.3) to reduce bytes transferred per step.';
+    } else if (selected === 'a') {
+      result.style.background = '#FFF3E0';
+      result.innerHTML = '<strong>Not quite.</strong> The symptom says the first token appears quickly - which means TTFT is fine and Prefill is not the bottleneck. A 200-token prompt is also a short input, so Prefill compute cost is low. The slow part is generating the full 2,000-token output, which points to Decode. Option B is correct.';
+    } else if (selected === 'c') {
+      result.style.background = '#FFF3E0';
+      result.innerHTML = '<strong>Not quite.</strong> The two phases have different bottlenecks and different solutions - they are not both slow simultaneously in this scenario. TTFT is acceptable (Prefill is fine), and TPOT is high (Decode is slow). The H100 is not undersized in terms of FLOPS. The issue is HBM bandwidth becoming the constraint during long Decode sequences. Option B is correct.';
     } else {
       result.style.background = '#FFF3E0';
-      result.innerHTML = '<strong>Not quite.</strong> The clue is "starts quickly but takes long to complete" - this pattern tells you TTFT is fine (Prefill is fast) and TPOT is high (Decode is slow). Option B is correct. With a 2,000-token output, the KV Cache grows large and memory bandwidth becomes the bottleneck during Decode. TTFT-focused solutions like Flash Attention would not help here.';
+      result.innerHTML = '<strong>Not quite.</strong> Decode is indeed the bottleneck, but the cause is HBM bandwidth, not Tensor Core compute. During Decode, the compute cores run one token through the full transformer block per step - the attention calculation itself is fast. The slow part is reading the growing KV Cache from HBM before each step. More FLOPS would not help here. Higher HBM bandwidth, or a smaller KV Cache, would. Option B is correct.';
     }
     document.getElementById('check-btn').style.display = 'none';
   }
