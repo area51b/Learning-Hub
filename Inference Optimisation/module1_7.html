@@ -480,16 +480,165 @@
     </div>
   </div>
 
-  <!-- Section 5: TTFT and TPOT -->
+  <!-- Section 5: Resource demands -->
   <div class="section-card">
-    <div class="section-header" id="hdr5" onclick="toggle(5)">
+    <div class="section-header" id="hdr5" onclick="toggle(5)" style="border-left-color:#E8E8E8;">
       <div class="section-title">
-        <span class="section-num" style="background:#00796B;">5</span>
-        The Two Metrics - TTFT and TPOT
+        <span class="section-num" style="background:#E65100;">5</span>
+        Why They Need Different Hardware Resources
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
+      <p>The reason Prefill and Decode feel so different is because they stress the GPU in completely different ways. Here is a direct comparison of the four key resource dimensions:</p>
+
+      <div class="resource-table">
+        <div class="rt-header">
+          <span>Resource</span>
+          <span>Prefill</span>
+          <span>Decode</span>
+        </div>
+        <div class="rt-row">
+          <span class="rt-label">GPU Compute</span>
+          <div class="rt-bar-wrap">
+            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#1565C0; width:92%;">Very High</div></div>
+          </div>
+          <div class="rt-bar-wrap">
+            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#1565C0; width:22%;">Low</div></div>
+          </div>
+        </div>
+        <div class="rt-row">
+          <span class="rt-label">Memory BW</span>
+          <div class="rt-bar-wrap">
+            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#E65100; width:40%;">Moderate</div></div>
+          </div>
+          <div class="rt-bar-wrap">
+            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#E65100; width:90%;">Very High</div></div>
+          </div>
+        </div>
+        <div class="rt-row">
+          <span class="rt-label">GPU Util %</span>
+          <div class="rt-bar-wrap">
+            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#7B1FA2; width:85%;">~85%</div></div>
+          </div>
+          <div class="rt-bar-wrap">
+            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#7B1FA2; width:30%;">~30%</div></div>
+          </div>
+        </div>
+        <div class="rt-row">
+          <span class="rt-label">KV Cache Use</span>
+          <div class="rt-bar-wrap">
+            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#2E7D32; width:50%;">Write only</div></div>
+          </div>
+          <div class="rt-bar-wrap">
+            <div class="rt-bar-bg"><div class="rt-bar-fill" style="background:#2E7D32; width:90%;">Read every step</div></div>
+          </div>
+        </div>
+      </div>
+
+      <p>During Decode, the GPU compute utilisation drops to around 30% - not because the GPU is slow, but because it is <strong>waiting for memory reads</strong>. The GPU has to load the entire KV Cache from HBM (High Bandwidth Memory) for every single token it generates. This is the memory bandwidth bottleneck in action.</p>
+
+      <div class="callout callout-orange">
+        <strong>The restaurant analogy:</strong> Prefill is like a chef who gets all the ingredients delivered at once and does intense prep work - chopping, mixing, marinating - all in parallel. Decode is like a chef who must run back to the walk-in fridge for one ingredient before every single step of cooking. The fridge trips (memory reads) are what slow things down, not the actual cooking.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: KV Cache growth -->
+  <div class="section-card">
+    <div class="section-header" id="hdr6" onclick="toggle(6)" style="border-left-color:#E8E8E8;">
+      <div class="section-title">
+        <span class="section-num" style="background:#2E7D32;">6</span>
+        How the KV Cache Grows Through Both Phases
+      </div>
+      <span class="chevron" id="chv6">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy6">
+      <p>You learned in Module 1.3 that the KV Cache stores Key and Value vectors so they do not need to be recomputed. Now you can see exactly when and how it grows:</p>
+
+      <div class="kv-growth">
+        <div class="kv-growth-title">KV Cache growth - 6-token prompt, 4-token output</div>
+
+        <div class="kv-step">
+          <div class="kv-step-label" style="color:#1565C0; font-weight:bold;">Prefill starts</div>
+          <div class="kv-blocks">
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+          </div>
+          <span style="font-size:12px; color:#888; font-family:Arial,sans-serif; margin-left:8px;">6 KV entries written at once</span>
+        </div>
+
+        <div class="kv-step">
+          <div class="kv-step-label" style="color:#E65100; font-weight:bold;">Decode step 1</div>
+          <div class="kv-blocks">
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block kv-new" style="background:#E65100;"></div>
+          </div>
+          <span style="font-size:12px; color:#888; font-family:Arial,sans-serif; margin-left:8px;">+1 entry (new output token)</span>
+        </div>
+
+        <div class="kv-step">
+          <div class="kv-step-label" style="color:#E65100; font-weight:bold;">Decode step 2</div>
+          <div class="kv-blocks">
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#E65100;"></div>
+            <div class="kv-block kv-new" style="background:#E65100;"></div>
+          </div>
+          <span style="font-size:12px; color:#888; font-family:Arial,sans-serif; margin-left:8px;">+1 entry (reads all 7 previous)</span>
+        </div>
+
+        <div class="kv-step">
+          <div class="kv-step-label" style="color:#E65100; font-weight:bold;">Decode step 4</div>
+          <div class="kv-blocks">
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#1565C0;"></div>
+            <div class="kv-block" style="background:#E65100;"></div>
+            <div class="kv-block" style="background:#E65100;"></div>
+            <div class="kv-block" style="background:#E65100;"></div>
+            <div class="kv-block kv-new" style="background:#E65100;"></div>
+          </div>
+          <span style="font-size:12px; color:#888; font-family:Arial,sans-serif; margin-left:8px;">Reads all 9 to generate token 10</span>
+        </div>
+
+        <div style="font-size:12.5px; color:#666; font-family:Arial,sans-serif; margin-top:10px; line-height:1.6; padding-top:10px; border-top:1px solid #E0E0E0;">
+          Blue = prompt tokens. Orange = generated tokens. Each decode step reads the <em>entire</em> growing cache - this is why decode gets progressively slower as the response gets longer, and why KV Cache memory management is critical.
+        </div>
+      </div>
+
+      <div class="callout callout-teal">
+        <strong>The compounding problem:</strong> A 1,000-token output on a 4,000-token prompt means the decode phase eventually reads a 5,000-entry KV Cache on every single step. The last tokens take longer to generate than the first. For applications with long outputs - code generation, long-form writing, chain-of-thought reasoning - this KV Cache growth is the dominant inference cost driver.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: TTFT and TPOT -->
+  <div class="section-card">
+    <div class="section-header" id="hdr7" onclick="toggle(7)">
+      <div class="section-title">
+        <span class="section-num" style="background:#00796B;">7</span>
+        The Two Metrics - TTFT and TPOT
+      </div>
+      <span class="chevron" id="chv7">&#9662;</span>
+    </div>
+    <div class="section-body" id="bdy7">
       <p>Because Prefill and Decode are distinct phases with different bottlenecks, they map to two distinct latency metrics that appear in almost every inference performance discussion.</p>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
@@ -513,16 +662,16 @@
     </div>
   </div>
 
-  <!-- Section 6: Bridge to disaggregation -->
+  <!-- Section 8: Bridge to disaggregation -->
   <div class="section-card">
-    <div class="section-header" id="hdr6" onclick="toggle(6)">
+    <div class="section-header" id="hdr8" onclick="toggle(8)">
       <div class="section-title">
-        <span class="section-num" style="background:#7B1FA2;">6</span>
+        <span class="section-num" style="background:#7B1FA2;">8</span>
         Why Disaggregation Exists - Built From First Principles
       </div>
-      <span class="chevron" id="chv6">&#9662;</span>
+      <span class="chevron" id="chv8">&#9662;</span>
     </div>
-    <div class="section-body" id="bdy6">
+    <div class="section-body" id="bdy8">
       <p>Now that Prefill and Decode are concrete, the logic behind disaggregation follows directly. The question is simply: if these two phases need different hardware resources and run at different times, why force them to share the same GPU?</p>
 
       <div class="disagg-bridge">
@@ -557,16 +706,16 @@
     </div>
   </div>
 
-  <!-- Section 7: Part 1 summary -->
+  <!-- Section 9: Part 1 summary -->
   <div class="section-card">
-    <div class="section-header" id="hdr7" onclick="toggle(7)">
+    <div class="section-header" id="hdr9" onclick="toggle(9)">
       <div class="section-title">
-        <span class="section-num" style="background:#283593;">7</span>
+        <span class="section-num" style="background:#283593;">9</span>
         Part 1 Complete - The Foundation in One View
       </div>
-      <span class="chevron" id="chv7">&#9662;</span>
+      <span class="chevron" id="chv9">&#9662;</span>
     </div>
-    <div class="section-body" id="bdy7">
+    <div class="section-body" id="bdy9">
       <p>Part 1 has built a complete picture of how a transformer processes a request - from the architecture itself to the two operating modes that drive every inference decision. Here is what each module contributed:</p>
 
       <div class="summary-grid">
