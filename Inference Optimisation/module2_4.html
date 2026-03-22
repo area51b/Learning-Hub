@@ -207,7 +207,7 @@
           <div class="tc-badge" style="background:#1565C0; color:white;">Latency</div>
           <div class="tc-title" style="color:#1565C0;">Time for one request</div>
           <div class="tc-def">How long it takes to get a response for a single request. Usually decomposed into TTFT (time to first token) and TPOT (time per output token).</div>
-          <div class="tc-row">Measured: milliseconds per request, or ms per token</div>
+          <div class="tc-row">Measured as TTFT (ms to first token, driven by Prefill) and TPOT (ms per output token, driven by Decode). End-to-end latency combines both: TTFT + (TPOT x output tokens)</div>
           <div class="tc-row">Felt by: the individual user waiting for a response</div>
           <div class="tc-row">Driven by: model size, KV Cache reads, GPU speed</div>
           <div class="tc-row">Degraded by: large batch sizes, full queues, long contexts</div>
@@ -244,6 +244,7 @@
       <div class="plot-wrap">
         <div class="plot-title">Latency-Throughput curve - click a region to see operating characteristics</div>
         <div class="plot-controls">
+          <div class="plot-title">REGIONS:</div>
           <button class="plot-btn" style="background:#E3F2FD; color:#1565C0; border:2px solid #1565C0;" onclick="showRegion('low')">Low load</button>
           <button class="plot-btn" style="background:#E8F5E9; color:#2E7D32; border:2px solid #2E7D32;" onclick="showRegion('sweet')">Sweet spot</button>
           <button class="plot-btn" style="background:#FFF3E0; color:#E65100; border:2px solid #E65100;" onclick="showRegion('sat')">Saturation</button>
@@ -279,7 +280,7 @@
           <line x1="452" y1="12" x2="452" y2="210" stroke="#C62828" stroke-width="1.5" stroke-dasharray="6,4"/>
           <!-- dot at sweet spot -->
           <circle cx="295" cy="143" r="8" fill="#2E7D32" opacity="0.85" id="dot-sweet"/>
-          <text x="295" y="138" text-anchor="middle" font-size="9" font-family="Arial" fill="white" font-weight="bold">opt</text>
+          <text x="295" y="138" text-anchor="middle" font-size="9" font-family="Arial" fill="white" font-weight="bold"></text>
         </svg>
 
         <div id="region-info" style="background:white; border-radius:8px; padding:12px 16px; font-family:Arial,sans-serif; font-size:13.5px; line-height:1.7; border:1px solid #E0E0E0; margin-top:8px; min-height:60px; color:#444;">
