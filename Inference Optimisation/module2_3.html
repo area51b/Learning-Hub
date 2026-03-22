@@ -267,15 +267,15 @@
           <div class="btype-badge" style="background:#C62828; color:white;">Static</div>
           <div class="btype-title">Collect N requests, process together, return all, repeat</div>
         </div>
-        <div class="btype-desc">The simplest batching strategy: wait until you have a fixed number of requests (e.g. 8), run them all through the model together, wait for all to finish, then start the next batch. Used in early ML inference and still common in batch processing pipelines.</div>
+        <div class="btype-desc">The simplest batching strategy: collect a fixed number of requests, allocate GPU memory for all of them upfront, and run the entire group as a single atomic unit through the Decode loop. Every iteration advances all requests by one token simultaneously. No new request can be admitted and no finished request can release its memory slot until every member of the batch has completed generation. The batch closes as a unit, memory is freed, and only then does the next batch begin. Used in early ML inference and still common in batch processing pipelines.</div>
 
         <div class="btype-vis" style="background:#1e1e2e; color:#cdd6f4;">
 <span style="color:#6C7086;">// Static batch of 4 - all must FINISH before next batch starts</span>
-Req A [prompt=50tok,  output=<span style="color:#A6E3A1;">12tok </span>] ████░░░░░░░░░░░░ DONE at step 12
-Req B [prompt=200tok, output=<span style="color:#A6E3A1;">180tok</span>] ████████████████████████████ DONE at step 180
-Req C [prompt=30tok,  output=<span style="color:#A6E3A1;">8tok  </span>] ████░░░░░░░░░░░░░░░░░░░░░░░░ DONE at step 8
-Req D [prompt=100tok, output=<span style="color:#A6E3A1;">95tok </span>] ████████████████████████░░░░ DONE at step 95
-<span style="color:#F38BA8;">                                             ^ Req A, C, D sit IDLE waiting for Req B</span>
+<br/> Req A [prompt=50tok,  output=<span style="color:#A6E3A1;">12tok</span>]&nbsp;&nbsp;&nbsp;████░░░░░░░░░░░░░░░░░░░░░░░░ DONE at step 12
+<br/> Req B [prompt=200tok, output=<span style="color:#A6E3A1;">180tok</span>]&nbsp;████████████████████████████ DONE at step 180
+<br/> Req C [prompt=30tok,  output=<span style="color:#A6E3A1;">8tok</span>]&nbsp;&nbsp;&nbsp;&nbsp;███░░░░░░░░░░░░░░░░░░░░░░░░░ DONE at step 8
+<br/> Req D [prompt=100tok, output=<span style="color:#A6E3A1;">95tok</span>]&nbsp;&nbsp;████████████████████████░░░░ DONE at step 95
+<br/><span style="color:#F38BA8;">                                             ^ Req A, C, D sit IDLE waiting for Req B</span>
         </div>
 
         <div class="btype-pros-cons">
@@ -314,9 +314,9 @@ Req D [prompt=100tok, output=<span style="color:#A6E3A1;">95tok </span>] ██�
 
         <div class="btype-vis" style="background:#1e1e2e; color:#cdd6f4;">
 <span style="color:#6C7086;">// Dynamic batch - similar lengths grouped, smaller padding waste</span>
-Batch 1: Req A [50tok],  Req C [30tok]  → padded to 50  - minimal waste
-Batch 2: Req B [200tok], Req D [100tok] → padded to 200 - some waste
-<span style="color:#A6E3A1;">Result: shorter requests no longer wait for long ones</span>
+<br/> Batch 1: Req A [50tok],  Req C [30tok]  → padded to 50  - minimal waste
+<br/> Batch 2: Req B [200tok], Req D [100tok] → padded to 200 - some waste
+<br/><span style="color:#A6E3A1;">Result: shorter requests no longer wait for long ones</span>
         </div>
 
         <div class="btype-pros-cons">
@@ -355,21 +355,21 @@ Batch 2: Req B [200tok], Req D [100tok] → padded to 200 - some waste
 
         <div class="btype-vis" style="background:#1e1e2e; color:#cdd6f4;">
 <span style="color:#6C7086;">// Continuous batch - slots fill immediately when freed</span>
-Step 1-8:   [Req A] [Req B] [Req C] [Req D]
-Step 9:     [<span style="color:#A6E3A1;">DONE:C</span>] → [<span style="color:#FAB387;">NEW:E </span>] inserted immediately
-Step 10-12: [Req A] [Req B] [<span style="color:#FAB387;">Req E</span>] [Req D]
-Step 13:    [<span style="color:#A6E3A1;">DONE:A</span>] → [<span style="color:#FAB387;">NEW:F </span>] inserted immediately
-<span style="color:#A6E3A1;">No idle slots. GPU stays fully utilised.</span>
+<br/> Step 1-8:   [Req A] [Req B] [Req C] [Req D]
+<br/> Step 9:     [<span style="color:#A6E3A1;">DONE:C</span>] → [<span style="color:#FAB387;">NEW:E </span>] inserted immediately
+<br/> Step 10-12: [Req A] [Req B] [<span style="color:#FAB387;">Req E</span>] [Req D]
+<br/> Step 13:    [<span style="color:#A6E3A1;">DONE:A</span>] → [<span style="color:#FAB387;">NEW:F </span>] inserted immediately
+<br/><span style="color:#A6E3A1;">No idle slots. GPU stays fully utilised.</span>
         </div>
 
         <div class="btype-pros-cons">
-          <div class="btype-pro">Near-100% GPU slot utilisation at all times</div>
+          <div class="btype-pro" style="background:#FFF8F8;">Near-100% GPU slot utilisation at all times</div>
           <div class="btype-con">More complex KV Cache memory management required</div>
-          <div class="btype-pro">Short requests do not wait for long ones</div>
+          <div class="btype-pro" style="background:#FFF8F8;">Short requests do not wait for long ones</div>
           <div class="btype-con">Requires per-step scheduling overhead</div>
-          <div class="btype-pro">Throughput 5–10x higher than static batching</div>
+          <div class="btype-pro" style="background:#FFF8F8;">Throughput 5–10x higher than static batching</div>
           <div class="btype-con">Latency for individual requests can vary under high load</div>
-          <div class="btype-pro">Foundation of vLLM and TensorRT-LLM serving</div>
+          <div class="btype-pro" style="background:#FFF8F8;">Foundation of vLLM and TensorRT-LLM serving</div>
           <div class="btype-con">Not useful for batch offline jobs with uniform lengths</div>
         </div>
       </div>
@@ -487,7 +487,7 @@ Step 13:    [<span style="color:#A6E3A1;">DONE:A</span>] → [<span style="color
             <td>Mixed workloads, non-LLM models</td>
             <td>Moderate</td>
             <td>Moderate</td>
-            <td>Triton, ONNX Runtime</td>
+            <td>Triton (for non-LLM backends), ONNX Runtime</td>
           </tr>
           <tr>
             <td class="st-name">Continuous batching</td>
@@ -516,7 +516,7 @@ Step 13:    [<span style="color:#A6E3A1;">DONE:A</span>] → [<span style="color
       </div>
 
       <div class="callout callout-teal">
-        <strong>The practical guidance:</strong> For interactive chat applications, lean toward smaller batch sizes (4–16) with low max-wait time to keep TTFT under 500ms. For throughput-focused APIs where users accept slight latency increases for lower cost, larger batch sizes (32–128) can dramatically cut cost per token. Most production systems expose a <code>max_batch_size</code> and <code>batch_timeout</code> parameter for exactly this dial.
+        <strong>The practical guidance applies primarily to the Decode phase,</strong> where batch size is the main throughput lever. Multiple requests run their Decode loops together - each iteration advances all of them by one token simultaneously. For interactive chat applications, lean toward smaller Decode batch sizes (4–16) to keep TPOT low and reduce per-user generation latency. Smaller batch sizes also reduce request queuing time - a new request that arrives while the Decode pool is full must wait before its Prefill can begin, which adds to the total time before the first token appears. For throughput-focused APIs where users accept slight latency increases for lower cost, larger Decode batch sizes (32–128) can dramatically cut cost per token by keeping the GPU busier per cycle. Most production systems expose a <code>max_batch_size</code> and <code>batch_timeout</code> parameter for exactly this dial. Prefill batching also occurs - multiple requests arriving close together can have their prompts processed in the same forward pass - but variable prompt lengths make it harder to tune directly, and techniques like chunked Prefill address that problem separately.
       </div>
     </div>
   </div>
