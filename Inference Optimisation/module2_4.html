@@ -484,65 +484,83 @@
     <div class="section-body" id="bdy5">
       <p>When a customer needs to improve their throughput-latency position, there are a small number of high-leverage interventions. Understanding what each lever moves - and what it costs - is the core of inference architecture advice:</p>
 
-      <div style="display:flex; flex-direction:column; gap:10px; margin:16px 0;">
+      <style>
+        .lever-table { display:flex; flex-direction:column; gap:10px; margin:16px 0; }
+        .lever-header { display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; font-family:Arial,sans-serif; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#888; padding:0 12px; }
+        .lever-row { display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center; }
+        .lever-name { font-weight:bold; }
+        .lever-rating { font-weight:bold; }
+        .lever-note { color:#555; }
+        @media (max-width:620px) {
+          .lever-header { display:none; }
+          .lever-row { grid-template-columns:1fr 1fr; grid-template-rows:auto auto; }
+          .lever-name { grid-column:1 / -1; font-size:13.5px; margin-bottom:2px; }
+          .lever-note { grid-column:1 / -1; margin-top:4px; font-size:12.5px; }
+        }
+      </style>
 
-        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; font-family:Arial,sans-serif; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#888; padding:0 12px;">
-          <span>Lever</span><span>Latency</span><span>Throughput</span><span>Notes</span>
+      <div class="lever-table">
+
+        <div class="lever-header">
+          <span>Lever</span>
+          <span>Latency</span>
+          <span>Throughput</span>
+          <span>&nbsp;&nbsp;Notes</span>
         </div>
 
-        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#E8F5E9; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
-          <span style="font-weight:bold;">Continuous batching</span>
-          <span style="color:#2E7D32;">Neutral</span>
-          <span style="color:#2E7D32; font-weight:bold;">+++ </span>
-          <span style="color:#555;">Free - config change only. Most impactful single step from static batching.</span>
+        <div class="lever-row" style="background:#E8F5E9;">
+          <span class="lever-name">Continuous batching</span>
+          <span class="lever-rating" style="color:#888;">Neutral</span>
+          <span class="lever-rating" style="color:#2E7D32;">+++</span>
+          <span class="lever-note">Free - config change only. Most impactful single step from static batching.</span>
         </div>
 
-        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#E3F2FD; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
-          <span style="font-weight:bold;">Smaller model</span>
-          <span style="color:#2E7D32; font-weight:bold;">+++</span>
-          <span style="color:#2E7D32; font-weight:bold;">+++</span>
-          <span style="color:#555;">Reduces both. Quality trade-off - must validate before deploying.</span>
+        <div class="lever-row" style="background:#E3F2FD;">
+          <span class="lever-name">Smaller model</span>
+          <span class="lever-rating" style="color:#2E7D32;">+++</span>
+          <span class="lever-rating" style="color:#2E7D32;">+++</span>
+          <span class="lever-note">Improves both. Quality trade-off - must validate before deploying.</span>
         </div>
 
-        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#E8F5E9; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
-          <span style="font-weight:bold;">Quantisation (INT8)</span>
-          <span style="color:#2E7D32;">+</span>
-          <span style="color:#2E7D32; font-weight:bold;">++</span>
-          <span style="color:#555;">Reduces model memory → more KV Cache space → higher concurrency.</span>
+        <div class="lever-row" style="background:#E8F5E9;">
+          <span class="lever-name">Quantisation (FP8/INT8)</span>
+          <span class="lever-rating" style="color:#2E7D32;">+</span>
+          <span class="lever-rating" style="color:#2E7D32;">++</span>
+          <span class="lever-note">Reduces model memory - more KV Cache space - higher concurrency.</span>
         </div>
 
-        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#E3F2FD; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
-          <span style="font-weight:bold;">Prefix caching</span>
-          <span style="color:#2E7D32; font-weight:bold;">+++</span>
-          <span style="color:#2E7D32;">++</span>
-          <span style="color:#555;">Reduces TTFT dramatically for prefix-heavy workloads. Near-zero cost.</span>
+        <div class="lever-row" style="background:#E3F2FD;">
+          <span class="lever-name">Prefix caching</span>
+          <span class="lever-rating" style="color:#2E7D32;">+++</span>
+          <span class="lever-rating" style="color:#2E7D32;">++</span>
+          <span class="lever-note">Reduces TTFT dramatically for prefix-heavy workloads. Near-zero cost.</span>
         </div>
 
-        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#FFF3E0; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
-          <span style="font-weight:bold;">More GPUs</span>
-          <span style="color:#2E7D32;">+</span>
-          <span style="color:#2E7D32; font-weight:bold;">+++</span>
-          <span style="color:#555;">Linear throughput scaling. High cost. Right answer only after software optimisations exhausted.</span>
+        <div class="lever-row" style="background:#FFF3E0;">
+          <span class="lever-name">More GPUs</span>
+          <span class="lever-rating" style="color:#2E7D32;">+</span>
+          <span class="lever-rating" style="color:#2E7D32;">+++</span>
+          <span class="lever-note">Linear throughput scaling. High cost. Right answer only after software optimisations exhausted.</span>
         </div>
 
-        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#FBE9E7; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
-          <span style="font-weight:bold;">Increase batch size</span>
-          <span style="color:#C62828;">-</span>
-          <span style="color:#2E7D32; font-weight:bold;">++</span>
-          <span style="color:#555;">Improves throughput but increases TTFT. Choose based on workload type.</span>
+        <div class="lever-row" style="background:#FBE9E7;">
+          <span class="lever-name">Increase batch size</span>
+          <span class="lever-rating" style="color:#C62828;">-</span>
+          <span class="lever-rating" style="color:#2E7D32;">++</span>
+          <span class="lever-note">Improves Decode throughput but increases queue wait time and TTFT. Choose based on workload type.</span>
         </div>
 
-        <div style="display:grid; grid-template-columns:160px 80px 80px 1fr; gap:8px; background:#F3E8FD; border-radius:8px; padding:10px 12px; font-family:Arial,sans-serif; font-size:13px; align-items:center;">
-          <span style="font-weight:bold;">Disaggregation</span>
-          <span style="color:#2E7D32; font-weight:bold;">++</span>
-          <span style="color:#2E7D32; font-weight:bold;">++</span>
-          <span style="color:#555;">Separates Prefill/Decode onto dedicated hardware. Complex but powerful at scale.</span>
+        <div class="lever-row" style="background:#F3E8FD;">
+          <span class="lever-name">Disaggregation</span>
+          <span class="lever-rating" style="color:#2E7D32;">++</span>
+          <span class="lever-rating" style="color:#2E7D32;">++</span>
+          <span class="lever-note">Separates Prefill and Decode onto dedicated hardware. Complex but powerful at scale.</span>
         </div>
 
       </div>
 
       <div class="callout callout-teal">
-        <strong>The right sequence for a customer struggling with performance:</strong> Start with continuous batching (free, immediate). Then prefix caching if workload has repeated prefixes. Then quantisation to increase concurrency. Then model selection review. Only after those are exhausted consider more hardware. Adding GPUs before optimising software is the most expensive mistake in inference architecture.
+        <strong>The right sequence for a customer struggling with performance:</strong> Start with continuous batching (free, immediate). Then prefix caching if the workload has repeated prefixes. Then quantisation to increase concurrency. Then model selection review. Only after those are exhausted consider more hardware. Adding GPUs before optimising software is the most expensive mistake in inference architecture.
       </div>
     </div>
   </div>
