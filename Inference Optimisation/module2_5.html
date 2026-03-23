@@ -56,7 +56,7 @@
   .gpu-mem-wrap { background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
   .gpu-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.4; margin-bottom:16px; }
   .gpu-bar-outer { background:rgba(255,255,255,0.06); border-radius:10px; height:48px; overflow:hidden; display:flex; margin-bottom:10px; position:relative; }
-  .gpu-seg { height:48px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; transition:all 0.4s; overflow:hidden; white-space:nowrap; padding:0 8px; }
+  .gpu-seg { height:48px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; transition:all 0.4s; overflow:hidden; white-space:nowrap; padding:0 8px; position:relative; cursor:default; }
   .gpu-legend { display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; }
   .gpu-legend-item { display:flex; align-items:center; gap:7px; font-size:12.5px; }
   .gpu-legend-box  { width:14px; height:14px; border-radius:3px; flex-shrink:0; }
@@ -198,8 +198,8 @@
     <a href="module3_1.html" class="nav-btn next">
       <div class="nav-dir">Next &#8594;</div>
       <div class="nav-title">Part 3 - Optimisation Techniques</div>
-    </div>
-  </a>
+    </a>
+  </div>
 
   <div class="intro-card">
     <p>GPU memory - HBM (High Bandwidth Memory) - is the most constrained resource in LLM inference. It is expensive, finite, and shared between three competing consumers that all need it at the same time. Understanding exactly how memory fills up, what happens when it runs out, and how to reclaim space is the practical foundation for every infrastructure sizing conversation.</p>
@@ -295,7 +295,7 @@
           <div class="gpu-legend-item"><div class="gpu-legend-box" style="background:#1565C0;"></div>Model weights</div>
           <div class="gpu-legend-item"><div class="gpu-legend-box" style="background:#C2185B;"></div>KV Cache headroom</div>
           <div class="gpu-legend-item"><div class="gpu-legend-box" style="background:#E65100;"></div>Activations + overhead</div>
-          <div class="gpu-legend-item"><div class="gpu-legend-box" style="background:#2E7D32;"></div>Free / unused</div>
+          <div class="gpu-legend-item"><div class="gpu-legend-box" style="background:#2E7D32;"></div>System reserved memory</div>
         </div>
 
         <div class="gpu-stats" id="gpuStats">
@@ -674,7 +674,7 @@
     <div class="pc-icon">2</div>
     <div>
       <div class="pc-title">Part 2 Now Complete - All 5 Modules</div>
-      <div class="pc-sub">2.1 What Is Inference · 2.2 KV Cache · 2.3 Memory Bottleneck · 2.4 Batching · 2.5 Throughput vs Latency. You have the full inference serving picture. Part 3 goes deep on the techniques that fix each bottleneck.</div>
+      <div class="pc-sub">2.1 What Is Inference · 2.2 KV Cache· 2.3 Batching · 2.4 Throughput vs Latency · 2.5 Memory Bottleneck . You have the full inference serving picture. Part 3 goes deep on the techniques that fix each bottleneck.</div>
     </div>
   </div>
 
@@ -721,38 +721,78 @@
     var mk=document.getElementById('gpuModel').value;
     var hk=document.getElementById('gpuHW').value;
     var m=gpuModels[mk], h=gpuHWs[hk];
-    var totalGB=h.gb, weightsGB=Math.min(m.wGB,totalGB), overheadGB=3;
-    var kvGB=Math.max(0, totalGB-weightsGB-overheadGB);
-    var freeGB=0;
-    if(weightsGB+overheadGB>totalGB){ kvGB=0; }
+    var totalGB=h.gb;
+    var weightsGB=Math.min(m.wGB, totalGB);
+    var overheadGB=3;
+    // vLLM reserves gpu_memory_utilization (default 0.90) of HBM
+    // The remaining 10% is system reserved and not available for KV Cache
+    var systemReservedGB=parseFloat((totalGB*0.10).toFixed(1));
+    var usableGB=totalGB-systemReservedGB;
+    var kvGB=Math.max(0, usableGB-weightsGB-overheadGB);
+    if(weightsGB+overheadGB>usableGB){ kvGB=0; }
 
+    var fits=weightsGB<=usableGB;
     var wPct=(weightsGB/totalGB*100).toFixed(1);
     var kvPct=(kvGB/totalGB*100).toFixed(1);
     var ovPct=(overheadGB/totalGB*100).toFixed(1);
-    var frPct=Math.max(0,100-parseFloat(wPct)-parseFloat(kvPct)-parseFloat(ovPct)).toFixed(1);
+    var sysPct=(systemReservedGB/totalGB*100).toFixed(1);
 
     var bar=document.getElementById('gpuBar');
-    var fits=weightsGB<=totalGB;
     if(!fits){
-      bar.innerHTML='<div class="gpu-seg" style="background:#C62828;width:100%;color:white;">MODEL DOES NOT FIT - '+weightsGB+'GB weights exceed '+totalGB+'GB GPU</div>';
+      bar.innerHTML='<div class="gpu-seg" style="background:#C62828;width:100%;color:white;">MODEL DOES NOT FIT - '+weightsGB+'GB weights exceed '+usableGB.toFixed(0)+'GB usable GPU memory</div>';
     } else {
       bar.innerHTML=
-        seg('#1565C0',wPct,weightsGB.toFixed(0)+'GB weights')+
-        (kvPct>0?seg('#C2185B',kvPct,kvPct>8?kvGB.toFixed(0)+'GB KV headroom':'KV'):'') +
-        seg('#E65100',ovPct,'~'+overheadGB+'GB OH')+
-        (frPct>1?seg('#2E7D32',frPct,frPct>5?frPct+'% free':''):'');
+        seg('#1565C0', wPct, weightsGB.toFixed(0)+'GB weights', 'Model weights: '+weightsGB.toFixed(0)+'GB ('+wPct+'% of total)')+
+        (kvPct>0 ? seg('#C2185B', kvPct, kvPct>8 ? kvGB.toFixed(0)+'GB KV headroom' : 'KV', 'KV Cache headroom: '+kvGB.toFixed(0)+'GB ('+kvPct+'% of total) - available for concurrent requests') : '')+
+        seg('#E65100', ovPct, '~'+overheadGB+'GB OH', 'Activations + runtime overhead: ~'+overheadGB+'GB - temporary tensors during forward pass')+
+        seg('#2E7D32', sysPct, parseFloat(sysPct)>5 ? systemReservedGB.toFixed(0)+'GB reserved' : '', 'System reserved: '+systemReservedGB.toFixed(0)+'GB ('+sysPct+'% of total) - held back by vLLM (gpu_memory_utilization=0.90), not available for KV Cache');
     }
 
-    var concEst=kvGB>0?Math.floor(kvGB*1000/(8000*0.01)):0; // rough: 10MB/token at 8k ctx
     document.getElementById('gpuStats').innerHTML=
-      gstat('GPU Memory',totalGB+'GB',h.bw)+
-      gstat('Weights',fits?weightsGB.toFixed(0)+'GB':'OVER','FP16 equiv: '+(m.wGB)+'GB')+
-      gstat('KV Headroom',fits&&kvGB>0?kvGB.toFixed(0)+'GB':'-',fits?'For concurrent requests':'Not applicable');
+      gstat('GPU Memory', totalGB+'GB', h.bw)+
+      gstat('Weights', fits ? weightsGB.toFixed(0)+'GB' : 'OVER', 'FP16 equiv: '+(m.wGB)+'GB')+
+      gstat('KV Headroom', fits&&kvGB>0 ? kvGB.toFixed(0)+'GB' : '-', fits ? 'For concurrent requests' : 'Not applicable');
   }
-  function seg(col,pct,label){
+  function seg(col,pct,label,tooltip){
     if(parseFloat(pct)<1)return '';
-    return '<div class="gpu-seg" style="background:'+col+';width:'+pct+'%;">'+label+'</div>';
+    var tip=(tooltip||label).replace(/"/g,'&quot;');
+    var showLabel=parseFloat(pct)>12;
+    return '<div class="gpu-seg" style="background:'+col+';width:'+pct+'%;"'
+      +' data-tip="'+tip+'"'
+      +' onmouseenter="showTip(event,this)" onmouseleave="hideTip()">'
+      +(showLabel?'<span style="pointer-events:none;">'+label+'</span>':'')
+      +'</div>';
   }
+
+  function showTip(e, el){
+    var tip=document.getElementById('gpuTip');
+    tip.innerHTML=el.getAttribute('data-tip');
+    tip.style.display='block';
+    moveTip(e);
+  }
+
+  function moveTip(e){
+    var tip=document.getElementById('gpuTip');
+    if(tip.style.display==='none')return;
+    var x=e.clientX, y=e.clientY;
+    var tw=tip.offsetWidth, th=tip.offsetHeight;
+    var wx=window.innerWidth, wy=window.innerHeight;
+    // Position above cursor, centred horizontally, flip if too close to edge
+    var left=x-(tw/2);
+    var top=y-th-14;
+    if(left<8)left=8;
+    if(left+tw>wx-8)left=wx-tw-8;
+    if(top<8)top=y+20; // flip below if too close to top
+    tip.style.left=left+'px';
+    tip.style.top=top+'px';
+  }
+
+  function hideTip(){
+    document.getElementById('gpuTip').style.display='none';
+  }
+
+  // Track mouse movement for smooth tooltip follow
+  document.addEventListener('mousemove', moveTip);
   function gstat(label,value,sub){
     return '<div class="gpu-stat"><div class="gpu-stat-label">'+label+'</div><div class="gpu-stat-value">'+value+'</div><div style="font-size:11px;opacity:0.5;margin-top:2px;">'+sub+'</div></div>';
   }
@@ -851,5 +891,6 @@
     document.getElementById('check-btn').style.display='none';
   }
 </script>
+<div id="gpuTip" style="display:none; position:fixed; background:#1E293B; color:white; font-size:12.5px; font-family:Arial,sans-serif; line-height:1.6; padding:10px 14px; border-radius:8px; max-width:280px; z-index:9999; box-shadow:0 4px 16px rgba(0,0,0,0.5); pointer-events:none;"></div>
 </body>
 </html>
