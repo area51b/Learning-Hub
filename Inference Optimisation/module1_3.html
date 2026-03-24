@@ -83,7 +83,7 @@
   /* Process flow */
   .process-row { display: flex; align-items: stretch; gap: 0; margin: 18px 0; flex-wrap: wrap; }
   .process-step { flex: 1; min-width: 140px; background: #F8F8F8; border: 1px solid #E0E0E0; padding: 14px 12px; text-align: center; position: relative; }
-  .process-step:not(:last-child)::after { content: '&#8594;'; position: absolute; right: -12px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #999; z-index: 1; }
+  .process-step:not(:last-child)::after { content: '\2192'; position: absolute; right: -12px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #999; z-index: 1; }
   .process-step:first-child { border-radius: 8px 0 0 8px; }
   .process-step:last-child  { border-radius: 0 8px 8px 0; }
   .ps-num { font-size: 11px; font-family: Arial, sans-serif; font-weight: bold; color: #999; margin-bottom: 6px; letter-spacing: 1px; }
