@@ -202,7 +202,7 @@
         <div class="mh-row">
           <span class="mh-label">HBM (off-chip)</span>
           <div class="mh-bar-bg">
-            <div class="mh-fill" style="background:#C62828; width:22%;">~2–5 TB/s bandwidth</div>
+            <div class="mh-fill" style="background:#C62828; width:30%;">~2–5 TB/s bandwidth</div>
           </div>
           <span class="mh-meta" style="color:#F87171;">40–141 GB total</span>
         </div>
@@ -335,23 +335,18 @@
         <div class="impact-title">Flash Attention vs Standard Attention - measured improvements</div>
         <div class="impact-row">
           <span class="impact-label">Prefill speed</span>
-          <div class="impact-bar-bg"><div class="impact-fill" style="background:#1565C0; width:75%;">2–4× faster</div></div>
+          <div class="impact-bar-bg"><div class="impact-fill" style="background:#1565C0; width:75%;">2–4X faster</div></div>
           <span class="impact-note" style="color:#1565C0;">TTFT benefit</span>
         </div>
         <div class="impact-row">
           <span class="impact-label">Attention memory use</span>
-          <div class="impact-bar-bg"><div class="impact-fill" style="background:#C2185B; width:88%;">5–20× reduction</div></div>
+          <div class="impact-bar-bg"><div class="impact-fill" style="background:#C2185B; width:88%;">5–20X reduction</div></div>
           <span class="impact-note" style="color:#C2185B;">O(N²)→O(N)</span>
         </div>
         <div class="impact-row">
           <span class="impact-label">Max context length enabled</span>
           <div class="impact-bar-bg"><div class="impact-fill" style="background:#7B1FA2; width:92%;">4k→128k+ tokens</div></div>
           <span class="impact-note" style="color:#7B1FA2;">Enabled 100k+ ctx</span>
-        </div>
-        <div class="impact-row">
-          <span class="impact-label">Training throughput</span>
-          <div class="impact-bar-bg"><div class="impact-fill" style="background:#2E7D32; width:68%;">2–3× faster</div></div>
-          <span class="impact-note" style="color:#2E7D32;">GPT-3 scale</span>
         </div>
         <div class="impact-row">
           <span class="impact-label">Output quality change</span>
@@ -387,21 +382,21 @@
             <td class="ver-name">Flash Attention 1</td>
             <td>2022</td>
             <td>Tiling + online softmax. Eliminated the N×N intermediate matrix. Made long contexts practical.</td>
-            <td class="ver-good">2–4× vs standard</td>
+            <td class="ver-good">2–4X vs standard</td>
             <td>Superseded</td>
           </tr>
           <tr>
             <td class="ver-name">Flash Attention 2</td>
             <td>2023</td>
             <td>Better parallelism across attention heads. Reduced non-matmul operations. Improved GPU thread scheduling. Better causal masking.</td>
-            <td class="ver-good">~2× vs FA1</td>
+            <td class="ver-good">~2X vs FA1</td>
             <td>Current default</td>
           </tr>
           <tr>
             <td class="ver-name">Flash Attention 3</td>
             <td>2024</td>
             <td>H100-specific optimisations - exploits new Tensor Core features (WGMMA, TMA). Overlaps compute and memory transfers. FP8 support.</td>
-            <td class="ver-good">1.5–2× vs FA2 on H100</td>
+            <td class="ver-good">1.5–2X vs FA2 on H100</td>
             <td>H100/H200 deployments</td>
           </tr>
         </tbody>
