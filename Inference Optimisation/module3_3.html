@@ -305,8 +305,80 @@
         </div>
       </div>
 
-      <div class="callout callout-blue">
+<div class="callout callout-blue">
         <strong>FP8 vs INT8 - why both exist at 8 bits:</strong> INT8 stores integers (whole numbers from -128 to 127). FP8 stores floating-point values with an exponent, giving it a much wider dynamic range - it can represent both very large and very small numbers accurately. For neural network weights, which span a large dynamic range, FP8 typically achieves lower quality loss than INT8 at the same bit-width. H100 GPUs have dedicated FP8 Tensor Cores that make FP8 operations faster than INT8 on that hardware.
+      </div>
+
+      <div style="background:#0F172A; border-radius:14px; padding:22px 24px; margin:18px 0; font-family:Arial,sans-serif; color:white;">
+        <div style="font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.35; margin-bottom:16px;">Precision support by hardware - NVIDIA and AMD</div>
+
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:9px 12px; background:rgba(255,255,255,0.07); font-size:11px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.45); font-weight:normal; border-radius:6px 0 0 0;">Format</th>
+                <th style="text-align:center; padding:9px 12px; background:rgba(255,255,255,0.07); font-size:11px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.45); font-weight:normal;">A100</th>
+                <th style="text-align:center; padding:9px 12px; background:rgba(255,255,255,0.07); font-size:11px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.45); font-weight:normal;">H100 / H200</th>
+                <th style="text-align:center; padding:9px 12px; background:rgba(255,255,255,0.07); font-size:11px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.45); font-weight:normal;">Blackwell</th>
+                <th style="text-align:center; padding:9px 12px; background:rgba(255,255,255,0.07); font-size:11px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.45); font-weight:normal;">MI250 / MI210</th>
+                <th style="text-align:center; padding:9px 12px; background:rgba(255,255,255,0.07); font-size:11px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.45); font-weight:normal; border-radius:0 6px 0 0;">MI300X</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); font-weight:bold; color:#E2E8F0;">FP16</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+              </tr>
+              <tr style="background:rgba(255,255,255,0.03);">
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); font-weight:bold; color:#E2E8F0;">FP8</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#F87171;">Software only</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#F87171;">Software only</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#FBBF24;">Native (maturing)</td>
+              </tr>
+              <tr>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); font-weight:bold; color:#E2E8F0;">INT8</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Supported</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+              </tr>
+              <tr style="background:rgba(255,255,255,0.03);">
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); font-weight:bold; color:#E2E8F0;">INT4</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#FBBF24;">Via GPTQ/AWQ</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#FBBF24;">Via GPTQ/AWQ</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#FBBF24;">Via GPTQ/AWQ</td>
+                <td style="padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:center; color:#FBBF24;">Via GPTQ/AWQ</td>
+              </tr>
+              <tr>
+                <td style="padding:9px 12px; font-weight:bold; color:#E2E8F0;">FP4</td>
+                <td style="padding:9px 12px; text-align:center; color:#475569;">No</td>
+                <td style="padding:9px 12px; text-align:center; color:#475569;">No</td>
+                <td style="padding:9px 12px; text-align:center; color:#4ADE80;">Native</td>
+                <td style="padding:9px 12px; text-align:center; color:#475569;">No</td>
+                <td style="padding:9px 12px; text-align:center; color:#475569;">No</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex; gap:16px; margin-top:14px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:7px; font-size:12px; opacity:0.7;"><div style="width:10px; height:10px; border-radius:50%; background:#4ADE80; flex-shrink:0;"></div>Hardware-accelerated</div>
+          <div style="display:flex; align-items:center; gap:7px; font-size:12px; opacity:0.7;"><div style="width:10px; height:10px; border-radius:50%; background:#FBBF24; flex-shrink:0;"></div>Software path or maturing support</div>
+          <div style="display:flex; align-items:center; gap:7px; font-size:12px; opacity:0.7;"><div style="width:10px; height:10px; border-radius:50%; background:#F87171; flex-shrink:0;"></div>No hardware acceleration - slower than FP16</div>
+          <div style="display:flex; align-items:center; gap:7px; font-size:12px; opacity:0.7;"><div style="width:10px; height:10px; border-radius:50%; background:#475569; flex-shrink:0;"></div>Not supported</div>
+        </div>
+
+        <div style="font-size:11px; opacity:0.28; margin-top:14px; line-height:1.7;">
+          Via GPTQ/AWQ = weights are dequantised to a higher precision before compute - memory saving is real, hardware throughput gain is smaller than native. FP8 on MI300X is available via ROCm but production validation is less widespread than on H100. A100 FP8 falls back to software emulation and is slower than FP16 - do not use FP8 on A100.
+        </div>
       </div>
     </div>
   </div>
@@ -413,7 +485,7 @@
           </tr>
           <tr>
             <td class="tech-name">GPTQ</td>
-            <td>Post-training quantisation using a small calibration dataset. Minimises quantisation error layer-by-layer by finding optimal rounding decisions.</td>
+            <td>Generalized post-training quantisation using a small calibration dataset. Minimises quantisation error layer-by-layer by finding optimal rounding decisions.</td>
             <td class="tech-good">Good - near-lossless at INT8, acceptable INT4</td>
             <td class="tech-good">Fast (minutes)</td>
             <td>vLLM, AutoGPTQ, most open models</td>
