@@ -450,7 +450,7 @@
       </div>
 
       <div class="callout callout-orange">
-        <strong>The first-token vs later-token asymmetry:</strong> Quantisation affects different parts of the model differently. Embedding layers (which handle the first token) and final output layers are more sensitive to precision loss than middle layers. Advanced quantisation methods like GPTQ and AWQ account for this - they use higher precision for sensitive layers and more aggressive quantisation for robust ones, rather than applying the same format uniformly.
+        <strong>Layers are not equally sensitive:</strong> Embeddings and often the final output projection tend to hurt more from aggressive rounding than many middle blocks. Methods like GPTQ (layer-wise error minimisation) and AWQ (activation-aware scaling) reduce damage in those fragile places while still using one low-bit format across the model. Some deployments also keep a few layers in FP16- that is a separate mixed-precision choice, not required by GPTQ or AWQ themselves.
       </div>
 
       <div class="callout callout-red">
@@ -469,7 +469,9 @@
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
-      <p>Not all quantisation is equal. The method used to map FP16 values to lower-precision formats significantly affects quality. These are the methods you will encounter in practice:</p>
+      <p>Not all quantisation is equal. <strong>Format</strong> (INT8, INT4, FP8) is which number type you store; <strong>method</strong> is the recipe for choosing scales, rounding, and which weights matter most. The same INT8 weights can look very different depending on whether you used naive rounding or GPTQ. RTN, GPTQ, AWQ, and SmoothQuant are <em>post-training</em> recipes: start from an FP16/BF16 trained model, run a small calibration set, compress-no full retraining. The <strong>FP8 (native)</strong> row is different: it is about doing math in FP8 on supported GPUs, not a named calibration algorithm like GPTQ.</p>
+
+      <p style="font-size:13px; color:#555; line-height:1.65; margin-bottom:12px;"><strong>Reading the Speed column:</strong> For RTN through SmoothQuant, Speed means how long it takes to <em>produce</em> quantized weights (offline PTQ). For FP8 (native), Speed means <em>inference</em> matmul throughput on supported GPUs versus FP16-not the same measure as the rows above.</p>
 
       <table class="tech-table">
         <thead>
@@ -485,37 +487,37 @@
           </tr>
           <tr>
             <td class="tech-name">GPTQ</td>
-            <td>Generalized post-training quantisation using a small calibration dataset. Minimises quantisation error layer-by-layer by finding optimal rounding decisions.</td>
+            <td>Post-training quantisation using a small calibration dataset. Optimises weights layer-by-layer (often with Hessian information) so rounding errors stay small-much better than rounding each weight in isolation.</td>
             <td class="tech-good">Good - near-lossless at INT8, acceptable INT4</td>
-            <td class="tech-good">Fast (minutes)</td>
-            <td>vLLM, AutoGPTQ, most open models</td>
+            <td class="tech-good">Minutes to hours (model size)</td>
+            <td>vLLM, AutoGPTQ, many open-weight releases</td>
           </tr>
           <tr>
             <td class="tech-name">AWQ</td>
-            <td>Activation-aware - identifies the most important weights per channel (those with large activations) and protects them with higher precision.</td>
-            <td class="tech-good">Better than GPTQ at INT4</td>
-            <td class="tech-good">Fast</td>
+            <td>Activation-aware: uses calibration runs to see which weights matter most for outputs, then applies per-channel scaling so aggressive low-bit weights (e.g. INT4) stay accurate-without storing a separate high-precision copy of every weight.</td>
+            <td class="tech-good">Often stronger than GPTQ at INT4</td>
+            <td class="tech-good">Fast (usually faster PTQ than GPTQ)</td>
             <td>vLLM, llama.cpp, edge deployments</td>
           </tr>
           <tr>
             <td class="tech-name">SmoothQuant</td>
-            <td>Mathematically transfers quantisation difficulty from activations to weights, making both easier to quantise without quality loss. Designed for INT8.</td>
-            <td class="tech-good">Near-lossless at INT8</td>
-            <td class="tech-good">Fast</td>
-            <td>TensorRT-LLM, A100 INT8 deployments</td>
+            <td>Mathematically shifts some numerical range from activations into weights so <em>both</em> weights and activations can use INT8 (W8A8) with less error. Common in TensorRT-LLM-style INT8 pipelines.</td>
+            <td class="tech-good">Strong at INT8 (W8A8); task-dependent</td>
+            <td class="tech-good">Fast PTQ; fast INT8 inference on Tensor Cores</td>
+            <td>TensorRT-LLM; other W8A8 INT8 serving stacks</td>
           </tr>
           <tr>
             <td class="tech-name">FP8 (native)</td>
-            <td>Hardware-native on H100/H200 - the GPU performs FP8 matrix multiplications directly. No separate quantisation step needed if training in FP8.</td>
-            <td class="tech-good">Near-lossless - best 8-bit option</td>
-            <td class="tech-good">2× vs FP16 on H100</td>
-            <td>TensorRT-LLM, vLLM on H100/H200</td>
+            <td>On H100/H200, Tensor Cores run matrix multiplies directly in FP8. Weights are still usually converted from an FP16/BF16 checkpoint into FP8 for storage and compute-fast and often near-lossless, but it is a conversion step unless the model was trained natively in FP8.</td>
+            <td class="tech-good">Excellent on H100-class HW; often best 8-bit there</td>
+            <td class="tech-good">Up to ~2X FP16 Tensor Core peak; full decode less</td>
+            <td>TensorRT-LLM, vLLM, PyTorch on H100/H200</td>
           </tr>
         </tbody>
       </table>
 
       <div class="callout callout-teal">
-        <strong>The practical recommendation matrix:</strong> On A100 - use INT8 with SmoothQuant or GPTQ. On H100/H200 - use FP8 natively where possible, INT8 otherwise. For edge/memory-constrained - use AWQ INT4. For maximum quality preservation - INT8 everywhere. Never use RTN INT4 in production.
+        <strong>The practical recommendation matrix:</strong> On A100, prefer INT8 (SmoothQuant for full W8A8 stacks, or GPTQ for weight-only INT8 in many open-source flows). On H100/H200, prefer FP8 for speed and quality when your stack supports it; fall back to INT8 where FP8 is unavailable. For edge or severe memory limits, consider AWQ INT4 after benchmarking. Treat naive round-to-nearest INT4 as experimental only-not a production default.
       </div>
     </div>
   </div>
