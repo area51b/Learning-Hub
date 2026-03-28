@@ -86,8 +86,10 @@
   .beam-tree { display:flex; flex-direction:column; gap:8px; font-family:Arial,sans-serif; font-size:13px; }
   .beam-row  { display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; }
   .beam-node { border-radius:8px; padding:7px 12px; font-weight:bold; text-align:center; min-width:80px; }
+  .beam-node-label { border-radius:8px; padding:7px 12px; text-align:left; min-width:80px; }
   .beam-arrow { color:#CE93D8; font-size:18px; }
   .beam-shared { border:2px dashed #7B1FA2; }
+  .beam-shared-label { border:2px solid #8c1420; }
   .beam-label { font-size:11px; font-family:Arial,sans-serif; text-align:center; color:#7B1FA2; margin-top:6px; }
 
   /* ── Impact comparison ── */
@@ -272,7 +274,7 @@
     <div class="section-header" id="hdr3" onclick="toggle(3)">
       <div class="section-title">
         <span class="section-num" style="background:#2E7D32;">3</span>
-        How the Block Table Works - Interactive
+        How the Block Table Works?
       </div>
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
@@ -353,10 +355,12 @@
             <div class="beam-node beam-shared" style="background:#F3E8FD; color:#4A148C; font-size:12.5px;">Request 3<br>unique suffix →<br>new blocks only</div>
           </div>
         </div>
-        <div class="beam-label">Dashed border = logically separate but physically sharing the same KV blocks.<br>If a request modifies its KV content, only then is a private copy made (copy-on-write).</div>
+        <div class="beam-label">Dashed border = logically separate requests pointing to the same physical KV blocks.</div>
+        <br/>
+        <div class="beam-node-label beam-shared-label" style="background:#F3E8FD; color:#8c1420; font-size:12.5px;">All three requests read from these shared blocks freely - no copies are made. Copy-on-write triggers only if a request needs to write new data into a shared block, for example during beam search when two beams diverge. At that point the system makes a private copy of just that block for the writing request, leaving the other request's view of the block untouched.</div>
       </div>
-
-      <p>This is exactly how prefix caching works in vLLM. A system prompt that is 6,000 tokens long would normally require every request to recompute and store those 6,000 tokens' KV values. With Paged Attention and prefix caching, that KV data is stored once - in a set of physical blocks - and every subsequent request that shares that prefix simply gets pointers to the same blocks. TTFT drops from seconds to milliseconds for those requests.</p>
+      
+      <p>This is exactly how prefix caching works in vLLM. A system prompt that is 6,000 tokens long would normally require every request to recompute and store those 6,000 tokens' KV values. With Paged Attention and prefix caching, that KV data is stored once - in a set of physical blocks - and every subsequent request that shares that prefix simply gets pointers to the same blocks. TTFT drops from seconds to milliseconds for those requests. For prefix caching - where shared blocks are never modified after Prefill - the copy never triggers and the sharing costs nothing.</p>
 
       <div class="callout callout-purple">
         <strong>Beam search benefit:</strong> Beam search generates multiple candidate continuations from a shared prefix. With naive allocation, each beam gets its own full copy of the shared tokens. With Paged Attention copy-on-write, all beams share the same physical blocks for their common prefix - only diverging tokens get new blocks. Memory use for beam search drops by the beam width factor.
@@ -384,7 +388,7 @@
         </div>
         <div class="impact-row">
           <span class="impact-label">Throughput vs FasterTransformer</span>
-          <div class="impact-bar-bg"><div class="impact-fill" style="background:#2E7D32; width:80%;">2–4× higher</div></div>
+          <div class="impact-bar-bg"><div class="impact-fill" style="background:#2E7D32; width:80%;">2–4X higher</div></div>
           <span class="impact-note" style="color:#2E7D32;">Same hardware</span>
         </div>
         <div class="impact-row">
