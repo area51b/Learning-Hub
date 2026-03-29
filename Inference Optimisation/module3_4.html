@@ -197,32 +197,46 @@
     <div class="section-header" id="hdr1" onclick="toggle(1)">
       <div class="section-title">
         <span class="section-num" style="background:#00796B;">1</span>
-        Why Parallelism - Two Reasons to Spread Across GPUs
+        Why Parallelism - Three Reasons to Spread Across GPUs
       </div>
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>There are two separate reasons to run a model across multiple GPUs, and they lead to different parallelism strategies:</p>
+      <p>There are three separate reasons to run a model across multiple GPUs, and they lead to different parallelism strategies:</p>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
-        <div style="background:#FFEBEE; border-radius:10px; padding:18px; border-left:3px solid #C62828;">
-          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#C62828; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Reason 1 - Model does not fit</div>
-          <div style="font-size:14px; line-height:1.8; color:#333; margin-bottom:10px;">The model weights alone exceed single-GPU memory. A 70B FP16 model (140GB) cannot fit on one A100 (80GB). You must distribute the weights.</div>
-          <div style="font-size:12.5px; font-family:Arial,sans-serif; color:#555; background:rgba(198,40,40,0.08); border-radius:6px; padding:8px 10px; line-height:1.6;">
-            <strong>Primary solution:</strong> Tensor Parallelism - each GPU holds a shard of every weight matrix.
+      <div style="display:flex; flex-direction:column; gap:10px; margin:16px 0;">
+
+        <div style="background:#FFEBEE; border-radius:10px; padding:16px; border-left:4px solid #C62828;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#C62828; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Reason 1 - Model does not fit on one GPU</div>
+          <div style="font-size:13.5px; line-height:1.7; color:#333; margin-bottom:10px;">A 70B FP16 model needs 140GB - it cannot fit on one A100 80GB. The weights must be distributed across GPUs. Both TP and PP solve this, but in different ways and with different trade-offs.</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div style="font-size:12.5px; font-family:Arial,sans-serif; background:#E3F2FD; border-radius:6px; padding:6px 12px; color:#1565C0; font-weight:bold;">TP: each GPU holds a shard of every weight matrix</div>
+            <div style="font-size:12.5px; font-family:Arial,sans-serif; background:#FFF3E0; border-radius:6px; padding:6px 12px; color:#E65100; font-weight:bold;">PP: each GPU holds a block of consecutive layers</div>
           </div>
         </div>
-        <div style="background:#E8F5E9; border-radius:10px; padding:18px; border-left:3px solid #2E7D32;">
-          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Reason 2 - Model is too slow</div>
-          <div style="font-size:14px; line-height:1.8; color:#333; margin-bottom:10px;">The model fits on one GPU but latency is too high. You want multiple GPUs to share the compute burden so each forward pass completes faster.</div>
-          <div style="font-size:12.5px; font-family:Arial,sans-serif; color:#555; background:rgba(46,125,50,0.08); border-radius:6px; padding:8px 10px; line-height:1.6;">
-            <strong>Primary solution:</strong> Tensor Parallelism within a node (fast interconnect required).
+
+        <div style="background:#E3F2FD; border-radius:10px; padding:16px; border-left:4px solid #1565C0;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#1565C0; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Reason 2 - Latency is too high</div>
+          <div style="font-size:13.5px; line-height:1.7; color:#333; margin-bottom:10px;">The model fits on one GPU but each token takes too long. Multiple GPUs sharing the compute of each layer means each forward pass completes faster. Only TP helps here - PP does not reduce per-token latency because only one pipeline stage is active at any step.</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div style="font-size:12.5px; font-family:Arial,sans-serif; background:#E8F5E9; border-radius:6px; padding:6px 12px; color:#2E7D32; font-weight:bold;">TP: all GPUs compute each layer in parallel - faster per token</div>
+            <div style="font-size:12.5px; font-family:Arial,sans-serif; background:#FFEBEE; border-radius:6px; padding:6px 12px; color:#C62828; font-weight:bold;">PP does not help - only one stage is active per decode step</div>
           </div>
         </div>
+
+        <div style="background:#E8F5E9; border-radius:10px; padding:16px; border-left:4px solid #2E7D32;">
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Reason 3 - Throughput is too low</div>
+          <div style="font-size:13.5px; line-height:1.7; color:#333; margin-bottom:10px;">Per-user latency is acceptable but the system cannot serve enough concurrent users. The answer is not faster computation per request - it is more independent copies of the model running in parallel. This is Data Parallelism: separate model replicas each serving their own stream of requests with zero inter-GPU communication between them.</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div style="font-size:12.5px; font-family:Arial,sans-serif; background:#E3F2FD; border-radius:6px; padding:6px 12px; color:#1565C0; font-weight:bold;">DP: independent replicas serve different requests - throughput scales linearly</div>
+            <div style="font-size:12.5px; font-family:Arial,sans-serif; background:#FFEBEE; border-radius:6px; padding:6px 12px; color:#C62828; font-weight:bold;">TP and PP do not increase throughput per replica</div>
+          </div>
+        </div>
+
       </div>
 
       <div class="callout callout-teal">
-        <strong>The third reason - more throughput:</strong> Even when a model fits and latency is acceptable on one GPU, spreading across more GPUs multiplies throughput - more concurrent requests can be served. This is data parallelism: running multiple independent copies of the model on separate GPU groups, each serving different requests. This is how production clusters at scale work - many parallel model replicas behind a load balancer.
+        <strong>Why PP exists as a separate strategy from TP:</strong> Both TP and PP can distribute a model that does not fit on one GPU. The reason PP exists is that TP requires an AllReduce communication at every single layer - and that communication only works efficiently over NVLink within a node. Across nodes over InfiniBand, the AllReduce overhead becomes prohibitive. PP avoids this by only passing activations between stages - a much smaller communication cost that InfiniBand can handle. <b>So the practical rule is: TP within a node, PP across nodes.</b>
       </div>
     </div>
   </div>
