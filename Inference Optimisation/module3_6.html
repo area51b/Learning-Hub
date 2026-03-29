@@ -283,7 +283,7 @@
       </div>
 
       <div class="callout callout-blue">
-        <strong>The KV Cache transfer is the critical link:</strong> After Prefill computes the KV Cache, it must be shipped to the Decode worker before generation can begin. This transfer adds latency to TTFT - the KV Cache for a 2,000-token prompt with a 70B model at FP16 is roughly 1–2GB. Over NVLink (~600 GB/s) this takes ~2–3ms. Over InfiniBand (~50 GB/s) it takes ~20–40ms. The transfer latency therefore constrains how far apart Prefill and Decode workers can be placed, and whether the overall TTFT improvement outweighs the transfer cost.
+        <strong>The KV Cache transfer is the critical link:</strong> After Prefill computes the KV Cache, it must be shipped to the Decode worker before generation can begin. This transfer can add latency to TTFT - in implementations where the Decode worker produces all tokens including the first, the user waits for the transfer to complete before seeing any output. Some systems optimise this by having the Prefill worker produce and stream the first token immediately while the KV transfer happens in parallel, hiding the transfer cost from TTFT entirely - the KV Cache for a 2,000-token prompt with a 70B model at FP16 is roughly 1–2GB. Over NVLink (~600 GB/s) this takes ~2–3ms. Over InfiniBand (~50 GB/s) it takes ~20–40ms. The transfer latency therefore constrains how far apart Prefill and Decode workers can be placed, and whether the overall TTFT improvement outweighs the transfer cost.
       </div>
     </div>
   </div>
