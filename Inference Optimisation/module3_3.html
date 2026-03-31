@@ -713,9 +713,9 @@
         sc('Weight memory',weightGB+'GB','')+
         sc('Throughput vs FP16',speedup+'×','')+
         sc('Quality loss',qual,qcol)+
-        sc('Min A100 80GB',a100_80+' GPU'+(a100_80>1?'s':''),'')+
+        sc('GPU with 80GB',a100_80+' GPU'+(a100_80>1?'s':''),'')+
       '</div>'+
-      '<div style="font-size:12px; opacity:0.6; font-family:Arial,sans-serif; margin-top:10px; line-height:1.6;">Weight memory only - add ~3GB overhead + KV Cache headroom for total GPU requirement. KV Cache scales with concurrent requests and context length.</div>';
+      '<div style="font-size:12px; opacity:0.6; font-family:Arial,sans-serif; margin-top:10px; line-height:1.6;">Weight memory only - add ~3GB overhead + KV Cache headroom for total GPU requirement. KV Cache scales with concurrent requests and context length. A100 throughput is lower for FP8 compared to INT8 due to additional overhead.</div>';
   }
   function sc(label,val,col){
     return '<div class="sizer-cell"><div class="sizer-cell-label">'+label+'</div><div class="sizer-cell-val"'+(col?' style="color:'+col+'"':'')+'>'+val+'</div></div>';
