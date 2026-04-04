@@ -77,9 +77,9 @@
   .mem-title { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#1B5E20; margin-bottom:14px; font-weight:bold; }
   .mem-row   { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
   .mem-label { font-size:13px; font-weight:bold; min-width:80px; }
-  .mem-bar-bg { flex:1; background:#C8E6C9; border-radius:4px; height:28px; overflow:hidden; }
+  .mem-bar-bg { flex:1; background:#C8E6C9; border-radius:4px; height:28px; overflow:visible; position:relative; }
   .mem-fill  { height:28px; border-radius:4px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:bold; color:white; }
-  .mem-stat  { font-size:12px; color:#555; min-width:160px; text-align:right; font-family:monospace; }
+  .mem-stat { font-size:12px; color:#555; width:220px; min-width:220px; text-align:left; font-family:monospace; }
 
   /* ── NVLink interactive ── */
   .nvlink-wrap { background:#F3E8FD; border:1px solid #CE93D8; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
@@ -279,31 +279,54 @@
 
       <div class="mem-wrap">
         <div class="mem-title">Memory bandwidth comparison - why HBM matters for Decode</div>
+      
+        <!-- DDR5 RAM: sliver + label at fixed left offset -->
         <div class="mem-row">
           <div class="mem-label" style="color:#546E7A;">DDR5 RAM</div>
-          <div class="mem-bar-bg"><div class="mem-fill" style="width:4%; background:#546E7A;">~100</div></div>
-          <div class="mem-stat">~100 GB/s &nbsp;|&nbsp; CPU server RAM</div>
+          <div class="mem-bar-bg" style="overflow:visible; position:relative;">
+            <div class="mem-fill" style="width:3%; background:#546E7A; min-width:6px;"></div>
+            <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:bold; color:#546E7A; font-family:Arial,sans-serif;">~100</span>
+          </div>
+          <div class="mem-stat">~100 GB/s &nbsp;&nbsp;|&nbsp; CPU server RAM</div>
         </div>
+
+        <!-- PCIe SSD: sliver + label at fixed left offset -->
         <div class="mem-row">
           <div class="mem-label" style="color:#1565C0;">PCIe SSD</div>
-          <div class="mem-bar-bg"><div class="mem-fill" style="width:1%; background:#1565C0;">~7</div></div>
-          <div class="mem-stat">~7 GB/s &nbsp;|&nbsp; NVMe storage</div>
+          <div class="mem-bar-bg" style="overflow:visible; position:relative;">
+            <div class="mem-fill" style="width:0.09%; background:#1565C0; min-width:6px;"></div>
+            <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:bold; color:#1565C0; font-family:Arial,sans-serif;">~7</span>
+          </div>
+          <div class="mem-stat">~7 GB/s &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp; NVMe storage</div>
         </div>
+      
+        <!-- A100: 2000/8000 = 25% -->
         <div class="mem-row">
           <div class="mem-label" style="color:#E65100;">A100 HBM2e</div>
-          <div class="mem-bar-bg"><div class="mem-fill" style="width:40%; background:#E65100;">2,000</div></div>
+          <div class="mem-bar-bg">
+            <div class="mem-fill" style="width:25%; background:#E65100;">2,000</div>
+          </div>
           <div class="mem-stat">2,000 GB/s &nbsp;|&nbsp; A100 80GB</div>
         </div>
+      
+        <!-- H100: 3350/8000 = 41.88% -->
         <div class="mem-row">
           <div class="mem-label" style="color:#7B1FA2;">H100 HBM3</div>
-          <div class="mem-bar-bg"><div class="mem-fill" style="width:67%; background:#7B1FA2;">3,350</div></div>
+          <div class="mem-bar-bg">
+            <div class="mem-fill" style="width:41.88%; background:#7B1FA2;">3,350</div>
+          </div>
           <div class="mem-stat">3,350 GB/s &nbsp;|&nbsp; H100 SXM</div>
         </div>
+      
+        <!-- B200: 8000/8000 = 100% -->
         <div class="mem-row">
           <div class="mem-label" style="color:#1B5E20;">B200 HBM3e</div>
-          <div class="mem-bar-bg"><div class="mem-fill" style="width:100%; background:#1B5E20;">8,000</div></div>
-          <div class="mem-stat">8,000 GB/s &nbsp;|&nbsp; B200 (Blackwell)</div>
+          <div class="mem-bar-bg">
+            <div class="mem-fill" style="width:100%; background:#1B5E20;">8,000</div>
+          </div>
+          <div class="mem-stat">8,000 GB/s &nbsp;|&nbsp; B200</div>
         </div>
+      
       </div>
 
       <p>Recall from Module 2.5: Decode is memory-bandwidth-bound. Every token generation requires reading all model weights from HBM into the compute units. A 70B model at FP16 requires reading ~140GB of weights per decode step. At A100 bandwidth (2,000 GB/s), this takes ~70ms - which sets a hard floor on TPOT regardless of all other optimisations. The H100 (3,350 GB/s) does the same read in ~42ms, and the B200 (8,000 GB/s) in ~17ms.</p>
