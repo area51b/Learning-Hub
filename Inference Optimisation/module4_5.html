@@ -162,7 +162,7 @@
     <a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 4 · MODULE 4.5</div>
     <h1>How It All Fits Together: A Real Customer Architecture Walkthrough</h1>
-    <p>Every concept from Parts 1–4 placed in its correct position in a production LLM serving stack - and three real customer architectures with the reasoning behind every choice.</p>
+    <p>Every concept from Parts 1-4 placed in its correct position in a production LLM serving stack - and three real customer architectures with the reasoning behind every choice.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -244,8 +244,8 @@
             <div class="stack-box-body">FP8/INT8/INT4. Smaller weights. More memory for KV Cache. Faster Decode. (Module 3.3)</div>
           </div>
           <div class="stack-box" style="background:rgba(0,121,107,0.25);">
-            <div class="stack-box-title" style="color:#80CBC4;">Spec decoding</div>
-            <div class="stack-box-body">Draft + verify. Fewer large-model passes. Best at low concurrency. (Module 3.5)</div>
+            <div class="stack-box-title" style="color:#80CBC4;">Speculative decoding</div>
+            <div class="stack-box-body">Draft + verify. Fewer large-model passes. Best at low batch sizes / concurrency. (Module 3.5)</div>
           </div>
         </div>
 
@@ -253,11 +253,11 @@
         <div class="stack-row">
           <div class="stack-box" style="background:rgba(27,94,32,0.3);">
             <div class="stack-box-title" style="color:#A5D6A7;">NVIDIA GPUs - HBM, Tensor Cores, NVLink</div>
-            <div class="stack-box-body">A100 / H100 / H200 / B200. HBM bandwidth sets TPOT floor. NVLink enables TP. Tensor Cores drive Prefill throughput. (Module 4.1)</div>
+            <div class="stack-box-body">A100 / H100 / H200 / B200. HBM bandwidth sets the Decode TPOT floor. NVLink enables efficient TP. Tensor Cores drive Prefill throughput. (Module 4.1)</div>
           </div>
         </div>
 
-        <div class="stack-note">Every component in this stack maps to at least one concept from Parts 1–4. A production architecture conversation is really a question of which choices to make at each layer - and the answer always depends on the customer's specific workload, scale, SLAs, and team.</div>
+        <div class="stack-note">Every component in this stack maps to at least one concept from Parts 1-4. A production architecture conversation is really a question of which choices to make at each layer - and the answer always depends on the customer's specific workload, scale, SLAs, and team.</div>
       </div>
 
       <div class="callout callout-indigo">
@@ -290,7 +290,7 @@
       </div>
 
       <div class="callout callout-blue">
-        <strong>The two phases are invisible to the user but critical to the operator:</strong> From the user's perspective, they send a message and tokens appear. From the operator's perspective, the system runs Prefill (once, compute-bound, determines TTFT) and then Decode (one step per token, memory-bandwidth-bound, determines TPOT). Every optimisation in Parts 1–3 targets one or both of these phases. Knowing which phase a given symptom comes from is the first step in any performance diagnosis.
+        <strong>The two phases are invisible to the user but critical to the operator:</strong> From the user's perspective, they send a message and tokens appear. From the operator's perspective, the system runs Prefill (once, compute-bound, determines TTFT) and then Decode (one step per token, memory-bandwidth-bound, determines TPOT). Every optimisation in Parts 1-3 targets one or both of these phases. Knowing which phase a given symptom comes from is the first step in any performance diagnosis.
       </div>
     </div>
   </div>
@@ -386,7 +386,7 @@
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
-      <p>In customer conversations, symptoms arrive before causes. Here are the most common production LLM serving symptoms and the root cause and fix that each one points to - drawing on every concept from Parts 1–4:</p>
+      <p>In customer conversations, symptoms arrive before causes. Here are the most common production LLM serving symptoms and the root cause and fix that each one points to - drawing on every concept from Parts 1-4:</p>
 
       <div class="trouble-item" style="border-left-color:#C62828;">
         <div class="trouble-symptom">High TTFT that varies widely (200ms to 3s for similar prompts)</div>
@@ -395,37 +395,36 @@
       </div>
 
       <div class="trouble-item" style="border-left-color:#E65100;">
-        <div class="trouble-symptom">TPOT spikes mid-stream - tokens arrive steadily then pause for 200–500ms</div>
+        <div class="trouble-symptom">TPOT spikes mid-stream - tokens arrive steadily then pause for 200-500ms</div>
         <div class="trouble-diagnosis">Either (1) a large Prefill job interrupted the Decode phase on a shared GPU (coupled serving - same root cause as above, different symptom), or (2) KV Cache pressure forced preemption - the scheduler evicted an in-flight sequence to HBM (swapping) to free GPU memory for a new request.</div>
         <div class="trouble-fix">Fix for (1): same as above. Fix for (2): reduce --max-num-seqs in vLLM, or increase --gpu-memory-utilisation, or quantise the KV Cache (Module 3.3) to fit more sequences before swapping occurs.</div>
       </div>
 
       <div class="trouble-item" style="border-left-color:#7B1FA2;">
-        <div class="trouble-symptom">OOM errors at 20–30 concurrent users despite GPU having apparent free memory</div>
-        <div class="trouble-diagnosis">vLLM pre-allocates its memory pool at startup (90% of GPU by default). Model weights consume part of that pool; the rest is KV Cache blocks. With 20+ concurrent long-context requests, the KV Cache pool fills before the raw GPU memory appears full. The "free memory" is outside vLLM's pool.</div>
+        <div class="trouble-symptom">OOM errors at 20-30 concurrent users despite GPU having apparent free memory</div>
+        <div class="trouble-diagnosis">vLLM pre-allocates its memory pool at startup (for example, 90% of GPU by default). Model weights consume part of that pool; the rest is KV Cache blocks. With 20+ concurrent long-context requests, the KV Cache pool fills before the raw GPU memory appears full. The "free memory" is outside vLLM's pool.</div>
         <div class="trouble-fix">Fix: enable prefix caching (shared prefixes reduce per-request KV blocks), set --max-model-len to a realistic value (reduces block pre-allocation), reduce --max-num-seqs, or quantise KV Cache to FP8/INT8 (2x more sequences fit in same pool).</div>
       </div>
 
       <div class="trouble-item" style="border-left-color:#1565C0;">
         <div class="trouble-symptom">TPOT is consistently slow regardless of concurrency - even single-user requests are slow</div>
-        <div class="trouble-diagnosis">This is the HBM bandwidth floor from Module 2.5. Decode reads all model weights every token. For a given model size and GPU, TPOT has a hard minimum set by (model size in bytes) / (HBM bandwidth). No software optimisation can go below this floor - only quantisation (smaller weights) or a faster GPU (more bandwidth) can.</div>
-        <div class="trouble-fix">Fix: quantise weights (FP16 → INT8 → FP8 → INT4, each roughly halving memory reads and TPOT floor), upgrade to higher-bandwidth GPU (A100 → H100 → H200 → B200), or use a smaller model.</div>
+        <div class="trouble-diagnosis">This is the HBM bandwidth floor from Module 2.5. Decode reads all model weights every token. For a given model size and GPU, TPOT has a hard minimum set by (model size in bytes) ÷ (effective HBM bandwidth). No software optimisation can go below this floor - only quantisation (smaller weights) or a faster GPU (more bandwidth) can.</div>
+        <div class="trouble-fix">Fix: quantise weights (e.g. FP16 → INT8 → FP8 → INT4, each roughly reducing bytes read and lowering the TPOT floor), upgrade to a higher-bandwidth GPU (A100 → H100 → H200 → B200), or use a smaller model.</div>
       </div>
 
       <div class="trouble-item" style="border-left-color:#2E7D32;">
         <div class="trouble-symptom">Adding more GPUs with TP did not improve latency - sometimes made it worse</div>
-        <div class="trouble-diagnosis">The AllReduce communication between TP GPUs takes time proportional to data size and inversely proportional to interconnect bandwidth. On PCIe (64 GB/s), AllReduce for a 70B model's layer output takes ~20ms per layer - far exceeding the compute time. Adding more TP GPUs means more AllReduce operations at the same bandwidth, making it worse.</div>
-        <div class="trouble-fix">Fix: verify GPU interconnect - NVLink is required for TP to be net-positive. On PCIe, use Pipeline Parallelism instead if the model doesn't fit on one GPU. On NVLink, TP=4 or TP=8 is the sweet spot for 70B models.</div>
+        <div class="trouble-diagnosis">The AllReduce communication between TP GPUs takes time proportional to data size and inversely proportional to interconnect bandwidth. On PCIe (for example, 64 GB/s), AllReduce for a 70B model's layer output can take longer than the compute time. Adding more TP GPUs means more AllReduce operations at the same bandwidth, making it worse.</div>
+        <div class="trouble-fix">Fix: verify GPU interconnect - NVLink is typically required for TP to be net-positive. On PCIe, use Pipeline Parallelism instead if the model doesn't fit on one GPU. On NVLink, TP=4 or TP=8 is often a good starting point for 70B-class models.</div>
       </div>
 
       <div class="trouble-item" style="border-left-color:#546E7A;">
         <div class="trouble-symptom">Triton returns 503 at deployment - pod restarts in Kubernetes infinite loop</div>
-        <div class="trouble-diagnosis">Almost certainly a Kubernetes readiness probe misconfiguration. The probe is checking a non-existent endpoint and marking the pod unhealthy before it has finished loading the model (model loading takes 30–120 seconds for large models on first start).</div>
-        <div class="trouble-fix">Fix: use /v2/health/ready as the readiness probe endpoint with initialDelaySeconds set to at least 120s for large models. Use /v2/health/live for the liveness probe with a longer failureThreshold. Never use a custom path - Triton only honours the standard health endpoints.</div>
+        <div class="trouble-diagnosis">Almost certainly a Kubernetes readiness probe misconfiguration. The probe is checking a non-existent endpoint and marking the pod unhealthy before it has finished loading the model (model loading can take 30-120 seconds for large models on first start).</div>
+        <div class="trouble-fix">Fix: use /v2/health/ready as the readiness probe endpoint with initialDelaySeconds set to a generous value (for example, ≥120s) for large models. Use /v2/health/live for the liveness probe with a longer failureThreshold. Avoid custom health paths - Triton only honours the standard health endpoints.</div>
       </div>
     </div>
   </div>
-
   <!-- Section 6: The decisions in order -->
   <div class="section-card">
     <div class="section-header" id="hdr6" onclick="toggle(6)">
@@ -441,27 +440,27 @@
       <div style="display:flex; flex-direction:column; gap:8px; margin:16px 0;">
         <div style="background:#E8EAF6; border-radius:10px; padding:16px; border-left:4px solid #3949AB;">
           <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#3949AB; margin-bottom:6px;">Decision 1 - Which model?</div>
-          <div style="font-size:13.5px; line-height:1.8; color:#333;">Model size determines GPU count. 7B fits on 1x GPU at FP16. 70B needs 1x H200 or 2x H100. 405B needs 4x H200 or 8x H100. Model architecture (GQA, MoE, context window) determines KV Cache size and memory requirements. Nail this before choosing anything else.</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">Model size strongly influences GPU count. As a rough guide: 7B fits comfortably on 1x GPU at FP16. 70B typically needs either a single high-memory GPU (for example, H200 with FP8 or lower precision) or 2x H100 with tensor or pipeline parallelism. 405B may need 4x H200 or 8x H100. Model architecture (GQA, MoE, context window) determines KV Cache size and memory requirements. Nail this before choosing anything else.</div>
         </div>
         <div style="background:#E3F2FD; border-radius:10px; padding:16px; border-left:4px solid #1565C0;">
           <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#1565C0; margin-bottom:6px;">Decision 2 - Which GPU?</div>
-          <div style="font-size:13.5px; line-height:1.8; color:#333;">HBM capacity must fit the model (+ KV Cache budget). HBM bandwidth determines TPOT floor. NVLink determines whether TP is viable. H100 SXM is the current default. H200 for 70B+ where memory is the constraint. Check SXM vs PCIe form factor - they are not equivalent.</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">HBM capacity must fit the model (+ KV Cache budget) at your chosen precision. Effective HBM bandwidth determines the Decode TPOT floor. NVLink (or equivalent high-bandwidth interconnect) determines whether TP is viable. H100 SXM is the current default for many production stacks. H200 is attractive for 70B+ where memory is the main constraint. Check SXM vs PCIe form factor - they are not equivalent.</div>
         </div>
         <div style="background:#E8F5E9; border-radius:10px; padding:16px; border-left:4px solid #2E7D32;">
           <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; margin-bottom:6px;">Decision 3 - Which inference engine?</div>
-          <div style="font-size:13.5px; line-height:1.8; color:#333;">vLLM by default - faster to deploy, broad model support, OpenAI-compatible. TRT-LLM when: model is fixed, concurrency exceeds 50, TPOT SLA is under 30ms, and there is a team to manage engine builds. This decision determines whether Triton is mandatory (TRT-LLM) or optional (vLLM).</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">vLLM by default - faster to deploy, broad model support, OpenAI-compatible. TRT-LLM when: the model is relatively fixed, concurrency is high (for example, &gt;50 users), TPOT SLA is tight (for example, &lt;30ms), and there is a team to manage engine builds. This decision determines whether Triton is mandatory (TRT-LLM) or optional (vLLM).</div>
         </div>
         <div style="background:#F3E8FD; border-radius:10px; padding:16px; border-left:4px solid #7B1FA2;">
           <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#7B1FA2; margin-bottom:6px;">Decision 4 - Which quantisation?</div>
-          <div style="font-size:13.5px; line-height:1.8; color:#333;">FP8 on H100/H200 - native Transformer Engine, minimal quality impact, best default. INT8 + SmoothQuant on A100 - well-tested, solid quality. INT4 AWQ only when model must fit at all costs. Always validate quality on your workload after quantising - never assume the theoretical quality loss matches real-world quality loss.</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">FP8 on H100/H200 - native Transformer Engine, minimal quality impact, excellent general default. INT8 + SmoothQuant on A100 - well-tested, solid quality. INT4 AWQ only when a model absolutely must fit into a smaller memory footprint and you have validated quality on your workload. Always validate quality after quantising - never assume the theoretical quality loss matches real-world quality loss.</div>
         </div>
         <div style="background:#FFF3E0; border-radius:10px; padding:16px; border-left:4px solid #E65100;">
           <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#E65100; margin-bottom:6px;">Decision 5 - Which parallelism?</div>
-          <div style="font-size:13.5px; line-height:1.8; color:#333;">If model fits on one GPU after quantisation: no parallelism needed. If not: TP within a node (NVLink required), PP across nodes (InfiniBand). For throughput at scale with a model that fits: Data Parallelism (replicate across GPU groups). Never recommend TP on PCIe-connected GPUs.</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">If the model fits on one GPU after quantisation: no parallelism needed. If not: Tensor Parallelism within a node (NVLink or equivalent high-bandwidth interconnect strongly recommended), Pipeline Parallelism across nodes (InfiniBand). For throughput at scale with a model that fits: Data Parallelism (replicate across GPU groups). Avoid recommending TP on PCIe-connected GPUs for latency-sensitive workloads.</div>
         </div>
         <div style="background:#E0F7FA; border-radius:10px; padding:16px; border-left:4px solid #006064;">
           <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#006064; margin-bottom:6px;">Decision 6 - Advanced optimisations?</div>
-          <div style="font-size:13.5px; line-height:1.8; color:#333;">Prefix caching: always on if any system prompt is reused. Speculative decoding: only at low concurrency (&lt;20 users) with predictable outputs. Disaggregation: only at large scale (16+ GPUs) with mixed prompt lengths and SLA-sensitive workloads. Add complexity only when simpler optimisations have been exhausted.</div>
+          <div style="font-size:13.5px; line-height:1.8; color:#333;">Prefix caching: always on if any system prompt is reused. Speculative decoding: most useful at low concurrency / smaller batch sizes with predictable outputs; benefits often shrink or become negative at very high concurrency. Disaggregation: only at large scale (for example, 16+ GPUs) with mixed prompt lengths and SLA-sensitive workloads. Add complexity only when simpler optimisations have been exhausted.</div>
         </div>
       </div>
 
@@ -492,21 +491,21 @@
         <div class="key-num" style="color:#1565C0;">02</div>
         <div>
           <div class="key-title">The inference engine choice is the pivotal decision - it determines the rest of the stack</div>
-          <div class="key-desc">vLLM brings its own API and is self-contained. TRT-LLM requires Triton above it and a build pipeline below it. Choosing TRT-LLM without understanding this cascade is how teams end up with a half-built architecture. The engine choice is not just a performance decision - it is an operational architecture decision.</div>
+          <div class="key-desc">vLLM brings its own API and is self-contained. TRT-LLM typically sits behind Triton and requires an engine build pipeline below it. Choosing TRT-LLM without understanding this cascade is how teams end up with a half-built architecture. The engine choice is not just a performance decision - it is an operational architecture decision.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#2E7D32;">03</div>
         <div>
           <div class="key-title">Optimisations compound but must be applied in the right order - fix hardware and engine before tuning software</div>
-          <div class="key-desc">Quantisation on the wrong GPU yields nothing. Prefix caching with no repeated prompts yields nothing. Speculative decoding at high concurrency hurts throughput. Every technique from Parts 1–3 has a precondition - understanding those preconditions is what separates a recommendation that helps from one that adds complexity with no benefit.</div>
+          <div class="key-desc">Quantisation on the wrong GPU yields little. Prefix caching with no repeated prompts yields nothing. Speculative decoding at very high concurrency can hurt throughput. Every technique from Parts 1-3 has a precondition - understanding those preconditions is what separates a recommendation that helps from one that adds complexity with no benefit.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#006064;">04</div>
         <div>
           <div class="key-title">The stack is not fixed - it should evolve as the workload evolves</div>
-          <div class="key-desc">Teams start with vLLM and one GPU. They grow to TRT-LLM and TP=4. They add prefix caching when system prompts standardise. They consider disaggregation when RAG prompts get long. Good architecture conversations are not about finding the perfect final stack - they are about identifying the right next step for where the customer is today.</div>
+          <div class="key-desc">Teams might start with vLLM and one GPU. They grow to TRT-LLM and TP=4. They add prefix caching when system prompts standardise. They consider disaggregation when RAG prompts get long. Good architecture conversations are not about finding the perfect final stack - they are about identifying the right next step for where the customer is today.</div>
         </div>
       </div>
     </div>
@@ -518,15 +517,15 @@
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Decision sequence</div>
-        <div class="cheat-def">Model &#8594; GPU &#8594; Inference engine &#8594; Quantisation &#8594; Parallelism &#8594; Advanced optimisations. Never skip ahead - each decision constrains the next.</div>
+        <div class="cheat-def">Model &#8594; GPU &#8594; Inference engine &#8594; Quantisation &#8594; Parallelism &#8594; Advanced optimisations. Try not to skip ahead - each decision constrains the next.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">TTFT variance</div>
-        <div class="cheat-def">Root cause: head-of-line blocking (coupled P/D serving). Fix: prefix caching for shared prompts, chunked Prefill for short term, disaggregation for scale.</div>
+        <div class="cheat-def">Typical root cause: head-of-line blocking (coupled P/D serving). Fix: prefix caching for shared prompts, chunked Prefill for short term, disaggregation for scale.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">TPOT slow at low concurrency</div>
-        <div class="cheat-def">Root cause: HBM bandwidth floor. Fix: quantise weights (reduces bytes read per token), upgrade GPU, or use smaller model. No scheduler change helps.</div>
+        <div class="cheat-def">Root cause: HBM bandwidth floor. Fix: quantise weights (reduces bytes read per token), upgrade GPU, or use smaller model. Scheduler changes do not beat the physical floor.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">OOM under load</div>
@@ -534,23 +533,22 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">TP not helping latency</div>
-        <div class="cheat-def">Root cause: PCIe interconnect (64 GB/s) makes AllReduce slower than compute. Fix: verify NVLink present, or switch to PP for cross-node distribution.</div>
+        <div class="cheat-def">Root cause: limited interconnect bandwidth (for example, PCIe) makes AllReduce slower than compute. Fix: verify NVLink (or similar) present, or switch to PP for cross-node distribution.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">vLLM vs TRT-LLM trigger</div>
-        <div class="cheat-def">TRT-LLM when: fixed model + &gt;50 concurrent + &lt;30ms TPOT SLA + experienced team. vLLM for everything else. TRT-LLM always requires Triton as serving layer.</div>
+        <div class="cheat-def">TRT-LLM when: relatively fixed model + high concurrency + tight TPOT SLA + experienced team. vLLM for most other cases. TRT-LLM stacks almost always place Triton as the serving layer.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Triton 503 loop</div>
-        <div class="cheat-def">Root cause: K8s readiness probe on wrong endpoint or too-short initialDelay. Fix: use /v2/health/ready, set initialDelaySeconds &#8805;120s for large models.</div>
+        <div class="cheat-def">Root cause: K8s readiness probe on wrong endpoint or too-short initialDelay. Fix: use /v2/health/ready, set initialDelaySeconds generously (for example, &#8805;120s for large models).</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Stack evolution path</div>
-        <div class="cheat-def">1 GPU + vLLM &#8594; quantisation &#8594; multi-GPU TP &#8594; TRT-LLM + Triton &#8594; prefix caching &#8594; disaggregation. Add complexity only when simpler steps are exhausted.</div>
+        <div class="cheat-def">1 GPU + vLLM &#8594; quantisation &#8594; multi-GPU TP/PP where needed &#8594; TRT-LLM + Triton &#8594; prefix caching &#8594; disaggregation. Add complexity only when simpler steps are exhausted.</div>
       </div>
     </div>
   </div>
-
   <!-- Quiz -->
   <div class="quiz-section">
     <div class="quiz-label">QUICK CHECK - PART 4 INTEGRATION</div>
@@ -566,7 +564,7 @@
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Apply FP8 quantisation to weights and KV Cache. FP8 weights halve the bytes read per Decode step, directly lowering the TPOT floor. FP8 KV Cache reduces the 88% utilisation, giving more headroom before the scheduler is forced to preempt sequences or slow down to manage memory pressure - which is the likely cause of TPOT degrading from 18ms to 45ms as concurrency grows. Migrate to TRT-LLM compiled engine on H100 to capture the additional 20–30% throughput from kernel fusion and native FP8 Tensor Core usage.
+        Apply FP8 quantisation to weights and KV Cache, then migrate to a TRT-LLM compiled engine. FP8 weights substantially reduce the bytes read per Decode step compared to BF16, lowering the Decode TPOT floor and giving more headroom as concurrency grows. FP8 (or INT8) KV Cache reduces the 88% utilisation, giving more margin before the scheduler is forced to preempt sequences or slow down to manage memory pressure - which is the likely cause of TPOT degrading from 18ms to 45ms as concurrency grows. A TRT-LLM FP8 engine on H100 can often add a further ~20-30% throughput from kernel fusion and native Tensor Core usage.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
@@ -613,17 +611,17 @@
      body:'TRT-LLM receives the token IDs. All 500 tokens are processed in parallel - a single large matrix multiply across the full sequence. Each of the 80 transformer layers runs: LayerNorm + Q/K/V projection + Flash Attention + output projection + FFN. Key output: the KV Cache - K and V tensors for all 500 tokens across all 80 layers, stored in Paged Attention blocks on GPU HBM.',
      concept:'This is the compute-bound phase. Flash Attention (Module 3.1) keeps intermediate attention matrices in SRAM. Paged Attention (Module 3.2) allocates only the blocks actually needed - no upfront reservation. The first token cannot be generated until Prefill completes. TTFT ends when this step finishes.', conceptBg:'#FBE9E7'},
     {num:'Step 5 of 10', title:'First token generated - TTFT recorded', layer:'TRT-LLM engine (GPU - transition)', layerColor:'#1565C0',
-     body:'Prefill\'s output is a logit distribution over the vocabulary (~128k values). Sampling (greedy, top-p, or top-k) selects the first output token. This token is sent immediately to the streaming response - the user sees the first character. TTFT is recorded.',
+     body:'Prefill\'s output is a logit distribution over the vocabulary (for example, ~128k values). Sampling (greedy, top-p, or top-k) selects the first output token. This token is sent immediately to the streaming response - the user sees the first character. TTFT is recorded.',
      concept:'From the user\'s perspective, the response has started. From the operator\'s perspective, the compute-bound phase is done and the memory-bandwidth-bound phase is about to begin. The system switches from running one large batch to running one token per decode step.', conceptBg:'#E3F2FD'},
     {num:'Step 6 of 10', title:'Decode loop - generating tokens one by one', layer:'TRT-LLM engine (GPU - Decode phase)', layerColor:'#2E7D32',
      body:'Each decode step: (1) read all model weights from HBM into Tensor Cores - this read dominates TPOT, (2) compute attention using the new token as Q against the cached K/V from Paged Attention blocks, (3) run FFN, (4) sample next token, (5) append new K/V to the KV Cache. Repeat 200 times for a 200-token output.',
-     concept:'This is the memory-bandwidth-bound phase. The TPOT floor is set by (model bytes) / (HBM bandwidth). For 70B FP8 on H100: 70GB / 3350 GB/s ≈ 21ms minimum per token. The TRT-LLM in-flight batching engine processes other requests\' decode steps in the same GPU pass.', conceptBg:'#E8F5E9'},
+     concept:'This is the memory-bandwidth-bound phase. The TPOT floor is set by (model bytes) ÷ (effective HBM bandwidth). For a 70B-class FP8 model on H100, this back-of-the-envelope works out to on the order of tens of milliseconds per token. The TRT-LLM in-flight batching engine processes other requests\' decode steps in the same GPU pass.', conceptBg:'#E8F5E9'},
     {num:'Step 7 of 10', title:'KV Cache management throughout Decode', layer:'Paged Attention block manager', layerColor:'#3949AB',
-     body:'As each new token is generated, its K and V vectors are appended to the request\'s Paged Attention block sequence. When a block fills (16 tokens), a new block is allocated from the free pool. The block table maps the logical sequence of token positions to scattered physical GPU memory blocks. No contiguous reservation, no fragmentation.',
-     concept:'If prefix caching is enabled and this request shares a system prompt with previous requests, those KV blocks are already allocated and shared - no recomputation needed. This is why prefix caching can drop TTFT by 70–90% for repeat prompts (Module 3.2).', conceptBg:'#E8EAF6'},
+     body:'As each new token is generated, its K and V vectors are appended to the request\'s Paged Attention block sequence. When a block fills (for example, 16 tokens), a new block is allocated from the free pool. The block table maps the logical sequence of token positions to scattered physical GPU memory blocks. No contiguous reservation, no fragmentation.',
+     concept:'If prefix caching is enabled and this request shares a system prompt with previous requests, those KV blocks are already allocated and shared - no recomputation needed. This is why prefix caching can drop TTFT by 70-90% for repeat prompts (Module 3.2).', conceptBg:'#E8EAF6'},
     {num:'Step 8 of 10', title:'Continuous batching - other requests share the GPU', layer:'TRT-LLM in-flight batching', layerColor:'#006064',
-     body:'While this request is in its Decode loop, TRT-LLM is also running decode steps for 30–50 other concurrent requests in the same GPU iteration. Each iteration processes one decode step for every in-flight sequence simultaneously. If a different request finished during this time, its Paged Attention blocks were freed and its GPU slot was immediately assigned to a waiting request from Triton\'s queue.',
-     concept:'This is continuous batching / in-flight batching in action (Module 2.3). The GPU never idles between requests. The total throughput is the sum of all concurrent decode steps per second - which is why GPU utilisation at 85% translates to much higher tokens/sec than a single-request benchmark would suggest.', conceptBg:'#E0F7FA'},
+     body:'While this request is in its Decode loop, TRT-LLM is also running decode steps for many other concurrent requests in the same GPU iteration. Each iteration processes one decode step for every in-flight sequence simultaneously. If a different request finished during this time, its Paged Attention blocks were freed and its GPU slot was immediately assigned to a waiting request from Triton\'s queue.',
+     concept:'This is continuous batching / in-flight batching in action (Module 2.3). The GPU rarely idles between requests. The total throughput is the sum of all concurrent decode steps per second - which is why GPU utilisation at 80-90% translates to much higher tokens/sec than a single-request benchmark would suggest.', conceptBg:'#E0F7FA'},
     {num:'Step 9 of 10', title:'Final token - EOS or max length reached', layer:'TRT-LLM engine', layerColor:'#546E7A',
      body:'After 200 tokens, the model either generates an end-of-sequence token or hits max_new_tokens. TRT-LLM signals completion to Triton. All Paged Attention blocks for this request are freed immediately and returned to the block pool for reuse. The GPU slot opens for the next queued request.',
      concept:'The immediate block release is the payoff of Paged Attention - no memory sits reserved for a completed request. The free blocks are available for the next request within the same decode iteration. This is why Paged Attention improves concurrency so dramatically compared to contiguous allocation.', conceptBg:'#ECEFF1'},
@@ -669,33 +667,33 @@
         {bg:'rgba(84,110,122,0.8)',name:'Application',detail:'Direct HTTP to vLLM - no separate gateway needed at this scale'},
         {bg:'rgba(123,31,162,0.8)',name:'vLLM built-in API',detail:'OpenAI-compatible endpoint - no Triton needed'},
         {bg:'rgba(123,31,162,0.8)',name:'vLLM engine',detail:'Paged Attention + continuous batching out of the box'},
-        {bg:'rgba(21,101,192,0.8)',name:'Quantisation: AWQ INT4',detail:'Llama 3 8B at INT4 fits in 8GB - runs on a single A100 40GB with KV Cache headroom'},
-        {bg:'rgba(27,94,32,0.8)',name:'1x A100 40GB SXM',detail:'Single GPU - no TP needed, no NVLink complexity'},
+        {bg:'rgba(21,101,192,0.8)',name:'Quantisation: INT8',detail:'Llama 3 8B with INT8 fits comfortably on an A100 40GB with KV Cache headroom'},
+        {bg:'rgba(27,94,32,0.8)',name:'1x A100 40GB',detail:'Single GPU - no TP needed, no NVLink complexity'},
       ];
-      why='One GPU, one process, one command. vLLM\'s OpenAI-compatible API means zero integration work for any app built on the OpenAI SDK. INT4 AWQ on a small model maximises the memory available for KV Cache without compromising quality significantly. Add a second GPU and TP=2 when concurrency exceeds ~15 users. Switch to H100 when TPOT becomes the constraint.';
-      tags=['1x A100 40GB','vLLM + AWQ INT4','Llama 3 8B','~$3/hr cloud cost','Scales to ~15 concurrent'];
+      why='One GPU, one process, one command. vLLM\'s OpenAI-compatible API means minimal integration work for any app built on the OpenAI SDK. FP8 or INT8 on a small model maximises the memory available for KV Cache without compromising quality significantly. Add a second GPU and TP=2 when concurrency exceeds roughly 15-20 users. Consider upgrading to H100 when TPOT becomes the primary constraint.';
+      tags=['1x A100 40GB','vLLM + FP8/INT8','Llama 3 8B','Cost-conscious','Scales to ~15-20 concurrent'];
     } else if(scenario==='enterprise'){
       name='Enterprise RAG at scale - quality, SLA, multi-team';
       stack=[
         {bg:'rgba(84,110,122,0.8)',name:'API gateway (Kong/Apigee)',detail:'Auth, rate limiting, per-tenant routing, audit logging'},
         {bg:'rgba(0,96,100,0.8)',name:'Triton Inference Server',detail:'Ensemble pipeline: preprocessing → embedding → retrieval → LLM → postprocessing'},
-        {bg:'rgba(230,81,0,0.8)',name:'TRT-LLM FP8 engine',detail:'Compiled for H100 - 25% more throughput vs vLLM at this scale'},
+        {bg:'rgba(230,81,0,0.8)',name:'TRT-LLM FP8 engine',detail:'Compiled for H100 - can deliver ~20-30% more throughput vs vLLM at this scale in many workloads'},
         {bg:'rgba(21,101,192,0.8)',name:'Parallelism: TP=4',detail:'Llama 3 70B across 4x H100 SXM within one DGX node - NVLink AllReduce'},
-        {bg:'rgba(123,31,162,0.8)',name:'Prefix caching',detail:'Shared RAG system prompts cached - TTFT from 1.8s to <100ms for repeat document sets'},
-        {bg:'rgba(27,94,32,0.8)',name:'4x H100 SXM (DGX H100)',detail:'NVLink 4.0 for TP=4, 80GB HBM3 each, FP8 Transformer Engine'},
+        {bg:'rgba(123,31,162,0.8)',name:'Prefix caching',detail:'Shared RAG system prompts cached - TTFT from ~seconds to &lt;100ms for repeat document sets'},
+        {bg:'rgba(27,94,32,0.8)',name:'4x H100 SXM (DGX H100)',detail:'NVLink for TP=4, 80GB HBM3 each, FP8 Transformer Engine'},
       ];
-      why='The enterprise tier justifies operational complexity. TRT-LLM\'s compiled FP8 engine delivers consistent TPOT under 25ms at 60+ concurrent users - something vLLM cannot sustain reliably. Triton\'s ensemble pipeline orchestrates the RAG flow server-side, eliminating application-layer orchestration and providing per-stage Prometheus metrics for SLA monitoring. Prefix caching is the single highest-ROI optimisation for RAG - the document set system prompt is shared across thousands of queries.';
-      tags=['4x H100 SXM','TRT-LLM + FP8','Triton ensemble','Prefix caching','60+ concurrent','<25ms TPOT SLA'];
+      why='The enterprise tier justifies operational complexity. TRT-LLM\'s compiled FP8 engine often delivers consistent TPOT under tight SLAs (for example, &lt;25ms) at 60+ concurrent users - something a generic engine may struggle to sustain reliably. Triton\'s ensemble pipeline orchestrates the RAG flow server-side, eliminating application-layer orchestration and providing per-stage Prometheus metrics for SLA monitoring. Prefix caching is the single highest-ROI optimisation for RAG when prompts share a stable system prefix.';
+      tags=['4x H100 SXM','TRT-LLM + FP8','Triton ensemble','Prefix caching','60+ concurrent','Tight TPOT SLA'];
     } else {
       name='High-volume batch processing - throughput-first';
       stack=[
         {bg:'rgba(84,110,122,0.8)',name:'Job queue (Celery/SQS)',detail:'Async batch submission - no real-time latency SLA'},
         {bg:'rgba(0,96,100,0.8)',name:'Triton Inference Server',detail:'Sequence batching with max_queue_delay for maximum batch fill rate'},
-        {bg:'rgba(230,81,0,0.8)',name:'TRT-LLM FP8 engine',detail:'Maximum throughput - compiled engine, large batch size (256+)'},
-        {bg:'rgba(21,101,192,0.8)',name:'Parallelism: TP=4, Data Parallel x2',detail:'Two identical 4x H100 sets serving the same model - doubles throughput linearly'},
+        {bg:'rgba(230,81,0,0.8)',name:'TRT-LLM FP8 engine',detail:'Maximum throughput - compiled engine, large batch size (for example, 256+)'},
+        {bg:'rgba(21,101,192,0.8)',name:'Parallelism: TP=4, Data Parallel x2',detail:'Two identical 4x H100 sets serving the same model - doubles throughput nearly linearly'},
         {bg:'rgba(27,94,32,0.8)',name:'8x H100 SXM (2x DGX nodes)',detail:'Two DGX H100 nodes, InfiniBand between nodes for DP coordination'},
       ];
-      why='Batch workloads care only about tokens per second per dollar - not TTFT or TPOT. TRT-LLM with large max batch size (256+) and long queue_delay_microseconds fills every GPU cycle. Data Parallelism across two DGX nodes doubles throughput linearly with no AllReduce overhead (each DP replica is independent). The async job queue decouples submission from processing, allowing the GPUs to run continuously at near-100% utilisation. Speculative decoding is explicitly excluded - at batch sizes of 256, draft model overhead outweighs acceptance rate gains.';
+      why='Batch workloads care only about tokens per second per dollar - not TTFT or per-user TPOT. TRT-LLM with large max batch size (for example, 256+) and a non-zero queue_delay_microseconds fills every GPU cycle. Data Parallelism across two DGX nodes increases throughput with minimal coordination overhead (each DP replica is largely independent). The async job queue decouples submission from processing, allowing the GPUs to run continuously at high utilisation. Speculative decoding is explicitly excluded here - at very large batch sizes, draft-model overhead typically outweighs acceptance-rate gains.';
       tags=['8x H100 SXM','TRT-LLM FP8','Data Parallelism','Batch size 256+','Maximum tokens/sec','Async queue'];
     }
     var layerHtml=stack.map(function(l){
@@ -728,10 +726,16 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='c'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct - this integrates three separate concepts from Parts 1–4.</strong><br><br><strong>Why FP8 weight quantisation:</strong> The TPOT degradation from 18ms at 20 users to 45ms at 60 users is not primarily a scheduling problem - 18ms at low load tells us the baseline TPOT is already close to the HBM bandwidth floor for BF16 70B on H100 (70GB / 3350 GB/s ≈ 21ms). As concurrency grows, the GPU is reading full BF16 weights more times per second, and memory pressure from the KV Cache at 88% utilisation forces the scheduler to slow down or preempt sequences. FP8 weights halve the bytes read per decode step (35GB instead of 70GB), cutting the TPOT floor from 21ms to ~10ms - leaving far more headroom before memory pressure compounds.<br><br><strong>Why FP8 KV Cache quantisation:</strong> 88% KV Cache utilisation at 60 users is dangerously close to the OOM boundary. When the pool fills further, vLLM begins swapping sequences to CPU RAM, which causes exactly the TPOT spikes observed. FP8 KV Cache (INT8 halves the block footprint) doubles the effective KV Cache capacity, reducing utilisation from 88% to roughly 44% at the same concurrency - eliminating preemption-driven TPOT spikes.<br><br><strong>Why migrate to TRT-LLM:</strong> At 60 concurrent users with a 25ms TPOT SLA, this customer meets all four TRT-LLM criteria (fixed model, high concurrency, tight SLA, presumably an ML platform team). TRT-LLM\'s compiled FP8 kernels on H100 add a further 20–30% throughput on top of the quantisation gains.<br><br><strong>Why not option A (add GPUs):</strong> Adding TP GPUs raises TP from 4 to 8 on the same nodes - but they are already using 8 GPUs total across TP=4, PP=2. TP=8 within a single node requires all 8 GPUs on one DGX, which changes the PP configuration. More importantly, the bottleneck is memory bandwidth and KV Cache pressure, not compute - adding TP reduces per-GPU weight size but does not help the KV Cache pressure per se. Quantisation addresses the root cause more directly.<br><br><strong>Why not option B (speculative decoding):</strong> Speculative decoding explicitly degrades at high concurrency. At 60 users, batch sizes are large enough that the draft model overhead reduces overall throughput - Module 3.5 flagged this directly. The acceptance rate also needs to exceed ~50% to be net positive, and at this concurrency the gain is negative.<br><br><strong>Why not option D (rate limiting):</strong> Hiding the problem by rejecting users is not a fix - it is capitulation to an architectural constraint. The customer needs to serve 60 users at 25ms TPOT, not 30 users.';
+      r.innerHTML='<strong>Correct - this integrates multiple concepts from Parts 1-4.</strong><br><br>'+
+        '<strong>Why FP8 weight quantisation:</strong> The TPOT degradation from 18ms at 20 users to 45ms at 60 users suggests a Decode phase constrained by memory bandwidth and increasingly stressed at higher concurrency. With BF16 weights on a 70B-class model, each Decode step moves a large volume of data from HBM. FP8 weights substantially reduce the bytes read per decode step relative to BF16, lowering the Decode TPOT floor and leaving more headroom before contention and overhead push TPOT above the SLA.<br><br>'+
+        '<strong>Why FP8/INT8 KV Cache quantisation:</strong> 88% KV Cache utilisation at 60 users is close to the OOM and swapping boundary. As utilisation rises further, vLLM can begin swapping or aggressively managing sequences, which manifests as TPOT spikes and degradation under load. Quantising the KV Cache (for example, FP8 or INT8) effectively increases the capacity of the KV Cache pool, reducing utilisation and avoiding preemption-driven stalls at higher concurrency.<br><br>'+
+        '<strong>Why migrate to TRT-LLM:</strong> At 60 concurrent users with a 25ms TPOT SLA, this customer meets the typical criteria for TRT-LLM (relatively fixed model, high concurrency, tight SLA, and an implied platform team). TRT-LLM\'s compiled FP8 kernels on H100 can often add an additional ~20-30% throughput and more predictable latency on top of the quantisation gains.<br><br>'+
+        '<strong>Why not option A (add GPUs):</strong> Increasing TP to 8 by adding more GPUs changes the parallelism configuration but does not directly address the underlying bandwidth and KV Cache pressure. Without fixing precision and KV usage, more TP can even introduce extra communication overhead, especially if topology constraints appear.<br><br>'+
+        '<strong>Why not option B (speculative decoding):</strong> Speculative decoding is most effective at lower concurrency and smaller batch sizes where the draft model overhead is compensated by high acceptance rates. At 60 users with large batches, the extra work from the draft model frequently reduces overall throughput instead of improving it.<br><br>'+
+        '<strong>Why not option D (rate limiting):</strong> Reducing concurrency to 30 simply hides the architectural bottleneck by rejecting users. The requirement is to serve 60 users at a 25ms TPOT SLA, not to meet SLA by cutting traffic in half.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option C is correct. The TPOT degradation from 18ms to 45ms as concurrency grows points to two compounding problems: (1) the baseline TPOT is already near the HBM bandwidth floor for BF16 70B on H100 (~21ms), and (2) 88% KV Cache utilisation at 60 users is causing the scheduler to preempt sequences, adding TPOT spikes. FP8 weight quantisation halves the memory read per decode step, cutting the TPOT floor in half. FP8 KV Cache doubles effective capacity, dropping utilisation from 88% to ~44% and eliminating preemption-driven spikes. Migrating to TRT-LLM adds a further 20–30% throughput. Option A (more GPUs / TP=8) does not address the root cause - memory bandwidth and KV pressure. Option B (speculative decoding) actively hurts at 60 concurrent users. Option D (rate limiting) is not an architectural fix.';
+      r.innerHTML='<strong>Not quite.</strong> Option C is the best answer. The TPOT degradation from 18ms at 20 users to 45ms at 60 users points to two compounding issues: (1) a Decode phase that is already close to its memory-bandwidth limit at BF16, and (2) KV Cache utilisation at 88% that pushes the system toward swapping/preemption as concurrency grows. FP8 weight quantisation reduces the bytes read per decode step, lowering the Decode TPOT floor and improving headroom. KV Cache quantisation increases the effective capacity of the KV pool, reducing the risk of preemption-driven stalls. Migrating to a TRT-LLM FP8 engine on H100 can often add a further ~20-30% throughput and latency stability. Option A (more GPUs / TP=8) doesn\'t directly fix bandwidth/KV pressure and can add communication overhead. Option B (speculative decoding) tends to be net-negative at very high concurrency. Option D (rate limiting) meets SLA by turning users away, not by improving the architecture.';
     }
     document.getElementById('check-btn').style.display='none';
   }
