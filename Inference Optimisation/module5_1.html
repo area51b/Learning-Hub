@@ -162,7 +162,7 @@
   </div>
 
   <div class="intro-card">
-    <p>Part 4 ended with a production stack that works well for most teams: vLLM or TRT-LLM on a DGX node, Triton in front, quantisation applied, parallelism configured. For a team serving thousands of requests per day on a handful of GPUs, this stack is close to optimal. The problems begin when the scale jumps by two orders of magnitude.</p>
+    <p>Part 4 ended with a production stack that works well for most teams: vLLM or TRT-LLM on a node, Triton in front, quantisation applied, parallelism configured. For a team serving thousands of requests per day on a handful of GPUs, this stack is close to optimal. The problems begin when the scale jumps by two orders of magnitude.</p>
     <p>At the scale of hyperscaler inference deployments - hundreds of GPUs, millions of requests per day, dozens of model variants, mixed workloads with vastly different prompt and output lengths - the current stack exposes four structural limits that no amount of configuration tuning can fully overcome. These limits are not bugs in vLLM or TRT-LLM. They are architectural gaps between what single-node inference servers were designed to do and what fleet-scale inference actually requires. NVIDIA Dynamo and LLM-d exist specifically to close these gaps.</p>
   </div>
 

@@ -169,7 +169,7 @@
 
   <div class="intro-card">
     <p>Parts 1–3 explained the concepts: why KV Cache matters, why Decode is memory-bandwidth-bound, why NVLink enables Tensor Parallelism while InfiniBand only handles Pipeline Parallelism. Part 4 now grounds those concepts in actual hardware and software products that customers buy, configure, and ask about.</p>
-    <p>This module covers the NVIDIA hardware stack: what a GPU is (versus a CPU), what HBM memory is and why it determines throughput, what CUDA is and why it underpins every LLM framework, and what NVLink and NVSwitch do. After this module you should be able to look at a customer's DGX H100 cluster spec sheet and immediately map every number to an inference concept you already understand.</p>
+    <p>This module covers the NVIDIA hardware stack: what a GPU is (versus a CPU), what HBM memory is and why it determines throughput, what CUDA is and why it underpins every LLM framework, and what NVLink and NVSwitch do. After this module you should be able to look at a customer's H100 cluster spec sheet and immediately map every number to an inference concept you already understand.</p>
   </div>
 
   <!-- Section 1: GPU vs CPU -->
@@ -406,7 +406,7 @@
         <div class="nvlink-note" id="nvlinkNote"></div>
       </div>
 
-      <p>NVSwitch is a dedicated switch chip that provides full all-to-all NVLink connectivity between all GPUs in a DGX node - without NVSwitch, GPU A connecting to GPU H would consume bandwidth on intermediate GPUs. NVSwitch ensures every GPU pair in a node communicates at full NVLink bandwidth simultaneously, which is what makes 8-way Tensor Parallelism within a DGX node practical.</p>
+      <p>NVSwitch is a dedicated switch chip that provides full all-to-all NVLink connectivity between all GPUs in a node - without NVSwitch, GPU A connecting to GPU H would consume bandwidth on intermediate GPUs. NVSwitch ensures every GPU pair in a node communicates at full NVLink bandwidth simultaneously, which is what makes 8-way Tensor Parallelism within a node practical.</p>
 
       <div class="callout callout-orange">
         <strong>PCIe vs NVLink - the crucial distinction:</strong> Cloud instances without NVLink (e.g. some AWS and Azure GPU instances use PCIe between GPUs) have ~64 GB/s bidirectional between GPUs. NVLink H100 provides ~900 GB/s. For Tensor Parallelism, which runs AllReduce after every layer, this 14&#215; bandwidth difference is the difference between TP being net-positive for latency and being net-negative. Always ask customers whether their GPU interconnect is NVLink or PCIe before recommending TP configurations.
@@ -486,7 +486,7 @@
       </div>
 
       <div class="callout callout-slate">
-        <strong>H100 PCIe vs H100 SXM - not the same GPU:</strong> NVIDIA sells the H100 in two form factors. SXM (used in DGX H100 servers) has NVLink 4.0 at 900 GB/s and higher TDP (700W). PCIe (used in standard rack servers) has PCIe 5.0 at 64 GB/s and lower TDP (350W). HBM bandwidth is also lower: 3,350 vs 2,000 GB/s. For Tensor Parallelism and high-throughput inference, always ask which form factor the customer has - the SXM variant is significantly more capable for LLM workloads.
+        <strong>H100 PCIe vs H100 SXM - not the same GPU:</strong> NVIDIA sells the H100 in two form factors. SXM (used in H100 servers) has NVLink 4.0 at 900 GB/s and higher TDP (700W). PCIe (used in standard rack servers) has PCIe 5.0 at 64 GB/s and lower TDP (350W). HBM bandwidth is also lower: 3,350 vs 2,000 GB/s. For Tensor Parallelism and high-throughput inference, always ask which form factor the customer has - the SXM variant is significantly more capable for LLM workloads.
       </div>
     </div>
   </div>
@@ -512,7 +512,7 @@
         <div class="key-num" style="color:#1565C0;">02</div>
         <div>
           <div class="key-title">NVLink bandwidth determines whether Tensor Parallelism is viable</div>
-          <div class="key-desc">TP requires AllReduce after every layer. NVLink H100 (900 GB/s) makes this fast enough to be net-positive for latency. PCIe (64 GB/s) makes it net-negative. Before recommending a TP configuration, confirm NVLink vs PCIe. DGX nodes always have NVLink; cloud "GPU instances" may not.</div>
+          <div class="key-desc">TP requires AllReduce after every layer. NVLink H100 (900 GB/s) makes this fast enough to be net-positive for latency. PCIe (64 GB/s) makes it net-negative. Before recommending a TP configuration, confirm NVLink vs PCIe. nodes always have NVLink; cloud "GPU instances" may not.</div>
         </div>
       </div>
       <div class="key-item">
@@ -558,7 +558,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">NVSwitch</div>
-        <div class="cheat-def">Switch chip in DGX nodes that provides full all-to-all NVLink connectivity between all GPUs. Enables 8-way TP at full bandwidth without bandwidth sharing across intermediate GPUs.</div>
+        <div class="cheat-def">Switch chip in nodes that provides full all-to-all NVLink connectivity between all GPUs. Enables 8-way TP at full bandwidth without bandwidth sharing across intermediate GPUs.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">SXM vs PCIe form factor</div>
@@ -621,9 +621,9 @@
   /* ── NVLink interactive ── */
   var nvData={
     v100:{ gen:'NVLink 2.0', gpu:'V100', bw:'300 GB/s', links:6,  gpuPerNode:8, tpMax:'TP=4 practical', note:'6 NVLink lanes per GPU. 300 GB/s bidirectional. Sufficient for TP=2 and TP=4 configurations. TP=8 begins showing diminishing returns due to AllReduce overhead at this bandwidth.' },
-    a100:{ gen:'NVLink 3.0', gpu:'A100', bw:'600 GB/s', links:12, gpuPerNode:8, tpMax:'TP=8 practical', note:'12 NVLink lanes per GPU. 600 GB/s bidirectional. Standard DGX A100 nodes use NVSwitch for all-to-all connectivity. TP=8 is viable and commonly deployed for large models.' },
-    h100:{ gen:'NVLink 4.0', gpu:'H100', bw:'900 GB/s', links:18, gpuPerNode:8, tpMax:'TP=8 recommended', note:'18 NVLink lanes per GPU. 900 GB/s bidirectional. DGX H100 nodes support full 8-way TP with NVSwitch. AllReduce overhead is low enough that TP=8 is the standard configuration for 70B+ models.' },
-    b200:{ gen:'NVLink 5.0', gpu:'B200', bw:'1,800 GB/s', links:18, gpuPerNode:8, tpMax:'TP=8 highly efficient', note:'1,800 GB/s bidirectional - double H100. Enables very large batch AllReduce with minimal overhead. Combined with 192GB HBM per GPU, a single DGX B200 node (8 GPUs, 1.5TB total HBM) can serve 405B at FP8 with TP=8.' }
+    a100:{ gen:'NVLink 3.0', gpu:'A100', bw:'600 GB/s', links:12, gpuPerNode:8, tpMax:'TP=8 practical', note:'12 NVLink lanes per GPU. 600 GB/s bidirectional. Standard A100 nodes use NVSwitch for all-to-all connectivity. TP=8 is viable and commonly deployed for large models.' },
+    h100:{ gen:'NVLink 4.0', gpu:'H100', bw:'900 GB/s', links:18, gpuPerNode:8, tpMax:'TP=8 recommended', note:'18 NVLink lanes per GPU. 900 GB/s bidirectional. H100 nodes support full 8-way TP with NVSwitch. AllReduce overhead is low enough that TP=8 is the standard configuration for 70B+ models.' },
+    b200:{ gen:'NVLink 5.0', gpu:'B200', bw:'1,800 GB/s', links:18, gpuPerNode:8, tpMax:'TP=8 highly efficient', note:'1,800 GB/s bidirectional - double H100. Enables very large batch AllReduce with minimal overhead. Combined with 192GB HBM per GPU, a single B200 node (8 GPUs, 1.5TB total HBM) can serve 405B at FP8 with TP=8.' }
   };
   function showNVLink(gpu){
     var d=nvData[gpu];

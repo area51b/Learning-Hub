@@ -671,16 +671,16 @@
         {bg:'rgba(27,94,32,0.8)',name:'1x A100 40GB',detail:'Single GPU - no TP needed, no NVLink complexity'},
       ];
       why='One GPU, one process, one command. vLLM\'s OpenAI-compatible API means minimal integration work for any app built on the OpenAI SDK. FP8 or INT8 on a small model maximises the memory available for KV Cache without compromising quality significantly. Add a second GPU and TP=2 when concurrency exceeds roughly 15-20 users. Consider upgrading to H100 when TPOT becomes the primary constraint.';
-      tags=['1x A100 40GB','vLLM + FP8/INT8','Llama 3 8B','Cost-conscious','Scales to ~15-20 concurrent'];
+      tags=['1x A100 40GB','vLLM + INT8','Llama 3 8B','Cost-conscious','Scales to ~15-20 concurrent'];
     } else if(scenario==='enterprise'){
       name='Enterprise RAG at scale - quality, SLA, multi-team';
       stack=[
         {bg:'rgba(84,110,122,0.8)',name:'API gateway (Kong/Apigee)',detail:'Auth, rate limiting, per-tenant routing, audit logging'},
         {bg:'rgba(0,96,100,0.8)',name:'Triton Inference Server',detail:'Ensemble pipeline: preprocessing → embedding → retrieval → LLM → postprocessing'},
-        {bg:'rgba(230,81,0,0.8)',name:'TRT-LLM FP8 engine',detail:'Compiled for H100 - can deliver ~20-30% more throughput vs vLLM at this scale in many workloads'},
-        {bg:'rgba(21,101,192,0.8)',name:'Parallelism: TP=4',detail:'Llama 3 70B across 4x H100 SXM within one DGX node - NVLink AllReduce'},
-        {bg:'rgba(123,31,162,0.8)',name:'Prefix caching',detail:'Shared RAG system prompts cached - TTFT from ~seconds to &lt;100ms for repeat document sets'},
-        {bg:'rgba(27,94,32,0.8)',name:'4x H100 SXM (DGX H100)',detail:'NVLink for TP=4, 80GB HBM3 each, FP8 Transformer Engine'},
+        {bg:'rgba(230,81,0,0.8)',name:'TRT-LLM FP8 engine',detail:'Compiled for H100 - can deliver ~20-30% more throughput vs vLLM <br/> at this scale in many workloads'},
+        {bg:'rgba(21,101,192,0.8)',name:'Parallelism: TP=4',detail:'Llama 3 70B across 4x H100 SXM within one node - NVLink AllReduce'},
+        {bg:'rgba(123,31,162,0.8)',name:'Prefix caching',detail:'Shared RAG system prompts cached - TTFT from ~seconds to &lt;100ms for <br/>repeat document sets'},
+        {bg:'rgba(27,94,32,0.8)',name:'4x H100 SXM (H100)',detail:'NVLink for TP=4, 80GB HBM3 each, FP8 Transformer Engine'},
       ];
       why='The enterprise tier justifies operational complexity. TRT-LLM\'s compiled FP8 engine often delivers consistent TPOT under tight SLAs (for example, &lt;25ms) at 60+ concurrent users - something a generic engine may struggle to sustain reliably. Triton\'s ensemble pipeline orchestrates the RAG flow server-side, eliminating application-layer orchestration and providing per-stage Prometheus metrics for SLA monitoring. Prefix caching is the single highest-ROI optimisation for RAG when prompts share a stable system prefix.';
       tags=['4x H100 SXM','TRT-LLM + FP8','Triton ensemble','Prefix caching','60+ concurrent','Tight TPOT SLA'];
@@ -690,10 +690,10 @@
         {bg:'rgba(84,110,122,0.8)',name:'Job queue (Celery/SQS)',detail:'Async batch submission - no real-time latency SLA'},
         {bg:'rgba(0,96,100,0.8)',name:'Triton Inference Server',detail:'Sequence batching with max_queue_delay for maximum batch fill rate'},
         {bg:'rgba(230,81,0,0.8)',name:'TRT-LLM FP8 engine',detail:'Maximum throughput - compiled engine, large batch size (for example, 256+)'},
-        {bg:'rgba(21,101,192,0.8)',name:'Parallelism: TP=4, Data Parallel x2',detail:'Two identical 4x H100 sets serving the same model - doubles throughput nearly linearly'},
-        {bg:'rgba(27,94,32,0.8)',name:'8x H100 SXM (2x DGX nodes)',detail:'Two DGX H100 nodes, InfiniBand between nodes for DP coordination'},
+        {bg:'rgba(21,101,192,0.8)',name:'Parallelism: TP=4, Data Parallel x2',detail:'Two identical 4x H100 sets serving the same model - doubles throughput  <br/>nearly linearly'},
+        {bg:'rgba(27,94,32,0.8)',name:'8x H100 SXM (2x nodes)',detail:'Two H100 nodes, InfiniBand between nodes for DP coordination'},
       ];
-      why='Batch workloads care only about tokens per second per dollar - not TTFT or per-user TPOT. TRT-LLM with large max batch size (for example, 256+) and a non-zero queue_delay_microseconds fills every GPU cycle. Data Parallelism across two DGX nodes increases throughput with minimal coordination overhead (each DP replica is largely independent). The async job queue decouples submission from processing, allowing the GPUs to run continuously at high utilisation. Speculative decoding is explicitly excluded here - at very large batch sizes, draft-model overhead typically outweighs acceptance-rate gains.';
+      why='Batch workloads care only about tokens per second per dollar - not TTFT or per-user TPOT. TRT-LLM with large max batch size (for example, 256+) and a non-zero queue_delay_microseconds fills every GPU cycle. Data Parallelism across two nodes increases throughput with minimal coordination overhead (each DP replica is largely independent). The async job queue decouples submission from processing, allowing the GPUs to run continuously at high utilisation. Speculative decoding is explicitly excluded here - at very large batch sizes, draft-model overhead typically outweighs acceptance-rate gains.';
       tags=['8x H100 SXM','TRT-LLM FP8','Data Parallelism','Batch size 256+','Maximum tokens/sec','Async queue'];
     }
     var layerHtml=stack.map(function(l){
