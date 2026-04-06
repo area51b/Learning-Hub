@@ -161,7 +161,7 @@
     <a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 4 · MODULE 4.3</div>
     <h1>TensorRT-LLM - How It Differs from vLLM, When It Wins</h1>
-    <p>NVIDIA's compiled inference engine. What it actually does under the hood, why compilation produces faster engines than runtime execution, and the exact conditions where its performance advantage justifies the operational cost.</p>
+    <p>NVIDIA's compiled inference engine. What it actually does under the hood, why compilation can produce faster engines than a pure runtime stack, and the conditions where its performance advantage typically justifies the additional build-and-operate complexity.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -180,8 +180,8 @@
   </div>
 
   <div class="intro-card">
-    <p>TensorRT-LLM is NVIDIA's production inference engine for large language models. Where vLLM is a Python server that runs models at inference time using PyTorch, TensorRT-LLM compiles models ahead of time into GPU-specific optimised engines - fusing operations, selecting the fastest kernel for each layer on each GPU, and eliminating all Python overhead from the serving path. The result is consistently 20–40% more throughput than vLLM at the same hardware count, at the cost of a more complex build-and-deploy workflow.</p>
-    <p>This module covers what TensorRT-LLM actually does (compilation, kernel fusion, quantisation), how it differs architecturally from vLLM, when that difference matters enough to justify the investment, and how the deployment workflow looks in practice. After this module you should be able to explain TRT-LLM's value proposition accurately and know which customer situations call for it over vLLM.</p>
+    <p>TensorRT-LLM is NVIDIA's production inference engine for large language models. Where vLLM is a Python server that runs models at inference time using PyTorch plus its own CUDA kernels, TensorRT-LLM compiles models ahead of time into GPU-specific optimised engines - fusing operations, selecting kernels based on the actual GPU architecture and model shapes, and eliminating Python from the hot path. In many high-throughput benchmarks this yields roughly 20-40% more throughput than a well-tuned vLLM stack on the same hardware, at the cost of a more complex build-and-deploy workflow.</p>
+    <p>This module covers what TensorRT-LLM actually does (compilation, kernel fusion, quantisation), how it differs architecturally from vLLM, when that difference is likely to matter enough to justify the investment, and how the deployment workflow looks in practice. After this module you should be able to explain TRT-LLM's value proposition accurately and know which customer situations are strong candidates for it over vLLM.</p>
   </div>
 
   <!-- Section 1: What TensorRT-LLM is -->
@@ -194,7 +194,7 @@
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>The core distinction between TensorRT-LLM and vLLM is compile-time optimisation versus runtime execution. vLLM loads model weights and runs inference through PyTorch, making decisions at runtime about how to execute each operation. TensorRT-LLM takes a model, analyses it, and produces a compiled <strong>TensorRT engine</strong> - a binary optimised specifically for the target GPU, with operations fused, memory pre-planned, and kernel implementations selected ahead of time.</p>
+      <p>The core distinction between TensorRT-LLM and vLLM is compile-time optimisation versus primarily runtime execution. vLLM loads model weights and runs inference through PyTorch plus its own CUDA kernels, with execution decisions resolved at runtime and heavily delegated to libraries like cuBLAS and cuDNN. TensorRT-LLM takes a model, analyses it, and produces a compiled <strong>TensorRT engine</strong> - a binary optimised specifically for the target GPU, with operations fused, memory pre-planned, and concrete kernel implementations selected ahead of time for the model's actual shapes.</p>
 
       <div class="pipe-wrap">
         <div class="pipe-title">TensorRT-LLM build-then-serve workflow</div>
@@ -211,7 +211,7 @@
           <div class="pipe-num" style="background:#7B1FA2;">2</div>
           <div class="pipe-content" style="background:rgba(123,31,162,0.3);">
             <div class="pipe-step-title">Quantisation (optional - Model Optimizer / AMMO)</div>
-            <div class="pipe-step-desc">Apply INT8, FP8, or INT4 AWQ quantisation to weights using NVIDIA's calibration tools. Produces quantised checkpoint. This step requires a calibration dataset and takes 10–60 minutes depending on model size.</div>
+            <div class="pipe-step-desc">Optionally apply INT8, FP8, or selected INT4 schemes to weights using NVIDIA's calibration tools. Produces a quantised checkpoint. This step requires a calibration dataset and typically takes 10-60 minutes depending on model size and hardware.</div>
           </div>
         </div>
         <div class="pipe-arrow">&#9660;</div>
@@ -219,7 +219,7 @@
           <div class="pipe-num" style="background:#E64A19;">3</div>
           <div class="pipe-content" style="background:rgba(230,81,0,0.3);">
             <div class="pipe-step-title">trtllm-build - compilation to TensorRT engine</div>
-            <div class="pipe-step-desc">Core step. TRT-LLM analyses the model graph, fuses operations (LayerNorm + attention + activation into single kernels), selects optimal kernel implementations per GPU architecture, pre-plans memory layout. Output: .engine files for each GPU. Takes 5–120 minutes for large models.</div>
+            <div class="pipe-step-desc">Core step. TRT-LLM analyses the model graph, fuses operations (for example, combining LayerNorm + attention + activation into fewer kernels), selects kernel implementations tuned for the specific GPU architecture and tensor shapes, and pre-plans memory layout. Output: .engine files for each GPU. For large models this can take 5-120 minutes.</div>
           </div>
         </div>
         <div class="pipe-arrow">&#9660;</div>
@@ -238,12 +238,11 @@
             <div class="pipe-step-desc">The compiled .engine file is served via Triton Inference Server (Module 4.4), which handles HTTP/gRPC endpoints, batching orchestration, and health checks. TRT-LLM handles the GPU execution; Triton handles the serving layer.</div>
           </div>
         </div>
-        <div class="pipe-note">Key constraint: a compiled engine is GPU-specific. An engine built for H100 will not run on A100, and vice versa. If you change GPU type, you must recompile. Engines are also batch-size-specific - you specify the maximum batch size at compile time and the engine is optimised for that profile.</div>
+        <div class="pipe-note">Key constraint: a compiled engine is tightly coupled to a GPU generation/architecture and build profile. Practically, an engine built for H100 should be treated as non-portable to A100, and vice versa. If you change GPU type or significantly change engine parameters, you should plan to recompile. Engines are also batch-size-specific - you specify the maximum batch size at compile time and the engine is optimised for that profile.</div>
       </div>
 
       <div class="callout callout-orange">
-        <strong>The engine is a binary artifact, not a model:</strong> A TRT-LLM engine is analogous to a compiled executable - it contains fused CUDA kernels for a specific GPU, not portable model weights. This is why TRT-LLM deployments have a CI/CD build step that vLLM deployments do not. Teams that manage TRT-LLM well treat engine compilation like a build pipeline: version-controlled build configs, automated compilation on model updates, validation gates before production promotion.
-      </div>
+        <strong>The engine is a binary artifact, not a model:</strong> A TRT-LLM engine is analogous to a compiled executable - it contains fused CUDA kernels for a specific GPU profile, not portable model weights. This is why TRT-LLM deployments have a CI/CD build step that vLLM deployments do not. Teams that manage TRT-LLM well treat engine compilation like a build pipeline: version-controlled build configs, automated compilation on model or config updates, and validation gates before production promotion.</div>
     </div>
   </div>
 
@@ -258,7 +257,7 @@
     </div>
     <div class="section-body" id="bdy2">
       <p>A transformer forward pass consists of dozens of sequential operations per layer - LayerNorm, Q/K/V projection, attention, output projection, FFN expand, activation, FFN contract, residual add, and more. In an unoptimised runtime (like naive PyTorch), each of these is a separate GPU kernel call: the result is written to HBM, the next kernel reads it back, does its operation, writes again, and so on. Each HBM round-trip costs bandwidth and latency.</p>
-      <p>Kernel fusion combines multiple sequential operations into a single kernel that keeps data in SRAM (fast on-chip memory) between operations, never writing intermediate results to HBM. TensorRT automatically identifies fusible operation sequences during compilation and combines them.</p>
+      <p>Kernel fusion combines multiple sequential operations into a single kernel that keeps data in SRAM (fast on-chip memory) between operations, never writing intermediate results to HBM. TensorRT automatically identifies fusible operation sequences during compilation and combines them. vLLM also uses fused kernels in several hotspots, but TRT-LLM pushes fusion further because it can specialise the engine for a specific model and GPU at build time.</p>
 
       <div class="fusion-wrap">
         <div class="fusion-title">Per-layer operations - unfused vs fused kernel execution</div>
@@ -272,8 +271,7 @@
       </div>
 
       <div class="callout callout-blue">
-        <strong>Kernel selection is also GPU-specific:</strong> For a given operation like matrix multiplication, NVIDIA provides dozens of kernel implementations optimised for different matrix shapes, batch sizes, and GPU generations. At compile time, TensorRT benchmarks candidate kernels against the actual target GPU and selects the fastest one for each layer's specific shape. vLLM uses a fixed set of kernels that must work acceptably across many GPU types. This per-GPU selection is worth an additional 10–20% on top of fusion gains.
-      </div>
+        <strong>Kernel selection is also GPU and shape-specific:</strong> For a given operation like matrix multiplication, NVIDIA provides many kernel implementations optimised for different matrix shapes, batch sizes, and GPU generations. At compile time, TensorRT can benchmark or analytically choose candidate kernels against the actual target GPU and layer shape, and bake those choices into the engine. vLLM benefits from architecture-aware kernels in NVIDIA libraries and its own CUDA code, but it cannot specialise the full end-to-end graph per deployment in quite the same way. This extra level of per-GPU, per-shape tuning is typically worth another ~10-20% on top of fusion gains in high-load scenarios.</div>
     </div>
   </div>
 
@@ -287,36 +285,35 @@
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>Both vLLM and TRT-LLM support quantisation (INT8, FP8, INT4), but TRT-LLM's implementation is more deeply integrated with the hardware. Where vLLM applies quantisation as a layer on top of PyTorch, TRT-LLM compiles quantisation directly into the engine - fused dequantise-multiply-quantise operations run in a single kernel pass without ever materialising full-precision intermediate tensors.</p>
+      <p>Both vLLM and TRT-LLM support quantisation (INT8, lower-bit schemes, FP8 on appropriate hardware), but TRT-LLM's implementation is more deeply integrated with the hardware and engine build. Where vLLM often applies quantisation as a layer on top of PyTorch (using HuggingFace integrations, third-party libraries, or runtime dequantisation), TRT-LLM compiles quantisation directly into the engine - fused dequantise-multiply-quantise paths can run in a single kernel pass without ever materialising full-precision intermediate tensors.</p>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
         <div style="background:#ECEFF1; border-radius:10px; padding:16px; border-left:3px solid #546E7A;">
           <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#546E7A; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">vLLM quantisation</div>
           <div style="font-size:13.5px; line-height:1.9; color:#333;">
-            Applied via HuggingFace quantised weights (AWQ, GPTQ) or runtime quantisation<br>
-            PyTorch handles dequantise at runtime<br>
-            Supports AWQ, GPTQ, FP8, GGUF<br>
-            Setup: load pre-quantised model<br>
-            <div style="margin-top:8px; font-size:12px; color:#888; font-family:Arial,sans-serif;">Best for: quick deployment, broad model support</div>
+            Applied via HuggingFace/third-party quantised weights (AWQ, GPTQ, etc.) or runtime quantisation flows<br>
+            PyTorch and underlying libraries handle dequantise at runtime<br>
+            Supports a range of formats depending on model and integration (for example AWQ, GPTQ; FP8 support depends on PyTorch and vLLM versions)<br>
+            Setup: typically load a pre-quantised model or use a supported quantisation workflow<br>
+            <div style="margin-top:8px; font-size:12px; color:#888; font-family:Arial,sans-serif;">Best for: quick deployment and broad model coverage, where flexibility and iteration speed matter more than absolute peak tokens/sec</div>
           </div>
         </div>
         <div style="background:#FBE9E7; border-radius:10px; padding:16px; border-left:3px solid #E64A19;">
           <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#E64A19; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">TRT-LLM quantisation</div>
           <div style="font-size:13.5px; line-height:1.9; color:#333;">
-            Applied via NVIDIA Model Optimizer (AMMO) with calibration dataset<br>
-            Compiled into engine - no runtime overhead<br>
-            Supports INT8 (SmoothQuant), FP8, INT4-AWQ, INT4-GPTQ<br>
-            Setup: calibrate &#8594; quantise &#8594; compile<br>
-            <div style="margin-top:8px; font-size:12px; color:#666; font-family:Arial,sans-serif;">Best for: maximum throughput at fixed model</div>
+            Applied via NVIDIA Model Optimizer (AMMO) with a calibration dataset<br>
+            Compiled into the engine graph - minimal extra runtime overhead<br>
+            Supports INT8 (e.g. SmoothQuant-style flows), FP8 on supported GPUs, and selected INT4 schemes (such as INT4-AWQ / INT4-GPTQ for supported architectures and configs)<br>
+            Setup: calibrate &#8594; quantise &#8594; compile, with validation after<br>
+            <div style="margin-top:8px; font-size:12px; color:#666; font-family:Arial,sans-serif;">Best for: maximum throughput and efficiency when the model and hardware profile are stable</div>
           </div>
         </div>
       </div>
 
       <div class="callout callout-purple">
-        <strong>FP8 on H100 - TRT-LLM's strongest advantage:</strong> The H100's Transformer Engine can execute FP8 matrix multiplications natively in hardware. TRT-LLM's compiled FP8 engine uses these hardware instructions directly with no abstraction overhead. In benchmarks, TRT-LLM FP8 on H100 consistently outperforms vLLM FP8 on H100 by 25–45% in tokens/second - because the TRT-LLM engine has been compiled to use H100-specific FP8 Tensor Core instructions explicitly, while vLLM goes through a PyTorch abstraction layer that adds overhead.
-      </div>
+        <strong>FP8 on H100 - TRT-LLM's strongest advantage in practice:</strong> The H100's Transformer Engine can execute FP8 matrix multiplications natively in hardware. TRT-LLM's compiled FP8 engines use these hardware instructions directly with very little abstraction overhead. In NVIDIA and community benchmarks, TRT-LLM FP8 on H100 often outperforms comparable vLLM FP8 stacks by roughly 25-45% in tokens/second under high-load conditions - because the TRT-LLM engine is built specifically to exploit H100 FP8 Tensor Core instructions, while vLLM typically routes through a more generic PyTorch abstraction that adds some overhead.</div>
 
-      <p>The calibration requirement is a genuine operational consideration. NVIDIA Model Optimizer needs a representative sample of the model's input distribution (typically 512–1024 examples from your actual use case) to determine optimal quantisation scales. Using a generic calibration dataset for a domain-specific model (e.g. legal documents) produces worse quality than calibrating on domain-appropriate text. Teams deploying TRT-LLM in production should invest in a domain-relevant calibration set and re-run calibration when the use-case distribution shifts.</p>
+      <p>The calibration requirement is a genuine operational consideration. NVIDIA Model Optimizer needs a representative sample of the model's input distribution (typically 512-1024 examples from your actual use case) to determine reasonable quantisation scales. Using a generic calibration dataset for a domain-specific model (e.g. legal documents) will usually produce worse quality than calibrating on domain-appropriate text. Teams deploying TRT-LLM in production should invest in a domain-relevant calibration set and re-run calibration when the use-case distribution shifts meaningfully.</p>
     </div>
   </div>
 
@@ -339,71 +336,70 @@
           <tbody>
             <tr>
               <td class="cmp-dim">Execution model</td>
-              <td>Runtime - PyTorch + custom CUDA kernels</td>
-              <td class="cmp-good">Compiled - GPU-specific TRT engine</td>
+              <td>Runtime - PyTorch + custom CUDA kernels and vendor libraries</td>
+              <td class="cmp-good">Compiled - GPU- and shape-specific TRT engine</td>
             </tr>
             <tr>
               <td class="cmp-dim">Peak throughput</td>
-              <td class="cmp-mid">Baseline</td>
-              <td class="cmp-good">20–40% more tokens/sec at same GPU count</td>
+              <td class="cmp-mid">Strong baseline on modern NVIDIA GPUs</td>
+              <td class="cmp-good">Often ~20-40% more tokens/sec at the same GPU count in high-throughput, well-tuned scenarios</td>
             </tr>
             <tr>
               <td class="cmp-dim">Latency (TPOT)</td>
-              <td class="cmp-mid">Good</td>
-              <td class="cmp-good">10–25% lower TPOT due to kernel fusion</td>
+              <td class="cmp-mid">Good; can be optimised with batching and kernel improvements</td>
+              <td class="cmp-good">Typically 10-25% lower TPOT at comparable quality when engines are well-compiled and saturated</td>
             </tr>
             <tr>
               <td class="cmp-dim">Deployment complexity</td>
-              <td class="cmp-good">Low - pip install, one command to serve</td>
-              <td class="cmp-bad">High - quantise, compile, validate, serve via Triton</td>
+              <td class="cmp-good">Low - pip install, container images, one command to serve</td>
+              <td class="cmp-bad">Higher - convert, (optionally) quantise, compile, validate, and serve via Triton</td>
             </tr>
             <tr>
               <td class="cmp-dim">Time to first serving</td>
               <td class="cmp-good">Minutes (model download + startup)</td>
-              <td class="cmp-bad">Hours (quantisation + compilation for large models)</td>
+              <td class="cmp-bad">Can be tens of minutes to hours for large models (quantisation + compilation), especially multi-GPU 70B+</td>
             </tr>
             <tr>
               <td class="cmp-dim">Model support breadth</td>
-              <td class="cmp-good">Hundreds of models within days of release</td>
-              <td class="cmp-bad">Curated set - new models require TRT-LLM implementation</td>
+              <td class="cmp-good">Very broad - many HF models work quickly, community moves fast on new releases</td>
+              <td class="cmp-bad">Curated set - new models often require explicit TRT-LLM support or additional work</td>
             </tr>
             <tr>
               <td class="cmp-dim">GPU portability</td>
-              <td class="cmp-good">Same code runs on any NVIDIA GPU</td>
-              <td class="cmp-bad">Engine is GPU-specific - recompile when GPU changes</td>
+              <td class="cmp-good">Same vLLM code generally runs across NVIDIA GPUs (subject to memory/driver)</td>
+              <td class="cmp-bad">Engines are tied to GPU generation/profile - treat A100 vs H100 as separate builds</td>
             </tr>
             <tr>
               <td class="cmp-dim">Quantisation quality</td>
-              <td class="cmp-mid">Good - AWQ, GPTQ, FP8</td>
-              <td class="cmp-good">Best - calibrated, hardware-fused, validated</td>
+              <td class="cmp-mid">Good - via AWQ/GPTQ/other flows; FP8 still evolving and stack-version dependent</td>
+              <td class="cmp-good">Calibrated and hardware-fused; FP8/INT8 often deliver larger throughput gains on H100-class hardware</td>
             </tr>
             <tr>
               <td class="cmp-dim">Paged Attention / KV mgmt</td>
-              <td class="cmp-good">Native Paged Attention</td>
-              <td class="cmp-good">Implemented - similar KV management capabilities</td>
+              <td class="cmp-good">Native Paged Attention and sophisticated KV cache management</td>
+              <td class="cmp-good">Implemented with similar KV management capabilities within TRT-LLM</td>
             </tr>
             <tr>
               <td class="cmp-dim">Continuous batching</td>
-              <td class="cmp-good">Native</td>
+              <td class="cmp-good">Native continuous batching</td>
               <td class="cmp-good">Implemented (called in-flight batching in TRT-LLM)</td>
             </tr>
             <tr>
               <td class="cmp-dim">Serving layer</td>
-              <td class="cmp-good">Built-in OpenAI-compatible API</td>
-              <td class="cmp-mid">Requires Triton Inference Server on top</td>
+              <td class="cmp-good">Built-in OpenAI-compatible HTTP API and router-friendly endpoints</td>
+              <td class="cmp-mid">Requires Triton Inference Server on top for HTTP/gRPC, policies, and health checks</td>
             </tr>
             <tr>
-              <td class="cmp-dim">Operator for</td>
-              <td>Teams iterating on models, moderate scale</td>
-              <td>Fixed model, high scale, tight SLAs, NVIDIA-first</td>
+              <td class="cmp-dim">Operator fit</td>
+              <td>Teams iterating on models, experimenting with architectures, or operating at moderate scale</td>
+              <td>Fixed or slowly changing models, high scale, tight SLAs, NVIDIA-first stack, strong platform team</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="callout callout-green">
-        <strong>They are increasingly converging:</strong> The gap between vLLM and TRT-LLM has narrowed significantly since 2023. vLLM has added torch.compile support, improved FP8, and optimised its CUDA kernels. TRT-LLM has improved its model coverage and simplified its build tooling. The decision is now less about fundamental capability differences and more about where each tool sits on the complexity-vs-performance curve for a given team's situation.
-      </div>
+        <strong>They are increasingly converging:</strong> Since around 2023, the performance and feature gap between vLLM and TRT-LLM has narrowed. vLLM has added more kernel optimisations, better batching, and improving support for lower-precision formats; TRT-LLM has expanded model coverage and simplified parts of its tooling. The decision is now less about a fundamental capability gap and more about where each tool sits on the complexity-versus-performance curve for your specific workload, hardware, and team.</div>
     </div>
   </div>
 
@@ -417,7 +413,7 @@
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
-      <p>Use the questions below to arrive at a recommendation for a customer scenario:</p>
+      <p>Use the questions below as a rule-of-thumb framework to arrive at a recommendation for a customer scenario (these are heuristics, not hard technical rules):</p>
 
       <div class="dec-wrap">
         <div class="dec-title">Engine selection tool</div>
@@ -432,7 +428,7 @@
           <span class="dec-label">Concurrent users at peak</span>
           <select class="dec-select" id="decScale" onchange="updateDec()">
             <option value="low">Low (&lt;20 concurrent)</option>
-            <option value="medium">Medium (20–100 concurrent)</option>
+            <option value="medium">Medium (20-100 concurrent)</option>
             <option value="high">High (&gt;100 concurrent)</option>
           </select>
         </div>
@@ -440,7 +436,7 @@
           <span class="dec-label">TPOT latency SLA</span>
           <select class="dec-select" id="decSLA" onchange="updateDec()">
             <option value="relaxed">Relaxed (&gt;50ms/token is acceptable)</option>
-            <option value="moderate">Moderate (20–50ms/token)</option>
+            <option value="moderate">Moderate (20-50ms/token)</option>
             <option value="strict">Strict (&lt;20ms/token)</option>
           </select>
         </div>
@@ -475,7 +471,7 @@
             <div class="wf-step-num">1</div>
             <div class="wf-step-body">
               <div class="wf-step-title">Prepare environment</div>
-              <div class="wf-step-desc">Pull NVIDIA TRT-LLM Docker container (NGC registry). Verify CUDA driver version compatibility. Allocate GPU node(s) for compilation - this is compute-intensive.</div>
+              <div class="wf-step-desc">Pull NVIDIA TRT-LLM Docker container (NGC registry). Verify CUDA driver version compatibility. Allocate GPU node(s) for compilation - this is compute-intensive, especially for large models.</div>
               <div class="wf-step-cmd">docker pull nvcr.io/nvidia/tensorrt-llm:latest</div>
             </div>
           </div>
@@ -484,7 +480,7 @@
             <div class="wf-step-num">2</div>
             <div class="wf-step-body">
               <div class="wf-step-title">Download and convert model weights</div>
-              <div class="wf-step-desc">Download from HuggingFace. Run TRT-LLM's convert_checkpoint.py to transform weights into TRT-LLM's intermediate checkpoint format. This is lossless - no quantisation yet.</div>
+              <div class="wf-step-desc">Download from HuggingFace or another source. Run TRT-LLM's convert_checkpoint.py to transform weights into TRT-LLM's intermediate checkpoint format. This is lossless - no quantisation yet.</div>
               <div class="wf-step-cmd">python convert_checkpoint.py --model-dir ./llama3-70b --output-dir ./trtllm-ckpt --tp 4</div>
             </div>
           </div>
@@ -493,7 +489,7 @@
             <div class="wf-step-num">3</div>
             <div class="wf-step-body">
               <div class="wf-step-title">Quantise (if required)</div>
-              <div class="wf-step-desc">Run NVIDIA Model Optimizer with a calibration dataset representative of your production traffic. Produces a quantised checkpoint. Skip this step if serving at BF16/FP16. Duration: 15–60 minutes for 70B.</div>
+              <div class="wf-step-desc">Run NVIDIA Model Optimizer with a calibration dataset representative of your production traffic. Produces a quantised checkpoint. Skip this step if serving at BF16/FP16. Duration: roughly 15-60 minutes for a 70B-class model on suitable hardware.</div>
               <div class="wf-step-cmd">python quantize.py --model-dir ./trtllm-ckpt --qformat fp8 --calib-dataset ./calib-data.json</div>
             </div>
           </div>
@@ -502,7 +498,7 @@
             <div class="wf-step-num">4</div>
             <div class="wf-step-body">
               <div class="wf-step-title">Compile engine with trtllm-build</div>
-              <div class="wf-step-desc">The core compilation step. Specify target GPU, max batch size, max sequence length, parallelism config. Duration: 10 minutes (small models) to 2 hours (405B, multi-GPU). Output: .engine files, one per GPU.</div>
+              <div class="wf-step-desc">The core compilation step. Specify target GPU, max batch size, max sequence length, and parallelism configuration. Duration: from around 10 minutes for small models to 1-2 hours for very large models (e.g. 70B+ with tensor/pipeline parallelism). Output: .engine files, one per GPU or partition.</div>
               <div class="wf-step-cmd">trtllm-build --checkpoint-dir ./trtllm-ckpt --output-dir ./engines --tp 4 --max-batch-size 64 --max-seq-len 8192</div>
             </div>
           </div>
@@ -511,7 +507,7 @@
             <div class="wf-step-num">5</div>
             <div class="wf-step-body">
               <div class="wf-step-title">Validate engine quality</div>
-              <div class="wf-step-desc">Run sample prompts. Compare outputs to reference model. Run automated quality benchmarks (perplexity, task accuracy). Gate on quality before promoting to production.</div>
+              <div class="wf-step-desc">Run sample prompts. Compare outputs to a reference model. Run automated quality benchmarks (for example perplexity or task-specific metrics). Gate promotion on quality; if quality is unacceptable, revisit quantisation and/or build settings.</div>
               <div class="wf-step-cmd">python run.py --engine-dir ./engines --max-output-len 512</div>
             </div>
           </div>
@@ -520,7 +516,7 @@
             <div class="wf-step-num">6</div>
             <div class="wf-step-body">
               <div class="wf-step-title">Serve via Triton Inference Server</div>
-              <div class="wf-step-desc">Configure Triton model repository pointing to the compiled engine. Deploy Triton container. Triton handles HTTP/gRPC endpoints, batching policy, health checks. (Module 4.4 covers this in detail.)</div>
+              <div class="wf-step-desc">Configure a Triton model repository pointing to the compiled engines. Deploy the Triton container. Triton handles HTTP/gRPC endpoints, batching policy, health checks, and metrics. TRT-LLM handles the GPU execution. (Module 4.4 covers Triton in detail.)</div>
               <div class="wf-step-cmd">tritonserver --model-repository ./triton-model-repo</div>
             </div>
           </div>
@@ -528,8 +524,7 @@
       </div>
 
       <div class="callout callout-slate">
-        <strong>Engine recompilation triggers:</strong> A team running TRT-LLM in production must recompile whenever: (1) the model weights change (fine-tune update), (2) the target GPU type changes, (3) the required max batch size or sequence length changes, (4) TRT-LLM version is updated (engine format is versioned). This means build automation is not optional - it is a prerequisite for sustainable TRT-LLM operations. Teams without CI/CD infrastructure for engine builds often revert to vLLM after a painful manual recompilation cycle.
-      </div>
+        <strong>Engine recompilation triggers:</strong> A team running TRT-LLM in production should plan to recompile whenever: (1) model weights change (for example, new fine-tune), (2) the target GPU generation changes (for example A100 → H100), (3) the required max batch size or sequence length changes materially, or (4) the TRT-LLM/TensorRT major version is updated in a way that affects engine compatibility. This means build automation is not optional - it is a prerequisite for sustainable TRT-LLM operations. Teams without CI/CD infrastructure for engine builds often end up doing painful, manual rebuilds and may revert to vLLM after the first few cycles.</div>
     </div>
   </div>
 
@@ -546,29 +541,29 @@
       <div class="key-item">
         <div class="key-num" style="color:#E64A19;">01</div>
         <div>
-          <div class="key-title">Compilation eliminates Python overhead and fuses kernels - that is where the 20–40% throughput gain comes from</div>
-          <div class="key-desc">The compiled TRT engine runs pure C++/CUDA with no Python in the hot path. Kernel fusion keeps intermediate results in SRAM instead of round-tripping through HBM. GPU-specific kernel selection squeezes the last performance from the target hardware. These three factors compound to produce consistent throughput advantages over runtime execution.</div>
+          <div class="key-title">Compilation removes Python from the hot path and lets you fuse kernels - this is where most of the throughput gain comes from</div>
+          <div class="key-desc">The compiled TRT engine runs C++/CUDA with no Python interpreter in the hot path. Kernel fusion keeps intermediate results in SRAM instead of round-tripping through HBM. GPU- and shape-specific kernel selection squeezes more performance out of the target hardware. These factors compound to produce consistent throughput advantages over a purely runtime-based stack in high-load scenarios.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#1565C0;">02</div>
         <div>
-          <div class="key-title">The engine is GPU-specific and must be recompiled when GPU type, batch size, or model changes</div>
-          <div class="key-desc">A TRT-LLM engine built for H100 will not run on A100. An engine compiled for max-batch-size 64 cannot serve 128 simultaneous requests. A model fine-tune requires a new compilation run. These constraints are non-negotiable - they are inherent to how TensorRT compilation works. Teams must treat engine builds as first-class CI/CD artifacts.</div>
+          <div class="key-title">The engine is tightly coupled to GPU generation and build profile - expect to recompile when hardware or key parameters change</div>
+          <div class="key-desc">A TRT-LLM engine built for H100 should be treated as non-portable to A100, and vice versa. An engine compiled for max-batch-size 64 is not ideal for serving 128 simultaneous requests. A model fine-tune or a major TRT-LLM upgrade requires a new compilation run. These constraints are inherent to how TensorRT compilation works, not policy. Teams must treat engine builds as first-class CI/CD artifacts.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#7B1FA2;">03</div>
         <div>
-          <div class="key-title">TRT-LLM's quantisation is calibrated and hardware-fused - the throughput gains from FP8/INT8 are larger than with vLLM</div>
-          <div class="key-desc">NVIDIA Model Optimizer calibrates quantisation scales against actual data, and TRT-LLM compiles those scales directly into the engine. On H100, this produces FP8 inference that uses native Tensor Core instructions with no abstraction overhead - routinely 25–45% faster than vLLM FP8 on the same hardware.</div>
+          <div class="key-title">TRT-LLM's quantisation is calibrated and hardware-fused - FP8/INT8 gains on H100-class hardware are often bigger than with vLLM</div>
+          <div class="key-desc">NVIDIA Model Optimizer calibrates quantisation scales against actual data, and TRT-LLM compiles those scales directly into the engine graph. On H100, this produces FP8 inference that uses native Tensor Core instructions with very little abstraction overhead - often delivering ~25-45% more tokens/sec than comparable vLLM FP8 stacks on the same hardware when heavily loaded.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#00796B;">04</div>
         <div>
-          <div class="key-title">TRT-LLM wins at: fixed model, high scale, tight SLAs, experienced team. vLLM wins everywhere else.</div>
-          <div class="key-desc">The TRT-LLM advantage is real but only materialises under specific conditions. Recommending it to a team that is still evaluating models, lacks MLOps infrastructure, or serves at modest scale is setting them up for operational pain without proportional benefit. The right recommendation requires asking about model stability, concurrency, SLAs, and team capability - not just GPU type.</div>
+          <div class="key-title">TRT-LLM is best for: fixed model, high scale, strict SLAs, experienced team. vLLM is often best everywhere else.</div>
+          <div class="key-desc">The TRT-LLM advantage is real but tends to materialise under specific conditions: the model is relatively stable, concurrency is high, TPOT SLAs are tight, and the team can own build pipelines. Recommending it to a team that is still evaluating models, lacks MLOps infrastructure, or serves at modest scale risks adding operational complexity without proportional benefit. The right recommendation starts with questions about model stability, concurrency, SLAs, hardware, and team capacity - not just GPU type.</div>
         </div>
       </div>
     </div>
@@ -580,35 +575,35 @@
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">TensorRT-LLM</div>
-        <div class="cheat-def">NVIDIA's compiled inference engine. Build-time optimisation: kernel fusion, GPU-specific kernel selection, quantisation compiled into engine. 20–40% throughput advantage over vLLM at peak load.</div>
+        <div class="cheat-def">NVIDIA's compiled inference engine. Build-time optimisation: kernel fusion, GPU/shape-specific kernel selection, quantisation compiled into the engine. In many high-load benchmarks, delivers roughly 20-40% higher throughput than a tuned vLLM stack on the same GPUs.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Kernel fusion</div>
-        <div class="cheat-def">Combining multiple sequential GPU operations (LayerNorm, attention, activation) into a single kernel that keeps data in SRAM. Eliminates HBM round-trips between ops. Primary source of TRT-LLM's latency advantage.</div>
+        <div class="cheat-def">Combining multiple sequential GPU operations (LayerNorm, attention, activation, etc.) into a single or smaller number of kernels that keep data in SRAM. Eliminates unnecessary HBM round-trips between ops. A primary source of TRT-LLM's latency and throughput advantage.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">trtllm-build</div>
-        <div class="cheat-def">The compilation command. Takes converted checkpoint + config, outputs .engine files per GPU. GPU-specific - must recompile for different GPU types or batch sizes. Duration: 10 min to 2 hours.</div>
+        <div class="cheat-def">The compilation command. Takes a converted (and optionally quantised) checkpoint + config and outputs .engine files per GPU/profile. Engines are tied to GPU generation and build parameters. Compilation time ranges from minutes to ~1-2 hours for very large, multi-GPU models.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">NVIDIA Model Optimizer (AMMO)</div>
-        <div class="cheat-def">Quantisation tool for TRT-LLM. Calibrates INT8/FP8/INT4 scales against a representative dataset. Produces quantised checkpoint for trtllm-build. Requires domain-appropriate calibration data for best quality.</div>
+        <div class="cheat-def">Quantisation tool for TRT-LLM. Calibrates INT8/FP8/selected INT4 scales against a representative dataset. Produces a quantised checkpoint for trtllm-build. Requires domain-appropriate calibration data for best quality.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Engine constraints</div>
-        <div class="cheat-def">Compiled engine is GPU-specific + batch-size-specific. Model update, GPU change, or batch size change = recompile. Build automation (CI/CD for engines) is mandatory for sustainable TRT-LLM ops.</div>
+        <div class="cheat-def">Compiled engine is tied to GPU generation and build profile (max batch size, max sequence length, key TRT-LLM/TensorRT version). Model update, GPU change, or major profile change = recompile. CI/CD for engine builds is effectively mandatory for sustainable TRT-LLM ops.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">In-flight batching</div>
-        <div class="cheat-def">TRT-LLM's term for continuous batching. Functionally equivalent to vLLM's iteration-level scheduling - requests join and leave the batch at each decode step without waiting for the full batch to complete.</div>
+        <div class="cheat-def">TRT-LLM's term for continuous batching. Functionally similar to vLLM's scheduling: requests join and leave the batch at each decode step without waiting for the full batch to complete.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">When TRT-LLM wins</div>
-        <div class="cheat-def">Fixed model in production + high concurrency (&gt;50 users) + tight TPOT SLA (&lt;30ms) + experienced MLOps team + H100/H200 hardware. All four conditions should be present.</div>
+        <div class="cheat-def">Model is relatively fixed, concurrency is high (for example tens to hundreds of users), TPOT SLA is strict, the stack is NVIDIA-heavy (H100/H200, etc.), and the team can own build pipelines. Under those conditions, TRT-LLM's extra throughput can be worth the added complexity.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Serving layer</div>
-        <div class="cheat-def">TRT-LLM does not serve HTTP on its own - it requires Triton Inference Server on top. Triton handles endpoints, batching policy, and health checks. TRT-LLM handles GPU execution. (Module 4.4.)</div>
+        <div class="cheat-def">TRT-LLM does not expose HTTP/gRPC endpoints on its own - it runs under Triton Inference Server. Triton handles endpoints, batching policy, routing, and health checks; TRT-LLM handles GPU execution. (Module 4.4.)</div>
       </div>
     </div>
   </div>
@@ -624,8 +619,7 @@
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        This customer is the ideal TensorRT-LLM candidate: stable model, high concurrency, tight SLA, experienced team, H100 SXM with NVLink. Recommend migrating to TRT-LLM with FP8 quantisation - expect 25–40% throughput improvement on the same 4&#215; H100 hardware, likely resolving the ceiling without adding GPUs. The critical operational requirement to communicate upfront: the compiled engine is GPU-specific and must be rebuilt whenever the model, GPU type, max batch size, or TRT-LLM version changes. They need a CI/CD pipeline for engine builds - not a one-time compilation. If they do not have automated build infrastructure, set up that pipeline before the first production deployment or they will face a painful manual recompilation cycle on the first model update.
-      </div>
+        This customer is a strong TensorRT-LLM candidate: stable model, high concurrency, tight-ish 25ms TPOT SLA, experienced team, H100 SXM with NVLink. Recommend evaluating a migration to TRT-LLM with FP8 quantisation - under these conditions, you can reasonably expect a material throughput improvement (often on the order of 25-40% in benchmarks) on the same 4&#215; H100 hardware, which may resolve the ceiling without adding GPUs. The critical operational requirement to communicate upfront: the compiled engine is tied to GPU generation and build profile, and must be rebuilt whenever the model weights, GPU type, key engine parameters (like max batch size / sequence length), or TRT-LLM/TensorRT version change in incompatible ways. They need a CI/CD pipeline for engine builds and validation - not a one-off compilation. If they do not have automated build infrastructure, invest in that pipeline before the first production deployment to avoid painful manual rebuild cycles.</div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
         Recommend switching to a smaller, faster model - if they are hitting a throughput ceiling, the model is too large for their hardware.
@@ -699,7 +693,7 @@
       '<div style="color:'+(mode==='fused'?'#2E7D32':'#C62828')+';">'+total.toFixed(1)+'ms'+(saving?' ('+saving+'% faster)':'')+'</div>';
     document.getElementById('fusionNote').textContent=mode==='unfused'
       ?'Each operation is a separate kernel. Results are written to HBM between operations, then read back by the next kernel. 9 separate kernel launches per layer, '+maxMs.toFixed(1)+'ms total, multiple unnecessary HBM round-trips.'
-      :'TensorRT-LLM fuses 9 operations into 5 kernels. Intermediate results stay in SRAM - no HBM round-trips between fused ops. Fewer kernel launch overheads. Result: '+total.toFixed(1)+'ms total, '+saving+'% faster per layer. Compounded across 80 layers: significant TPOT improvement.';
+      :'TensorRT-LLM fuses 9 operations into 5 kernels. Intermediate results stay in SRAM - no HBM round-trips between fused ops. Fewer kernel launch overheads. Result: '+total.toFixed(1)+'ms total, '+saving+'% faster per layer. Compounded across many layers: a significant TPOT improvement at scale.';
   }
   showFusion('unfused');
 
@@ -722,18 +716,18 @@
     if(trtScore>=6){
       rec='TensorRT-LLM recommended';
       bg='#BF360C';
-      why='This customer meets the core criteria for TRT-LLM: model is fixed, scale is high, SLA is tight, and the team can manage the operational complexity. Expect 25–40% throughput improvement on the same hardware. Key action: establish a CI/CD pipeline for engine builds before the first production deployment - this is non-negotiable for sustainable operations.';
-      tags=['Compile for your GPU','FP8 quantisation on H100','Triton serving layer','CI/CD for engine builds'];
+      why='This customer meets most of the core criteria for TRT-LLM: model is relatively fixed, scale is high, SLA is tight, and the team can manage the operational complexity. Under these conditions, a well-tuned TRT-LLM deployment often delivers materially higher throughput on the same hardware. Key action: establish a CI/CD pipeline for engine builds and validation before the first production deployment.';
+      tags=['Compile for your GPU','FP8 on H100-class GPUs','Triton serving layer','CI/CD for engine builds'];
     } else if(trtScore>=3){
-      rec='Start with vLLM, plan TRT-LLM migration';
+      rec='Start with vLLM, plan TRT-LLM evaluation';
       bg='#E65100';
-      why='The customer has some but not all of the conditions that make TRT-LLM worth the investment. vLLM will serve their needs now. As their model stabilises, scale grows, or SLAs tighten, revisit the TRT-LLM migration. Use vLLM\'s lower operational friction to iterate quickly, and treat TRT-LLM as the production-hardening step once things are stable.';
-      tags=['vLLM now','Enable prefix caching','Monitor TPOT P95','Plan TRT-LLM path'];
+      why='The customer has some but not all of the conditions that make TRT-LLM worth the operational investment. vLLM will serve their needs now and is easier to iterate on while models and requirements are still evolving. As the model stabilises, scale grows, or SLAs tighten, revisit TRT-LLM as a next-step optimisation rather than a day-one requirement.';
+      tags=['vLLM now','Enable batching optimisations','Monitor TPOT P95','Plan TRT-LLM path'];
     } else {
       rec='vLLM recommended';
       bg='#4A148C';
-      why='The customer does not yet have the conditions that justify TRT-LLM\'s operational cost. Model is still changing, scale is modest, SLA is relaxed, or the team lacks capacity for build pipelines. vLLM will deliver excellent performance here. TRT-LLM would add complexity without proportional benefit at this stage.';
-      tags=['vLLM','OpenAI-compatible API','Simple horizontal scaling','Revisit TRT-LLM when model stabilises'];
+      why='The customer does not yet exhibit the conditions that typically justify TRT-LLM’s additional complexity. Model may still be changing, scale is modest, SLA is relaxed, or the team lacks capacity for build pipelines. vLLM will deliver strong performance with lower operational overhead. TRT-LLM can be reconsidered later if traffic and SLAs tighten.';
+      tags=['vLLM','OpenAI-compatible API','Simple horizontal scaling','Revisit TRT-LLM later'];
     }
 
     document.getElementById('decResult').style.background=bg;
@@ -765,10 +759,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct - and the CI/CD requirement is the detail that separates a good recommendation from a great one.</strong> This customer hits all four TRT-LLM criteria: (1) stable model with no fine-tuning planned, (2) 150 concurrent users is well above the high-concurrency threshold, (3) 25ms TPOT is a strict SLA that will benefit from TRT-LLM\'s kernel fusion gains, and (4) a dedicated ML platform team has the capacity to manage engine builds. With FP8 quantisation on H100 SXM, the compiled engine should deliver 25–40% more throughput - likely solving the ceiling without adding hardware. The operational requirement is the key deliverable in this conversation: the engine must be rebuilt for any model change, GPU change, or batch size change. Teams that treat the first compilation as a one-time step and then update the model weights six months later without rebuilding the engine discover this the hard way. Getting build automation in place before the first engine reaches production is the difference between a successful migration and a painful support engagement. Option A (add GPUs) works but is more expensive and does not address the underlying efficiency gap. Option C (smaller model) would compromise quality unnecessarily. Option D (speculative decoding) can help TPOT but actually hurts throughput at high concurrency (&gt;50 users) because acceptance rate drops and the GPU spends time on draft model work that does not benefit the batch.';
+      r.innerHTML='<strong>Correct - and the CI/CD requirement is the detail that separates a good recommendation from a great one.</strong> This customer hits the classic TRT-LLM criteria: (1) a stable model with no immediate fine-tuning planned, (2) high concurrency (150 concurrent users), (3) a relatively strict TPOT SLA around 25ms/token, and (4) a dedicated ML platform team with capacity to own build pipelines. Under these conditions, a compiled FP8 engine on 4&#215; H100 SXM commonly delivers a substantial throughput boost over vLLM on the same hardware, often enough to postpone buying more GPUs. The key deliverable in your conversation is the operational requirement: engines are tied to GPU generation and build profile, and must be rebuilt for model, hardware, or profile changes. Teams that treat compilation as a one-time task and then silently update weights months later tend to discover this the hard way. Option A (add GPUs) can work, but it increases cost without addressing the underlying efficiency gap. Option C (smaller model) sacrifices quality unnecessarily given H100-class hardware. Option D (speculative decoding) can help some latency profiles, but is not a universal fix for throughput ceilings at high concurrency.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option B is correct. This customer meets all four TRT-LLM criteria (stable model, high concurrency, tight SLA, experienced team) and should migrate to TRT-LLM with FP8. The key detail in the recommendation is communicating the CI/CD requirement upfront - engine recompilation on every model/GPU/batch-size change is a hard constraint that teams consistently underestimate. Option A adds cost without improving efficiency. Option C unnecessarily sacrifices model quality when the hardware can support 70B. Option D (speculative decoding) degrades at high concurrency - best for low-concurrency, latency-sensitive workloads.';
+      r.innerHTML='<strong>Not quite.</strong> Option B is the best answer. This customer is a strong candidate for TRT-LLM: the model is stable, concurrency is high, the TPOT SLA is tight enough to benefit from kernel fusion and FP8, and they have an ML platform team that can own CI/CD for engines. The most important part of the recommendation is setting expectations about build pipelines and recompilation. Option A (add GPUs) increases cost and may still leave efficiency optimisations on the table. Option C (smaller model) trades away quality when the existing hardware can support 70B. Option D (speculative decoding) can be useful in some cases, but it is not a guaranteed fix for a throughput ceiling at high concurrency and should be treated as one optimisation lever among many, not the main strategy here.';
     }
     document.getElementById('check-btn').style.display='none';
   }
