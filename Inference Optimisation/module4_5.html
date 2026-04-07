@@ -417,12 +417,6 @@
         <div class="trouble-diagnosis">The AllReduce communication between TP GPUs takes time proportional to data size and inversely proportional to interconnect bandwidth. On PCIe (for example, 64 GB/s), AllReduce for a 70B model's layer output can take longer than the compute time. Adding more TP GPUs means more AllReduce operations at the same bandwidth, making it worse.</div>
         <div class="trouble-fix">Fix: verify GPU interconnect - NVLink is typically required for TP to be net-positive. On PCIe, use Pipeline Parallelism instead if the model doesn't fit on one GPU. On NVLink, TP=4 or TP=8 is often a good starting point for 70B-class models.</div>
       </div>
-
-      <div class="trouble-item" style="border-left-color:#546E7A;">
-        <div class="trouble-symptom">Triton returns 503 at deployment - pod restarts in Kubernetes infinite loop</div>
-        <div class="trouble-diagnosis">Almost certainly a Kubernetes readiness probe misconfiguration. The probe is checking a non-existent endpoint and marking the pod unhealthy before it has finished loading the model (model loading can take 30-120 seconds for large models on first start).</div>
-        <div class="trouble-fix">Fix: use /v2/health/ready as the readiness probe endpoint with initialDelaySeconds set to a generous value (for example, ≥120s) for large models. Use /v2/health/live for the liveness probe with a longer failureThreshold. Avoid custom health paths - Triton only honours the standard health endpoints.</div>
-      </div>
     </div>
   </div>
   <!-- Section 6: The decisions in order -->

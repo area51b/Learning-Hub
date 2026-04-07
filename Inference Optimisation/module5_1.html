@@ -163,7 +163,7 @@
 
   <div class="intro-card">
     <p>Part 4 ended with a production stack that works well for most teams: vLLM or TRT-LLM on a node, Triton in front, quantisation applied, parallelism configured. For a team serving thousands of requests per day on a handful of GPUs, this stack is close to optimal. The problems begin when the scale jumps by two orders of magnitude.</p>
-    <p>At the scale of hyperscaler inference deployments - hundreds of GPUs, millions of requests per day, dozens of model variants, mixed workloads with vastly different prompt and output lengths - the current stack exposes four structural limits that no amount of configuration tuning can fully overcome. These limits are not bugs in vLLM or TRT-LLM. They are architectural gaps between what single-node inference servers were designed to do and what fleet-scale inference actually requires. NVIDIA Dynamo and LLM-d exist specifically to close these gaps.</p>
+    <p>At the scale of inference deployments - hundreds of GPUs, millions of requests per day, dozens of model variants, mixed workloads with vastly different prompt and output lengths - the current stack exposes four structural limits that no amount of configuration tuning can fully overcome. These limits are not bugs in vLLM or TRT-LLM. They are architectural gaps between what single-node inference servers were designed to do and what fleet-scale inference actually requires. NVIDIA Dynamo and LLM-d exist specifically to close these gaps.</p>
   </div>
 
   <!-- Section 1: The scale at which limits appear -->
@@ -176,10 +176,12 @@
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>The problems in this module are not visible at small deployments. They are emergent - they appear as a deployment grows from one node to many, from one model to several, from a few dozen concurrent users to thousands. Understanding the threshold at which each problem becomes significant helps you apply this knowledge correctly: a customer with 4 GPUs does not need Dynamo; a customer with 128 GPUs almost certainly does.</p>
+      <p>The issues in this module don’t usually show up when you are running a small, relatively simple deployment. They emerge gradually as you move from a handful of GPUs and one or two models to larger, more complex fleets: multiple replicas, multiple models, diverse workloads, and sustained traffic. The important nuance is that these are not “on/off” problems - they get worse as scale, workload diversity, and context length grow.</p>
+
+      <p>At the point where you have many replicas, high reuse of a few prompts, long‑running conversations, or a mix of very different request types, four structural limits start to dominate. Tuning per‑instance settings (batch size, max sequences, quantisation, etc.) helps at the margin, but cannot fully remove these limits because they live above any single vLLM or TRT‑LLM instance. NVIDIA Dynamo and LLM‑d exist specifically to introduce a fleet‑level coordination layer that addresses these issues.</p>
 
       <div class="wall-wrap">
-        <div class="wall-title">Problem severity by deployment scale - click a problem to see where it bites</div>
+        <div class="wall-title">Problem severity by deployment scale (illustrative) - click a problem to see where it typically becomes painful</div>
         <div class="wall-controls">
           <button class="wall-btn" style="background:#546E7A; color:white;" onclick="showWall('routing')">Request routing inefficiency</button>
           <button class="wall-btn" style="background:#C62828; color:white;" onclick="showWall('kv')">KV Cache locality loss</button>
@@ -191,7 +193,7 @@
       </div>
 
       <div class="callout callout-slate">
-        <strong>The important framing for customer conversations:</strong> When a customer with a large deployment complains that vLLM "isn't scaling well" or that their P99 TTFT is unpredictable despite having plenty of GPU capacity, the root cause is almost always one of these four structural problems - not a misconfiguration of their existing stack. Knowing these problems by name and mechanism is what lets you move the conversation from "have you tried tuning --max-num-seqs" to "you have a KV Cache locality problem and you need a smarter router."
+        <strong>How to frame this with customers:</strong> When a customer with a growing deployment says that vLLM or TRT‑LLM “isn’t scaling well” or that P99 TTFT is unpredictable despite apparently sufficient GPU capacity, the root cause is very often one of these four structural problems at the fleet layer - not that the underlying inference server is misconfigured or fundamentally flawed. Knowing these problems by name and mechanism lets you move the conversation from “have you tuned <code>--max-num-seqs</code>?” to “you are running into a KV Cache locality and routing problem that requires a smarter, fleet‑aware router and scheduler.”
       </div>
     </div>
   </div>
@@ -206,18 +208,23 @@
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
     <div class="section-body" id="bdy2">
-      <p>When a deployment grows beyond a single inference server instance, requests must be routed across multiple servers. The standard approach is a load balancer using round-robin or least-connections routing. This works well for stateless services. LLM inference is not stateless - it has KV Cache.</p>
+      <p>As soon as you have more than one inference server, you need something to route requests across replicas. In most stacks this is a conventional load balancer doing round‑robin, least‑connections, or a similar policy. That works well for stateless HTTP services where any replica can serve any request equally well. LLM inference, however, is stateful at the KV Cache level - where the cache lives matters.</p>
 
-      <p>Consider a deployment with four vLLM replicas, all serving the same model with prefix caching enabled. A customer application has a 4,000-token system prompt that is identical for every user. With prefix caching, the first request that arrives on each replica pays the full Prefill cost for that system prompt (~400ms). Subsequent requests to the same replica find the KV Cache already built and skip it entirely (~20ms TTFT). With round-robin routing, each of the four replicas handles roughly 25% of requests - and each replica's prefix cache only covers the requests it receives. If a new replica spins up, it starts cold.</p>
+      <p>Consider a deployment with four vLLM replicas, all serving the same model with prefix caching enabled. A customer application uses a shared 4,000‑token system prompt. With prefix caching, the first request that hits a given replica pays the full Prefill cost for that prompt. Subsequent requests that land on the same replica can reuse the prefix from KV Cache and see a much lower TTFT. The key detail: that prefix cache is local to the replica that built it.</p>
 
       <div class="prob-card" style="background:#FFEBEE; border-left-color:#C62828;">
         <div class="prob-title" style="color:#C62828;">The routing blindness problem</div>
-        <div class="prob-body">A load balancer routing by least-connections has no visibility into which replica has which KV Cache blocks already built. It might route a request with a cached 4,000-token system prompt to the one replica that just restarted and has an empty cache - paying full Prefill cost unnecessarily. Meanwhile, the three replicas that have the cache sit idle or handle unrelated requests.<br><br>At scale with thousands of distinct system prompts across hundreds of replicas, the fraction of requests that hit a warm prefix cache drops dramatically. The latency benefit of prefix caching - one of the highest-ROI optimisations from Part 3 - is almost entirely negated by cache-unaware routing.</div>
-        <div class="prob-impact" style="color:#C62828;">Impact at scale: prefix cache hit rate drops from ~80% (single node) to ~20% (round-robin across 16 replicas). TTFT increases 4–5x for requests that should be cache hits.</div>
+        <div class="prob-body">
+          A load balancer that only looks at connections or queue depth has no idea which replica already has a given prefix cached. It might route a request with a frequently used 4,000‑token system prompt to the one replica that has just restarted and has an empty cache, while other replicas are sitting on a warm prefix for the same prompt.<br><br>
+          As you add more replicas, more distinct prompts, and more variability in traffic, the fraction of requests that land on a replica with the right warm prefix drops. In practice, this means the theoretical TTFT benefit of prefix caching is often much smaller at fleet scale than what you see in single‑instance benchmarks - not because prefix caching is misconfigured, but because the routing layer is effectively random with respect to cache state.<br><br>
+          The exact hit‑rate numbers depend heavily on workload, QPS, and cache configuration, but the pattern is consistent: the more replicas you add under a cache‑blind router, the more your effective prefix cache reuse tends to degrade.
+          <br><br>
+          Typical impact at scale: a deployment that sees high prefix cache hit rates on a single node can see those hit rates drop sharply once traffic is spread across many replicas via round‑robin or least‑connections routing. TTFT for requests that “should” have been cache hits ends up much closer to cold‑prefill latency than expected.
+        </div>
       </div>
 
       <div class="callout callout-blue">
-        <strong>What is actually needed:</strong> A router that is KV Cache-aware - one that knows which replicas have which prefix hashes cached and routes requests to the replica most likely to have a cache hit. This requires the router to track cache state across the fleet in real time, not just queue depth or connection count. This is one of the core capabilities that Dynamo's smart router provides (Module 5.2).
+        <strong>What is actually needed:</strong> A routing layer that is KV Cache‑aware - one that tracks, at fleet level, which replicas have which prefix hashes cached and uses that information when deciding where to send each request. This requires the router to maintain a view of cache state across replicas in addition to traditional metrics like queue depth and health. Dynamo’s smart router (Module 5.2) is an example of this kind of fleet‑aware routing: it is designed to preserve prefix cache benefits even as you scale out to many replicas.
       </div>
     </div>
   </div>
@@ -232,7 +239,9 @@
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>Even with a smarter router, KV Cache locality creates a deeper problem. In a disaggregated system (Module 3.6), Prefill workers build KV Cache and transfer it to Decode workers. But in a multi-replica deployment without disaggregation, the KV Cache built by Prefill on one GPU stays on that GPU. If Decode needs to continue on a different GPU - because the first GPU became overloaded, or because a different replica picked up the next turn in a multi-turn conversation - the KV Cache must be rebuilt from scratch or transferred at significant cost.</p>
+      <p>In Problem 1, the router was <em>blind</em> to cache state and sometimes sent requests to replicas with no relevant KV Cache at all. Now assume we fix that: the router tracks which replica owns a given prefix or conversation and deliberately sends follow‑up traffic back to that replica. This removes routing blindness, but it exposes a deeper issue: the KV Cache is still physically local to the GPU(s) that built it.</p>
+
+      <p>In a disaggregated design (Module 3.6), Prefill workers build KV Cache and can transfer it to Decode workers through an explicit handoff. In the more common multi‑replica setup without full disaggregation, the KV Cache built by Prefill on a given replica stays resident on that replica’s GPUs. If, for any reason, you want to move subsequent work for that request or conversation to a different replica - to relieve load, avoid memory pressure, or handle a failure - you either have to rebuild the KV on the new replica or implement some form of KV transfer between replicas.</p>
 
       <div class="kv-wrap">
         <div class="kv-title">KV Cache locality - request routing across 4 replicas</div>
@@ -244,10 +253,10 @@
         <div class="kv-note" id="kvNote"></div>
       </div>
 
-      <p>Multi-turn conversations make this worse. In a chatbot deployment, a user's conversation history grows with each turn. Turn 1 builds a 200-token KV Cache on replica A. Turn 2 ideally hits replica A and extends that cache. But if the router sends turn 2 to replica B, replica B must rebuild the entire 200-token history from scratch before generating the response - paying full Prefill cost every turn. In a long conversation with 10 turns, this can mean 10 full Prefills instead of 1, for what should have been incremental cache extensions.</p>
+      <p>Multi‑turn conversations are where this becomes very visible. Imagine a chatbot where a user’s first turn builds a 200‑token KV Cache on replica A. A KV‑aware router will send the second turn to replica A again so it can extend that cache. But as more users and long conversations accumulate, a few replicas can end up “owning” many active histories and large KV footprints, while other replicas are relatively empty. If you keep routing strictly by locality, those hot replicas can become overloaded or memory‑constrained even though there is spare capacity elsewhere in the fleet.</p>
 
       <div class="callout callout-purple">
-        <strong>The locality-load balance tension:</strong> KV Cache locality argues for sticky routing - always send a user's requests to the same replica. Load balancing argues for spreading requests evenly. These objectives directly conflict. A replica that is "sticky" for many active long-context users will accumulate KV Cache pressure while other replicas sit underutilised. Resolving this tension requires a router that simultaneously tracks cache state, load, and memory pressure across all replicas - something a conventional load balancer cannot do.
+        <strong>The locality-load balance tension:</strong> With a KV‑aware router, you can preserve locality by sending follow‑up turns and repeated prefixes back to the same replica. That maximises cache reuse but can create hotspots and uneven utilisation. If you instead spread traffic more evenly to balance load, you inevitably break locality and either redo Prefill work or need a way to move KV state between replicas. This trade‑off is the KV Cache locality problem: the cache being tied to specific GPUs makes it hard to optimise both locality and load balance without a fleet‑level scheduler and, in many designs, an explicit KV transfer/sharing mechanism across workers.
       </div>
     </div>
   </div>
@@ -262,37 +271,37 @@
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
     <div class="section-body" id="bdy4">
-      <p>Module 3.6 covered disaggregation - splitting Prefill and Decode onto dedicated GPU pools. The concept is sound and the performance gains are real. The operational problem is that disaggregation as implemented today (manually configured static P/D ratios, custom KV transfer scripts) does not scale gracefully to large fleets.</p>
+      <p>Module 3.6 introduced disaggregation: separating Prefill and Decode into dedicated GPU pools. Conceptually, this is powerful – you can size and tune Prefill and Decode independently and often get better utilisation and latency than on a fully symmetric pool. The challenge is operational: most current implementations rely on static ratios, hand‑tuned routing rules, and custom KV transfer logic that become fragile as fleets and workloads grow more complex.</p>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;">
         <div style="background:#FFF3E0; border-radius:10px; padding:16px; border-left:3px solid #E65100;">
-          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#E65100; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Static disaggregation (today)</div>
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#E65100; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Static disaggregation (typical today)</div>
           <div style="font-size:13.5px; line-height:1.9; color:#333;">
-            P:D ratio set manually at deployment<br>
-            Ratio fixed until operator intervenes<br>
-            KV transfer via ad-hoc scripts<br>
-            No awareness of individual request sizes<br>
-            Prefill queue backs up during traffic spikes<br>
-            Decode pool idles during light traffic
+            P:D ratio chosen at deploy time based on benchmarks<br>
+            Ratio changed manually when traffic patterns shift<br>
+            KV transfer implemented via custom scripts or glue code<br>
+            Routing logic mostly unaware of per‑request sizes or mix<br>
+            Prefill side can back up during prompt‑heavy spikes<br>
+            Decode side can be underutilised during quiet periods
           </div>
         </div>
         <div style="background:#E8F5E9; border-radius:10px; padding:16px; border-left:3px solid #2E7D32;">
-          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">What fleet scale needs</div>
+          <div style="font-size:12px; font-weight:bold; font-family:Arial,sans-serif; color:#2E7D32; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">What fleet scale really needs</div>
           <div style="font-size:13.5px; line-height:1.9; color:#333;">
-            Dynamic P:D ratio adjustment in real time<br>
-            Per-request routing to least-loaded Prefill worker<br>
-            Standardised KV transfer protocol<br>
-            KV transfer aware of destination cache state<br>
-            Automatic failover if Prefill worker dies<br>
-            Unified observability across P and D pools
+            Dynamic P:D ratio adjustment based on live load and mix<br>
+            Per‑request routing to appropriate Prefill workers<br>
+            A well‑defined, robust KV transfer mechanism<br>
+            KV transfer that takes destination cache state into account<br>
+            Automatic handling of worker failure and retries<br>
+            Unified observability across Prefill and Decode pools
           </div>
         </div>
       </div>
 
-      <p>The coordination problem compounds at scale. With 4 Prefill workers and 12 Decode workers, the routing decision for each request involves: which Prefill worker has capacity, which Decode worker has a matching prefix cache, whether the KV transfer path between those two workers is healthy, and whether the Decode worker has enough free KV Cache blocks to accept the transfer. No single component in the current stack - not vLLM, not TRT-LLM, not Triton - owns this coordination logic. Teams building large disaggregated deployments today write bespoke orchestration code to fill this gap.</p>
+      <p>As you add more Prefill and Decode workers, the coordination problem grows quickly. For each incoming request or conversation, the system needs to decide which Prefill worker to use, which Decode worker or pool to target, how to move or reuse KV state between them, and how to react if any of those components are saturated or fail. No single off‑the‑shelf component in the current vLLM / TRT‑LLM / Triton stack owns this global coordination; teams typically stitch together routing rules, scripts, and control‑plane logic to fill the gap.</p>
 
       <div class="callout callout-orange">
-        <strong>The hidden cost of bespoke orchestration:</strong> Every large-scale LLM inference team that has implemented disaggregation has written their own version of this coordination layer. It is custom, poorly documented, tightly coupled to their specific hardware, and breaks in non-obvious ways when GPU topology or traffic patterns change. NVIDIA Dynamo and LLM-d are both, in part, attempts to standardise this coordination layer so teams do not have to rebuild it from scratch.
+        <strong>The hidden cost of bespoke orchestration:</strong> Most teams that deploy large disaggregated systems today end up implementing their own coordination layer on top of existing inference servers – deciding how to place Prefill and Decode work, how to transfer KV, and how to observe and adjust P:D ratios over time. These solutions are often tailored to a specific cluster topology, cloud provider, or traffic pattern and can be difficult to evolve. NVIDIA Dynamo and LLM‑d both aim to standardise this coordination layer so that teams can rely on a supported, fleet‑aware framework instead of maintaining custom orchestration code indefinitely.
       </div>
     </div>
   </div>
@@ -532,9 +541,9 @@
     routing:{
       label:'Request routing inefficiency (prefix cache blindness)',
       rows:[
-        {scale:'1–4 GPUs / 1 replica',val:5,  color:'#2E7D32', note:'Single replica - all requests hit the same cache. Not a problem.'},
-        {scale:'8–16 GPUs / 2–4 replicas', val:35, color:'#F57F17', note:'Cache spread across replicas. Hit rate degrading.'},
-        {scale:'32–64 GPUs / 8–16 replicas',val:75, color:'#E65100', note:'Round-robin distributes requests randomly. Cache hit rate near zero.'},
+        {scale:'1-4 GPUs / 1 replica',val:5,  color:'#2E7D32', note:'Single replica - all requests hit the same cache. Not a problem.'},
+        {scale:'8-16 GPUs / 2-4 replicas', val:35, color:'#F57F17', note:'Cache spread across replicas. Hit rate degrading.'},
+        {scale:'32-64 GPUs / 8-16 replicas',val:75, color:'#E65100', note:'Round-robin distributes requests randomly. Cache hit rate near zero.'},
         {scale:'128+ GPUs / 32+ replicas',  val:95, color:'#C62828', note:'Effectively no prefix caching benefit. TTFT = full Prefill cost for almost every request.'},
       ],
       note:'Routing blindness is benign at single-node scale and catastrophic at fleet scale. The problem is not prefix caching configuration - it is that the load balancer has no cache state visibility.'
@@ -543,7 +552,7 @@
       label:'KV Cache locality loss (multi-turn / sticky routing conflict)',
       rows:[
         {scale:'Short single-turn conversations',val:10, color:'#2E7D32', note:'No multi-turn history - locality is irrelevant for single-turn requests.'},
-        {scale:'2–5 turn conversations',         val:40, color:'#F57F17', note:'Moderate penalty. Each new turn rebuilds some history if routed to different replica.'},
+        {scale:'2-5 turn conversations',         val:40, color:'#F57F17', note:'Moderate penalty. Each new turn rebuilds some history if routed to different replica.'},
         {scale:'10+ turn conversations',          val:80, color:'#E65100', note:'Severe. A 10-turn conversation routed randomly rebuilds up to 10x the KV Cache work needed.'},
         {scale:'Long-context agents (50+ turns)', val:98, color:'#C62828', note:'Practically all KV Cache work is wasted rebuild. Agents effectively cannot scale under blind routing.'},
       ],
@@ -564,7 +573,7 @@
       rows:[
         {scale:'Single workload type',             val:5,  color:'#2E7D32', note:'One request type, one optimal config. Single-instance server handles this well.'},
         {scale:'2 workload types (chat + RAG)',    val:30, color:'#F57F17', note:'Config compromise between two optima. Meaningful but manageable inefficiency.'},
-        {scale:'3–4 workload types mixed',         val:65, color:'#E65100', note:'Config satisfies none fully. Chat latency spikes when long RAG prompts queue. Batch steals capacity from interactive.'},
+        {scale:'3-4 workload types mixed',         val:65, color:'#E65100', note:'Config satisfies none fully. Chat latency spikes when long RAG prompts queue. Batch steals capacity from interactive.'},
         {scale:'5+ types at high volume each',     val:90, color:'#C62828', note:'Consistent SLA violations across most workload types. GPU utilisation high but effective throughput low due to contention.'},
       ],
       note:'Heterogeneous workload problems compound with variety and volume. They are the primary driver of GPU underutilisation at large AI platform deployments.'
@@ -597,10 +606,10 @@
     },
     aware:{
       nodes:[
-        {color:'rgba(21,101,192,0.8)',title:'Replica 1',body:'Prefixes 1–5\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
-        {color:'rgba(123,31,162,0.8)',title:'Replica 2',body:'Prefixes 6–10\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
-        {color:'rgba(46,125,50,0.8)', title:'Replica 3',body:'Prefixes 11–15\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
-        {color:'rgba(230,81,0,0.8)',  title:'Replica 4',body:'Prefixes 16–20\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
+        {color:'rgba(21,101,192,0.8)',title:'Replica 1',body:'Prefixes 1-5\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
+        {color:'rgba(123,31,162,0.8)',title:'Replica 2',body:'Prefixes 6-10\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
+        {color:'rgba(46,125,50,0.8)', title:'Replica 3',body:'Prefixes 11-15\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
+        {color:'rgba(230,81,0,0.8)',  title:'Replica 4',body:'Prefixes 16-20\nUsers routed by hash',cache:'Cache: 5 of 5 prefixes warm (100%)'},
       ],
       note:'KV Cache-aware routing: requests are routed to the replica that has the matching prefix cached. Each replica owns a subset of prefixes and serves them at near-zero TTFT after the first request. Fleet-wide cache hit rate: ~95%+ after warm-up. TTFT drops from 1.6s to <100ms for cached prefixes. Requires a router with real-time visibility into each replica\'s cache state.'
     }
@@ -636,7 +645,7 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct - and this is exactly the kind of diagnosis that distinguishes a real SME from someone who just knows the per-instance concepts.</strong><br><br>The customer\'s prefix caching configuration is not wrong. Each individual replica is correctly configured and each one does cache the 3,000-token system prompt after its first request. The problem is entirely at the routing layer.<br><br>With 16 replicas and round-robin routing, each replica receives approximately 1/16th (6.25%) of total traffic. The 3,000-token system prompt cache on replica 3 does nothing for a request that lands on replica 7. Unless traffic volume is high enough that every replica independently sees enough requests to keep the cache warm - and is never evicted by KV pressure from other requests - most requests will land on a cold replica and pay full Prefill cost.<br><br>The quantitative impact: a 3,000-token Prefill on a 70B H100 takes roughly 400–600ms. With a warm prefix cache on the right replica, TTFT drops to under 100ms (just the new tokens since the cached prefix). The 1.6s average TTFT the customer sees is consistent with ~5–10% cache hit rate - most requests landing on a cold replica and paying full cost, with the occasional hit pulling the average down slightly from the theoretical maximum.<br><br>The fix is not a vLLM configuration change. It is a routing infrastructure change: a KV Cache-aware router (as described in this module and provided by Dynamo in Module 5.2) that hashes the system prompt, tracks which replicas have which prefix hashes cached, and routes accordingly. Option A is wrong - prefix caching works correctly with Paged Attention regardless of model size. Option C is wrong - consolidating replicas would reduce throughput capacity. Option D is wrong - vLLM\'s block size (16 tokens) is irrelevant to prefix cache reuse; a 3,000-token prefix spans many blocks but is fully cacheable.';
+      r.innerHTML='<strong>Correct - and this is exactly the kind of diagnosis that distinguishes a real SME from someone who just knows the per-instance concepts.</strong><br><br>The customer\'s prefix caching configuration is not wrong. Each individual replica is correctly configured and each one does cache the 3,000-token system prompt after its first request. The problem is entirely at the routing layer.<br><br>With 16 replicas and round-robin routing, each replica receives approximately 1/16th (6.25%) of total traffic. The 3,000-token system prompt cache on replica 3 does nothing for a request that lands on replica 7. Unless traffic volume is high enough that every replica independently sees enough requests to keep the cache warm - and is never evicted by KV pressure from other requests - most requests will land on a cold replica and pay full Prefill cost.<br><br>The quantitative impact: a 3,000-token Prefill on a 70B H100 takes roughly 400-600ms. With a warm prefix cache on the right replica, TTFT drops to under 100ms (just the new tokens since the cached prefix). The 1.6s average TTFT the customer sees is consistent with ~5-10% cache hit rate - most requests landing on a cold replica and paying full cost, with the occasional hit pulling the average down slightly from the theoretical maximum.<br><br>The fix is not a vLLM configuration change. It is a routing infrastructure change: a KV Cache-aware router (as described in this module and provided by Dynamo in Module 5.2) that hashes the system prompt, tracks which replicas have which prefix hashes cached, and routes accordingly. Option A is wrong - prefix caching works correctly with Paged Attention regardless of model size. Option C is wrong - consolidating replicas would reduce throughput capacity. Option D is wrong - vLLM\'s block size (16 tokens) is irrelevant to prefix cache reuse; a 3,000-token prefix spans many blocks but is fully cacheable.';
     } else {
       r.style.background='#FFF3E0';
       r.innerHTML='<strong>Not quite.</strong> Option B is correct. The customer\'s prefix caching is correctly configured - the problem is that round-robin routing distributes requests across 16 replicas regardless of cache state. Each replica only holds the prefix cache for requests it has previously served, which is roughly 1/16th of total traffic. Most requests land on replicas with cold caches and pay full Prefill cost. The fix is a KV Cache-aware router, not a per-replica configuration change. Option A is wrong (prefix caching works correctly with Paged Attention at any model size). Option C is wrong (fewer replicas would hurt throughput). Option D is wrong (block size does not prevent prefix cache reuse for large prefixes).';
