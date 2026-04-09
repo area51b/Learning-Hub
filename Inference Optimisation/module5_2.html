@@ -193,9 +193,9 @@
   </div>
 
   <div class="intro-card">
-    <p>NVIDIA Dynamo was announced at GTC March 2025 as the successor to Triton Inference Server — a ground-up redesign for the era of large-scale, multi-node LLM inference. Where Triton unified per-node model serving across frameworks, Dynamo introduces the fleet-level coordination layer that was absent from the Part 4 stack: KV-aware routing, disaggregated Prefill/Decode scheduling, standardised KV transfer, and tiered memory management. It wraps existing inference engines — TRT-LLM, vLLM, and SGLang — without replacing them, and is implemented in Rust for performance with Python integration for extensibility. Triton continues under the name Dynamo-Triton for teams that need its broad multi-framework, multi-hardware coverage.</p>
+    <p>NVIDIA Dynamo was announced at GTC March 2025 as the successor to Triton Inference Server - a ground-up redesign for the era of large-scale, multi-node LLM inference. Where Triton unified per-node model serving across frameworks, Dynamo introduces the fleet-level coordination layer that was absent from the Part 4 stack: KV-aware routing, disaggregated Prefill/Decode scheduling, standardised KV transfer, and tiered memory management. It wraps existing inference engines - TRT-LLM, vLLM, and SGLang - without replacing them, and is implemented in Rust for performance with Python integration for extensibility. Triton continues under the name Dynamo-Triton for teams that need its broad multi-framework, multi-hardware coverage.</p>
 
-    <p>NVIDIA's published benchmarks show two distinct performance tiers. On Blackwell-based GB200 NVL72 hardware running DeepSeek-R1 671B, Dynamo's disaggregated serving delivered up to 30x throughput improvement — a figure that reflects both the new hardware's architecture and Dynamo's orchestration working together and should not be generalised to other configurations. On existing Hopper-class hardware running Llama 70B with vLLM, Dynamo more than doubled throughput — a more representative baseline for customers on current infrastructure. This module explains the four mechanisms behind those gains — the Smart Router, the Planner, NIXL, and the KV Block Manager — and maps each one back to the structural gaps identified in Module 5.1.</p>
+    <p>NVIDIA's published benchmarks show two distinct performance tiers. On Blackwell-based GB200 NVL72 hardware running DeepSeek-R1 671B, Dynamo's disaggregated serving delivered up to 30x throughput improvement - a figure that reflects both the new hardware's architecture and Dynamo's orchestration working together and should not be generalised to other configurations. On existing Hopper-class hardware running Llama 70B with vLLM, Dynamo more than doubled throughput - a more representative baseline for customers on current infrastructure. This module explains the four mechanisms behind those gains - the Smart Router, the Planner, NIXL, and the KV Block Manager - and maps each one back to the structural gaps identified in Module 5.1.</p>
   </div>
 
   <!-- Section 1: What Dynamo is -->
@@ -505,11 +505,6 @@
               <td>Planner + NIXL</td>
               <td>Planner dynamically adjusts P:D ratio based on queue depth and worker utilisation. NIXL provides a standardised, high-bandwidth, zero-copy KV transfer protocol - no bespoke scripts needed.</td>
             </tr>
-            <tr>
-              <td class="cmp-dim">Heterogeneous workloads<br><span style="font-weight:normal; color:#666; font-size:12px;">One config cannot serve all request types optimally</span></td>
-              <td>Router + Planner (worker pool routing)</td>
-              <td>Router can classify requests by type (short/long prompt, streaming/batch) and route to specialised worker pools. Each pool has its own TP config and batch size optimised for that request type.</td>
-            </tr>
           </tbody>
         </table>
       </div>
@@ -728,7 +723,6 @@
       rows:[
         {label:'Baseline (no Dynamo)',val:15,color:'#546E7A',note:'100% - reference, severe contention between workload types'},
         {label:'+ KV-aware router',   val:45,color:'#1565C0',note:'3x - cache hits restored, workload routing by type'},
-        {label:'+ Specialised pools', val:80,color:'#7B1FA2',note:'5x - each type served by pool tuned for it'},
         {label:'+ Disaggregation',    val:100,color:'#2E7D32',note:'~6x - full optimisation across all types'},
       ],
       note:'Mixed-workload fleets see the greatest absolute benefit from Dynamo because the baseline is worst-case: contention between incompatible workload types on shared resources. Dynamo\'s ability to classify and route to specialised pools - each with optimal P:D ratio and batch configuration - resolves the heterogeneous workload problem directly.'
