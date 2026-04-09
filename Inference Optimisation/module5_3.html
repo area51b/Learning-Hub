@@ -63,7 +63,7 @@
   .arch-box-title { font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
   .arch-box-body  { font-size:11px; opacity:0.6; line-height:1.6; }
   .arch-arrow { text-align:center; font-size:13px; opacity:0.25; margin:3px 0; }
-  .arch-hl    { border:2px solid rgba(255,130,80,0.35); border-radius:10px; padding:4px; }
+  .arch-hl    { border:2px sealed rgba(255,130,80,0.35); border-radius:10px; padding:4px; }
   .arch-note  { font-size:11px; opacity:0.35; margin-top:14px; line-height:1.7; }
 
   /* ── IGW explorer ── */
@@ -166,7 +166,7 @@
     <a href="index.html" class="home-icon" title="Home">🏠</a>
     <div class="header-eyebrow">PART 5 · MODULE 5.3</div>
     <h1>LLM-d - Kubernetes-Native Distributed LLM Inference</h1>
-    <p>Where Dynamo is NVIDIA's fleet coordination layer, llm-d is the open-source, hardware-agnostic, Kubernetes-native answer - built by Red Hat, Google, and IBM on top of vLLM and the Kubernetes Inference Gateway.</p>
+    <p>Where Dynamo is NVIDIA's fleet coordination layer, llm-d is an open-source, hardware-flexible, Kubernetes-native answer - built by a broader community including Red Hat, Google, IBM Research and other contributors - on top of vLLM and the Kubernetes Gateway API Inference Extension.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -185,8 +185,8 @@
   </div>
 
   <div class="intro-card">
-    <p>llm-d was announced in mid-2025 by Red Hat, Google, and IBM as an open-source project for high-performance distributed LLM inference on Kubernetes. It targets the same fleet-scale problems Dynamo addresses - routing blindness, disaggregation coordination, heterogeneous workloads - but from a fundamentally different starting point: instead of building a new coordination layer on top of existing tools, llm-d extends the tools and standards that Kubernetes teams already operate.</p>
-    <p>The key distinction is the deployment model. Dynamo introduces a new fleet-level process (the Dynamo router, planner, and NIXL transfer system) that teams adopt alongside their existing stack. llm-d routes through Kubernetes-native infrastructure - the Inference Gateway, Envoy proxy, and standard Kubernetes APIs - so teams already running LLM workloads on Kubernetes can adopt it incrementally without introducing a new system to operate. By February 2026, llm-d had reached v0.5, validating roughly 3,100 tokens/sec per B200 Decode GPU and order-of-magnitude TTFT reduction versus round-robin baseline.</p>
+    <p>llm-d was introduced in 2025 as an open-source project for high-performance distributed LLM inference on Kubernetes. It targets the same fleet-scale problems Dynamo addresses - routing blindness, disaggregation coordination - but from a different starting point: instead of building a new proprietary coordination layer on top of existing tools, llm-d extends the tools and standards that Kubernetes teams already operate.</p>
+    <p>The key distinction is the deployment model. Dynamo introduces a new fleet-level process (the Dynamo router, planner, and NIXL-based transfer system) that teams adopt alongside their existing stack. llm-d routes through Kubernetes-native infrastructure - the Gateway API Inference Extension, Envoy proxy, and standard Kubernetes APIs - so teams already running LLM workloads on Kubernetes can adopt it incrementally without introducing a separate control plane to operate.</p>
   </div>
 
   <!-- Section 1: Philosophy -->
@@ -201,7 +201,7 @@
     <div class="section-body" id="bdy1">
       <p>The name "well-lit paths" is llm-d's own description of its goal: tested, benchmarked deployment patterns that teams can follow without building bespoke infrastructure. The phrase reflects the project's philosophy - rather than providing a novel system that teams must learn and operate, llm-d provides Kubernetes-native implementations of proven inference optimisations that plug into tooling teams already know.</p>
 
-      <p>This matters practically. A team running LLM workloads on Kubernetes already has Helm charts, Prometheus monitoring, Grafana dashboards, Kubernetes RBAC, and standard GitOps workflows. Adding Dynamo means adopting a new process with its own operational surface. Adding llm-d means installing a Helm chart that deploys the Inference Gateway scheduler and a configured vLLM deployment - things that look and behave like the Kubernetes resources the team already manages.</p>
+      <p>This matters practically. A team running LLM workloads on Kubernetes already has Helm charts, Prometheus monitoring, Grafana dashboards, Kubernetes RBAC, and standard GitOps workflows. Adding Dynamo means adopting a new process with its own operational surface. Adopting llm-d typically means installing Helm charts that deploy the inference-aware Gateway and a configured vLLM deployment - things that look and behave like the Kubernetes resources the team already manages.</p>
 
       <div class="arch-wrap">
         <div class="arch-title">llm-d architecture - extending Kubernetes with inference-aware components</div>
@@ -215,15 +215,15 @@
         </div>
         <div class="arch-arrow">&#9660;</div>
 
-        <div class="arch-layer-label">NEW - Kubernetes Inference Gateway (IGW) - the llm-d control plane</div>
+        <div class="arch-layer-label">NEW - Gateway API Inference Extension (control plane)</div>
         <div class="arch-row arch-hl">
           <div class="arch-box" style="background:rgba(191,54,12,0.4);">
             <div class="arch-box-title" style="color:#FFAB91;">Gateway API Inference Extension</div>
-            <div class="arch-box-body">Official Kubernetes project. Extends standard Gateway API with LLM-specific concepts: InferenceModel, InferencePool, serving priority. Control plane for the load balancer.</div>
+            <div class="arch-box-body">Emerging Kubernetes standard that extends the Gateway API with LLM-specific concepts: InferenceModel, InferencePool, serving priority. Used as the control plane for inference-aware load balancing.</div>
           </div>
           <div class="arch-box" style="background:rgba(216,67,21,0.4);">
             <div class="arch-box-title" style="color:#FFAB91;">Inference Scheduler (EPP)</div>
-            <div class="arch-box-body">Endpoint Picker Protocol. Built on Envoy proxy. Implements KV Cache-aware, P/D-aware, SLA-aware, and load-aware scoring and filtering. Customisable scorers.</div>
+            <div class="arch-box-body">Endpoint Picker Protocol. Built on Envoy proxy. Implements KV Cache-aware, P/D-aware, SLA-aware, and load-aware scoring and filtering. Supports pluggable scorer logic.</div>
           </div>
           <div class="arch-box" style="background:rgba(230,74,25,0.4);">
             <div class="arch-box-title" style="color:#FFAB91;">Disaggregated Serving Sidecar</div>
@@ -236,15 +236,15 @@
         <div class="arch-row">
           <div class="arch-box" style="background:rgba(123,31,162,0.25);">
             <div class="arch-box-title" style="color:#CE93D8;">Prefill pods (vLLM)</div>
-            <div class="arch-box-body">Standard vLLM pods with llm-d KV connector patches. Handle compute-bound Prefill. Report cache state to scheduler via metrics.</div>
+            <div class="arch-box-body">vLLM pods with llm-d integration for KV state reporting. Handle compute-bound Prefill. Report cache state to the scheduler via metrics.</div>
           </div>
           <div class="arch-box" style="background:rgba(21,101,192,0.25);">
             <div class="arch-box-title" style="color:#90CAF9;">Decode pods (vLLM)</div>
-            <div class="arch-box-body">Standard vLLM pods. Handle memory-bandwidth-bound Decode. Each has the disaggregated serving sidecar. Receive KV blocks via NIXL or vLLM KV connector.</div>
+            <div class="arch-box-body">vLLM pods. Handle memory-bandwidth-bound Decode. Each has the disaggregated serving sidecar. Can receive KV blocks via high-speed transport such as NIXL or other supported connectors.</div>
           </div>
           <div class="arch-box" style="background:rgba(46,125,50,0.25);">
             <div class="arch-box-title" style="color:#A5D6A7;">Standard vLLM replicas</div>
-            <div class="arch-box-body">Undisaggregated replicas for simpler workloads. Managed by Kubernetes Deployment. Autoscaled via HPA or llm-d workload autoscaler.</div>
+            <div class="arch-box-body">Aggregated replicas for simpler workloads. Managed by Kubernetes Deployments. Autoscaled via HPA or llm-d-aware workload autoscalers.</div>
           </div>
         </div>
         <div class="arch-arrow">&#9660;</div>
@@ -260,8 +260,7 @@
       </div>
 
       <div class="callout callout-red">
-        <strong>The foundational choice that shapes everything:</strong> llm-d chose vLLM as its primary inference engine, not TRT-LLM. This is a deliberate stance for hardware-agnosticism - vLLM supports NVIDIA A100+, AMD MI250, Google TPU v5e+, and Intel GPU Max without recompilation. TRT-LLM produces GPU-specific compiled binaries. For teams running mixed-accelerator infrastructure or non-NVIDIA hardware, llm-d is the only viable option among these two frameworks.
-      </div>
+        <strong>The foundational choice that shapes everything:</strong> llm-d chose vLLM as its primary inference engine, not TRT-LLM. This aligns with a hardware-flexible stance - vLLM can be integrated with multiple accelerator backends and is not tied to a single GPU vendor toolchain. TRT-LLM produces GPU-specific compiled binaries for NVIDIA hardware. For teams running mixed-accelerator infrastructure or planning for non-NVIDIA hardware, llm-d’s vLLM-first design keeps more options open than a stack that is tightly coupled to TRT-LLM.</div>
     </div>
   </div>
 
@@ -275,12 +274,12 @@
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
     <div class="section-body" id="bdy2">
-      <p>The Kubernetes Inference Gateway (IGW) is an official Kubernetes project - not just a llm-d component - that extends the standard Gateway API with LLM-specific concepts. llm-d builds on IGW rather than building its own routing layer, which means teams get a routing system that integrates with standard Kubernetes tooling and will be maintained upstream as the Kubernetes ecosystem evolves.</p>
+      <p>The Gateway API Inference Extension is an emerging Kubernetes standard - not just a llm-d component - that extends the standard Gateway API with LLM-specific concepts. llm-d builds on this extension rather than building its own bespoke routing protocol, which means teams get a routing system that integrates with standard Kubernetes tooling and is evolving in the open with the broader Kubernetes ecosystem.</p>
 
       <div class="igw-wrap">
-        <div class="igw-title">IGW and scheduler components - click to explore</div>
+        <div class="igw-title">Inference extension and scheduler components - click to explore</div>
         <div class="igw-tabs">
-          <button class="igw-tab active" style="background:#BF360C; color:white;" onclick="showIGW('igw')">Inference Gateway</button>
+          <button class="igw-tab active" style="background:#BF360C; color:white;" onclick="showIGW('igw')">Inference extension</button>
           <button class="igw-tab" style="background:#1565C0; color:white;" onclick="showIGW('epp')">Endpoint Picker (EPP)</button>
           <button class="igw-tab" style="background:#2E7D32; color:white;" onclick="showIGW('envoy')">Envoy proxy</button>
           <button class="igw-tab" style="background:#7B1FA2; color:white;" onclick="showIGW('crds')">CRDs</button>
@@ -291,8 +290,7 @@
       <p>The Endpoint Picker Protocol (EPP) is where llm-d's intelligence lives. Rather than reimplementing a full-featured load balancer, the EPP plugs into Envoy's extensible balancing policies as a custom filter. This design means llm-d inherits Envoy's production-grade flow control, connection management, circuit breaking, and observability - while adding the LLM-specific scoring logic on top.</p>
 
       <div class="callout callout-blue">
-        <strong>Why Envoy matters here:</strong> Envoy is the data plane used by Istio, Linkerd-compatible configurations, and virtually every service mesh deployed in production Kubernetes environments. By building on Envoy, llm-d integrates naturally with existing service mesh deployments. A team already running Istio gets llm-d's inference-aware routing without replacing any networking infrastructure - they add the EPP filter to the existing Envoy configuration.
-      </div>
+        <strong>Why Envoy matters here:</strong> Envoy is the data plane used by Istio, AWS App Mesh, and many service meshes deployed in production Kubernetes environments. By building on Envoy, llm-d integrates naturally with existing mesh and gateway deployments. A team already running an Envoy-based gateway or service mesh can add llm-d's inference-aware routing by introducing the EPP filter into the existing Envoy configuration instead of standing up a new proxy stack.</div>
     </div>
   </div>
 
@@ -306,7 +304,7 @@
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>When a request arrives at the Inference Gateway, the scheduler does not pick a pod arbitrarily. It runs a two-phase process: first it filters out pods that cannot serve the request (overloaded, wrong model version, unhealthy), then it scores the remaining candidates across multiple dimensions and routes to the highest-scoring pod.</p>
+      <p>When a request arrives at the inference gateway, the scheduler does not pick a pod arbitrarily. It runs a two-phase process: first it filters out pods that cannot serve the request (overloaded, wrong model version, unhealthy), then it scores the remaining candidates across multiple dimensions and routes to the highest-scoring pod.</p>
 
       <div class="sched-wrap">
         <div class="sched-title">Scheduler scoring - select a request type to see how pods are evaluated</div>
@@ -319,14 +317,12 @@
         <div class="sched-note" id="schedNote"></div>
       </div>
 
-      <p>Teams can customise the scoring algorithm by implementing their own scorer plugins - the EPP defines an interface that any scorer must implement, allowing organisations to add business-specific logic (e.g., prefer pods in a specific availability zone, penalise pods with recent errors) without forking the core scheduler. The default scorers cover KV Cache-awareness, load balancing, SLA priority, and P/D disaggregation routing.</p>
+      <p>Teams can customise the scoring algorithm by implementing their own scorer plugins - the EPP defines an interface that any scorer must implement, allowing organisations to add business-specific logic (e.g., prefer pods in a specific availability zone, penalise pods with recent errors) without forking the core scheduler. The default scorers cover KV Cache-awareness, load balancing, SLA priority, and P/D disaggregation routing. Experimental work adds predicted-latency-aware scoring that uses request length and queue state to estimate completion time, rather than relying only on current load.</p>
 
       <div class="callout callout-green">
-        <strong>Predicted latency balancing (v0.3+):</strong> From the v0.3 release onwards, llm-d's scheduler gained a predicted latency scorer - rather than just looking at current load and cache state, it estimates the expected completion time for each pod given the request's input/output length and the pod's current queue. Benchmarks showed up to 3x P90 latency improvement in long-Prefill workloads compared to load-only balancing. This is a meaningful capability gap versus simple round-robin: a pod with low connection count but a large in-flight long-context request may have worse predicted latency than a busier pod with shorter requests.
-      </div>
+        <strong>Predicted latency balancing (experimental):</strong> llm-d’s scheduler includes support for a predicted latency scorer - rather than just looking at current load and cache state, it estimates the expected completion time for each pod given the request's input/output length and the pod's current queue. Early benchmarks show that this can significantly improve P90 latency for long-Prefill workloads compared to simple load-only balancing. This is a meaningful capability gap versus basic round-robin: a pod with low connection count but a large in-flight long-context request may have worse predicted latency than a busier pod with shorter requests.</div>
     </div>
   </div>
-
   <!-- Section 4: Disaggregation in llm-d -->
   <div class="section-card">
     <div class="section-header" id="hdr4" onclick="toggle(4)">
@@ -357,18 +353,17 @@
             Sidecar container per Decode pod<br>
             Scheduler makes routing decision<br>
             x-prefiller-host-port header routing<br>
-            vLLM KV connector or NIXL transfer<br>
+            vLLM integration with high-speed KV transfer (e.g., NIXL)<br>
             Kubernetes-native pod lifecycle<br>
             Fits existing Kubernetes operations
           </div>
         </div>
       </div>
 
-      <p>For KV Cache transfer, llm-d supports both its own vLLM KV connector interface and NIXL - so teams using NVIDIA hardware get the same high-bandwidth RDMA transfer that Dynamo uses for its inter-node handoff. The v0.4 release extended disaggregation support beyond NVIDIA to Intel XPU and Google TPU, reflecting the hardware-agnostic design principle.</p>
+      <p>For KV Cache transfer, llm-d can integrate with high-bandwidth mechanisms such as NIXL, alongside vLLM’s own KV handling, so teams using NVIDIA hardware can align with the same class of RDMA-based transfers that Dynamo uses for inter-node handoff. The project is designed with hardware flexibility in mind, so support for different accelerators and transports continues to expand as the ecosystem matures.</p>
 
       <div class="callout callout-purple">
-        <strong>The sidecar trade-off:</strong> The sidecar model has a smaller operational surface than a dedicated fleet coordinator - there is no new central process to deploy, monitor, or scale. But it also means disaggregation decisions are made per-request by the scheduler rather than by a planner with persistent state about worker health and queue depth. For very dynamic traffic patterns where Prefill pool capacity needs to be rapidly rebalanced, Dynamo's Planner has more flexibility. For teams who prioritise Kubernetes-native operations over maximum dynamic flexibility, the sidecar model is simpler to manage.
-      </div>
+        <strong>The sidecar trade-off:</strong> The sidecar model has a smaller operational surface than a dedicated fleet coordinator - there is no new central process to deploy, monitor, or scale. But it also means disaggregation decisions are made per-request by the scheduler rather than by a planner with long-lived global state about worker health and queue depth. For very dynamic traffic patterns where Prefill pool capacity needs to be rapidly rebalanced, Dynamo's Planner can offer more centralised control. For teams who prioritise Kubernetes-native operations and simpler day-2 management, the sidecar model is attractive because it fits directly into existing pod lifecycle and deployment workflows.</div>
     </div>
   </div>
 
@@ -382,68 +377,52 @@
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
-      <p>llm-d organises its capabilities around "well-lit paths" - pre-tested, benchmarked deployment configurations for specific goals. Each path comes with Helm charts, a deployment guide, and benchmark results so teams can validate expected performance before committing. As of v0.5 (February 2026), three primary well-lit paths are supported:</p>
+      <p>llm-d organises its capabilities around "well-lit paths" - pre-tested deployment configurations for specific goals. Each path is intended to come with Helm charts, deployment guidance, and benchmark results so teams can validate expected behaviour before committing. Conceptually, three primary well-lit paths are important to understand:</p>
 
       <div class="path-item" style="border-left-color:#BF360C; background:#FBE9E7;">
         <div class="path-num" style="color:#BF360C;">Well-lit path 1</div>
         <div class="path-title">Intelligent Inference Scheduling</div>
-        <div class="path-body">Deploy vLLM with the IGW Inference Scheduler - KV Cache-aware, load-aware, SLA-aware routing - without any disaggregation. The simplest adoption path: existing vLLM deployments add the scheduler and immediately get smarter routing. Recommended starting point for any Kubernetes team with multiple vLLM replicas.</div>
-        <div class="path-perf" style="color:#BF360C;">Benchmark: up to 3x TTFT improvement vs round-robin; doubles throughput under SLO constraints.</div>
+        <div class="path-body">Deploy vLLM behind an inference-aware Gateway and scheduler - KV Cache-aware, load-aware, SLA-aware routing - without any disaggregation. This is the simplest adoption path: existing vLLM deployments add the scheduler and immediately get smarter routing, without changing their model pods.</div>
+        <div class="path-perf" style="color:#BF360C;">Impact: significantly improves TTFT and overall latency compared to naive round-robin, especially under mixed workload and multi-tenant conditions.</div>
       </div>
 
       <div class="path-item" style="border-left-color:#7B1FA2; background:#F3E8FD;">
         <div class="path-num" style="color:#7B1FA2;">Well-lit path 2</div>
         <div class="path-title">Disaggregated Prefill / Decode</div>
-        <div class="path-body">Deploy dedicated Prefill and Decode vLLM pods with the disaggregated sidecar and IGW scheduler routing between them. Requires InfiniBand or sufficient network bandwidth for KV transfer. Validated on NVIDIA H100/H200, Intel XPU, and Google TPU. The v0.4 release showed 40% reduction in TPOT for DeepSeek V3.1 on H200 GPUs with this configuration.</div>
-        <div class="path-perf" style="color:#7B1FA2;">Benchmark: 40% TPOT reduction (DeepSeek V3.1, H200); order-of-magnitude TTFT reduction vs round-robin at scale.</div>
+        <div class="path-body">Deploy dedicated Prefill and Decode vLLM pods with the disaggregated sidecar and scheduler routing between them. This path takes advantage of the different characteristics of the two phases - Prefill is compute-bound, Decode is memory-bandwidth-bound - and uses the network for KV transfer between pods.</div>
+        <div class="path-perf" style="color:#7B1FA2;">Impact: can reduce end-to-end latency and improve throughput for long-context and RAG-style workloads when network and accelerator topology are configured appropriately.</div>
       </div>
 
       <div class="path-item" style="border-left-color:#1565C0; background:#E3F2FD;">
         <div class="path-num" style="color:#1565C0;">Well-lit path 3</div>
         <div class="path-title">MoE / Large Model Serving (Expert Parallelism)</div>
-        <div class="path-body">Native vLLM support for very large Mixture of Experts models (DeepSeek-R1, DeepSeek V3) with wide expert parallelism (EP) scaling. v0.3 validated 2,200 tokens/sec/GPU on H200. v0.5 reached 3,100 tokens/sec per B200 Decode GPU with wide-EP and 50,000 output tokens/sec on a 16x16 B200 Prefill/Decode topology.</div>
-        <div class="path-perf" style="color:#1565C0;">Benchmark: 3,100 tok/s per B200 Decode GPU; 50k output tok/s on 16x16 B200 topology (v0.5).</div>
+        <div class="path-body">Use vLLM with llm-d’s routing to serve very large models, including Mixture-of-Experts architectures, with wide expert parallelism (EP) scaling across many accelerators. The routing layer helps keep traffic balanced across experts and replicas while respecting KV-cache locality and SLAs.</div>
+        <div class="path-perf" style="color:#1565C0;">Impact: enables high utilisation and competitive tokens-per-second on modern GPUs for large and MoE models, without teams having to design their own expert-aware routing layer.</div>
       </div>
 
       <div class="timeline">
         <div class="tl-item">
-          <div class="tl-dot" style="background:#546E7A;">0.1</div>
+          <div class="tl-dot" style="background:#546E7A;">0.x</div>
           <div class="tl-body">
-            <div class="tl-date">Jun 2025</div>
-            <div class="tl-title">Initial release - intelligent scheduling path</div>
-            <div class="tl-desc">IGW integration, EPP, KV Cache-aware routing. Red Hat, Google, IBM announcement.</div>
+            <div class="tl-date">2025-2026</div>
+            <div class="tl-title">Early llm-d evolution</div>
+            <div class="tl-desc">Initial releases focused on intelligent scheduling behind the Gateway API Inference Extension and tight vLLM integration, followed by incremental additions around disaggregated serving, KV cache-aware routing, and support for larger models.</div>
           </div>
         </div>
         <div class="tl-item">
-          <div class="tl-dot" style="background:#BF360C;">0.2</div>
+          <div class="tl-dot" style="background:#BF360C;">CNCF</div>
           <div class="tl-body">
-            <div class="tl-date">Sep 2025</div>
-            <div class="tl-title">Disaggregation + MoE</div>
-            <div class="tl-desc">Disaggregated serving sidecar, DeepSeek-R1 vLLM support, improved deployment tooling.</div>
+            <div class="tl-date">KubeCon Europe 2026</div>
+            <div class="tl-title">Donation to the Cloud Native Computing Foundation</div>
+            <div class="tl-desc">IBM Research, Red Hat, Google Cloud and other contributors announced the contribution of llm-d to the CNCF as a sandbox project, signalling the intent to make it a vendor-neutral, community-governed blueprint for distributed inference.</div>
           </div>
         </div>
         <div class="tl-item">
-          <div class="tl-dot" style="background:#D84315;">0.3</div>
+          <div class="tl-dot" style="background:#D84315;">Roadmap</div>
           <div class="tl-body">
-            <div class="tl-date">Oct 2025</div>
-            <div class="tl-title">Predicted latency balancing + IGW v1.0 GA</div>
-            <div class="tl-desc">P90 latency up to 3x better on long-Prefill workloads. Wide expert parallelism to 2,200 tok/s/GPU H200.</div>
-          </div>
-        </div>
-        <div class="tl-item">
-          <div class="tl-dot" style="background:#E64A19;">0.4</div>
-          <div class="tl-body">
-            <div class="tl-date">Dec 2025</div>
-            <div class="tl-title">Multi-accelerator disaggregation + KV offload</div>
-            <div class="tl-desc">Intel XPU + Google TPU disaggregation. 40% TPOT reduction DeepSeek V3.1 H200. CPU memory tiering for KV offload.</div>
-          </div>
-        </div>
-        <div class="tl-item">
-          <div class="tl-dot" style="background:#FF6D00;">0.5</div>
-          <div class="tl-body">
-            <div class="tl-date">Feb 2026</div>
-            <div class="tl-title">Scale-to-zero, HA, LoRA routing, UCCL transport</div>
-            <div class="tl-desc">Hierarchical KV offload, active-active HA, cache-aware LoRA routing, scale-to-zero autoscaling. 3,100 tok/s per B200 Decode GPU validated.</div>
+            <div class="tl-date">Forward-looking</div>
+            <div class="tl-title">Feature and performance expansion</div>
+            <div class="tl-desc">Future releases aim to harden multi-accelerator support, deepen integrations with emerging Kubernetes standards (such as the Gateway API Inference Extension and LeaderWorkerSet), and continue improving latency, throughput and autoscaling for production workloads.</div>
           </div>
         </div>
       </div>
@@ -460,7 +439,7 @@
       <span class="chevron" id="chv6">&#9662;</span>
     </div>
     <div class="section-body" id="bdy6">
-      <p>These two projects solve the same set of problems with different design philosophies. Neither is universally superior - the right choice depends on the customer's infrastructure context, hardware, and operational preferences.</p>
+      <p>These two projects address similar problems with different design philosophies. Neither is universally superior - the right choice depends on the customer's infrastructure context, hardware, and operational preferences.</p>
 
       <div style="overflow-x:auto;">
         <table class="cmp-table">
@@ -471,73 +450,71 @@
             <tr>
               <td class="cmp-dim">Primary backer</td>
               <td>NVIDIA</td>
-              <td>Red Hat, Google, IBM - community governed</td>
+              <td>IBM Research, Red Hat, Google Cloud and a broader open-source community</td>
             </tr>
             <tr>
               <td class="cmp-dim">Inference engine</td>
-              <td>TRT-LLM, vLLM, SGLang (backend-agnostic)</td>
-              <td>vLLM primary; SGLang roadmap</td>
+              <td>TRT-LLM, vLLM, SGLang (backend-agnostic at the orchestration layer)</td>
+              <td>vLLM primary; designed to integrate with additional engines over time</td>
             </tr>
             <tr>
-              <td class="cmp-dim">Hardware support</td>
-              <td>NVIDIA-optimised (H100, H200, B200, GB200 NVL72)</td>
-              <td>NVIDIA A100+, AMD MI250, Google TPU v5e+, Intel GPU Max</td>
+              <td class="cmp-dim">Hardware posture</td>
+              <td>Optimised for NVIDIA GPUs (H100, H200, B200, GB200 NVL72 and successors)</td>
+              <td>Designed for hardware flexibility - “any model, any accelerator, any cloud” - with strong NVIDIA support today and growing integrations for other accelerators via vLLM and the broader ecosystem</td>
             </tr>
             <tr>
               <td class="cmp-dim">Deployment model</td>
-              <td>New fleet coordination processes (router, planner, NIXL)</td>
-              <td>Kubernetes-native: Helm charts, CRDs, extends existing K8s</td>
+              <td>New fleet coordination processes (router, planner, NIXL-based transfer stack)</td>
+              <td>Kubernetes-native: Helm charts, CRDs, Gateway API Inference Extension; extends existing K8s infrastructure</td>
             </tr>
             <tr>
               <td class="cmp-dim">Routing layer</td>
               <td>Dynamo's custom Rust-based KV-aware router</td>
-              <td>Kubernetes Inference Gateway + Envoy EPP</td>
+              <td>Gateway API Inference Extension + Envoy-based Endpoint Picker (EPP)</td>
             </tr>
             <tr>
               <td class="cmp-dim">Disaggregation coord.</td>
               <td>Centralised Planner - dynamic P:D ratio, fleet-wide state</td>
-              <td>Sidecar per Decode pod - scheduler-driven, per-request</td>
+              <td>Sidecar per Decode pod - scheduler-driven, per-request decisions</td>
             </tr>
             <tr>
               <td class="cmp-dim">KV transfer</td>
-              <td>NIXL - purpose-built, GPUDirect RDMA</td>
-              <td>vLLM KV connector or NIXL (v0.5+); UCCL transport (v0.5)</td>
+              <td>NIXL - purpose-built, GPUDirect RDMA and tiered offload</td>
+              <td>Integrates with vLLM’s KV connectors and can use NIXL and other transports where supported</td>
             </tr>
             <tr>
               <td class="cmp-dim">KV Cache offload</td>
-              <td>NIXL tiered: GPU → CPU RAM → NVMe → object storage</td>
-              <td>Hierarchical KV offload (v0.5): GPU → CPU memory tiering</td>
+              <td>NIXL-based tiered offload: GPU → CPU RAM → NVMe → object storage</td>
+              <td>Focus on efficient in-cluster KV handling; additional offload strategies are evolving with the project and its transport integrations</td>
             </tr>
             <tr>
               <td class="cmp-dim">Observability</td>
               <td>Custom Dynamo metrics + TRT-LLM/vLLM metrics</td>
-              <td>Prometheus + Grafana dashboards out of the box; standard K8s</td>
+              <td>Prometheus metrics and Grafana dashboards built on standard Kubernetes and Envoy telemetry</td>
             </tr>
             <tr>
               <td class="cmp-dim">Operational surface</td>
-              <td>Medium-high: new components, new ops patterns</td>
-              <td>Low: Helm charts, Kubernetes CRDs, existing tooling</td>
+              <td>Medium-high: introduces new components and operations patterns alongside Kubernetes</td>
+              <td>Lower: ships as Kubernetes-native resources (CRDs, Helm charts) and reuses existing cluster tooling</td>
             </tr>
             <tr>
-              <td class="cmp-dim">Best peak performance</td>
-              <td>Higher ceiling on NVIDIA hardware, especially Blackwell</td>
-              <td>Competitive on H100/H200; hardware-agnostic ceiling</td>
+              <td class="cmp-dim">Performance focus</td>
+              <td>Pushes for the highest possible performance on NVIDIA hardware, especially current and next-generation GPUs</td>
+              <td>Aims for competitive performance on modern accelerators while keeping the stack modular and portable across clouds and hardware</td>
             </tr>
             <tr>
               <td class="cmp-dim">When to choose</td>
-              <td>NVIDIA-only fleet, TRT-LLM in stack, maximum performance, new deployment</td>
-              <td>Existing K8s infrastructure, mixed accelerators, vLLM-based, operational simplicity</td>
+              <td>Primarily NVIDIA fleets, TRT-LLM already in the stack, customers willing to adopt a new coordination layer for maximum performance</td>
+              <td>Existing Kubernetes infrastructure, vLLM-based serving, desire to avoid lock-in to a single accelerator vendor, and preference for Kubernetes-native operations</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="callout callout-slate">
-        <strong>They are converging, not diverging:</strong> llm-d v0.5 adopted NIXL for KV transfer, the same library Dynamo uses. Dynamo supports vLLM as a backend, the same engine llm-d uses. Both use Kubernetes for deployment. The meaningful differentiation is in the routing and coordination architecture - Dynamo's centralised Planner versus llm-d's Kubernetes-native scheduler - and in hardware scope. Teams should expect continued convergence on the transport and engine layers while the coordination models remain distinct.
-      </div>
+        <strong>They are converging, not diverging:</strong> llm-d is designed to integrate with the same open components (vLLM, NIXL, Envoy, Gateway API Inference Extension) that also appear around Dynamo. Dynamo supports vLLM as a backend, the same engine llm-d uses. Both use Kubernetes as the deployment substrate. The meaningful differentiation is in the routing and coordination architecture - Dynamo's centralised Planner versus llm-d's Kubernetes-native scheduler and sidecar model - and in how tightly each stack is coupled to NVIDIA hardware. Teams should expect continued convergence on the transport and engine layers while the coordination models remain distinct.</div>
     </div>
   </div>
-
   <!-- Section 7: Key ideas -->
   <div class="section-card">
     <div class="section-header" id="hdr7" onclick="toggle(7)">
@@ -552,28 +529,28 @@
         <div class="key-num" style="color:#BF360C;">01</div>
         <div>
           <div class="key-title">llm-d is the Kubernetes-native path - it extends what teams already operate rather than introducing new systems to learn</div>
-          <div class="key-desc">Teams running LLM workloads on Kubernetes can adopt llm-d with a Helm chart. The routing layer is Kubernetes Inference Gateway, the data plane is Envoy, the inference engine is vLLM - all standard components. This is the primary differentiator from Dynamo, which introduces new processes with their own operational surface.</div>
+          <div class="key-desc">Teams running LLM workloads on Kubernetes can adopt llm-d with a Helm chart and CRDs. The routing layer is built on the Gateway API Inference Extension, the data plane is Envoy, and the inference engine is vLLM - all standard, well-understood components. This is a primary differentiator from Dynamo, which introduces a new, dedicated coordination layer with its own operational surface.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#D84315;">02</div>
         <div>
-          <div class="key-title">Hardware-agnosticism is llm-d's structural advantage - the only choice for teams with AMD, Intel, or Google TPU alongside NVIDIA</div>
-          <div class="key-desc">Dynamo is NVIDIA-optimised. llm-d actively tests and supports NVIDIA A100+, AMD MI250, Google TPU v5e+, and Intel GPU Max. For any customer running multi-cloud or multi-vendor GPU infrastructure, llm-d is the only framework in this module that covers the full fleet without vendor lock-in.</div>
+          <div class="key-title">Hardware flexibility is a structural goal for llm-d - it is designed to work across accelerators, not just one vendor</div>
+          <div class="key-desc">Dynamo is tightly optimised for NVIDIA hardware. llm-d, by contrast, is positioned as a vendor-neutral framework that leverages open projects like vLLM, Envoy and the Gateway API Inference Extension and is intended to support “any model, any accelerator, any cloud” over time. For customers running multi-cloud or considering more than one accelerator vendor, llm-d’s design reduces the risk of hard lock-in to a single GPU stack.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">03</div>
         <div>
-          <div class="key-title">The well-lit paths approach means adoption is incremental - start with intelligent scheduling, add disaggregation when justified</div>
-          <div class="key-desc">Path 1 (inference scheduling alone) delivers 3x TTFT improvement and doubled throughput under SLO with minimal operational change. Paths 2 and 3 add disaggregation and MoE support for teams ready for more complexity. No team has to adopt the full stack on day one - each path is independently deployable and benchmarked.</div>
+          <div class="key-title">The well-lit paths approach means adoption is incremental - start with intelligent scheduling, add disaggregation and MoE when justified</div>
+          <div class="key-desc">Path 1 (inference scheduling alone) improves routing quality with minimal operational change. Paths 2 and 3 add disaggregation and support for larger and MoE-style models for teams ready to invest in more sophisticated topologies. No team has to adopt the full stack on day one - each path is independently deployable and builds on familiar Kubernetes constructs.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#546E7A;">04</div>
         <div>
-          <div class="key-title">llm-d and Dynamo are converging on transport and engine while remaining distinct on coordination - the right choice depends on existing infrastructure, not performance alone</div>
-          <div class="key-desc">Both now use NIXL for KV transfer. Both support vLLM. The enduring difference is the coordination model (centralised Planner vs sidecar + K8s scheduler) and hardware scope. Performance on NVIDIA hardware is competitive. The decision is primarily operational: does the customer already run Kubernetes with standard tooling, or are they building a new NVIDIA-focused fleet from scratch?</div>
+          <div class="key-title">llm-d and Dynamo are converging on engines and transports while remaining distinct on coordination - the right choice depends on existing infrastructure, not performance numbers alone</div>
+          <div class="key-desc">Both can use vLLM as an inference engine and both can integrate with modern KV transport libraries like NIXL. The enduring difference is the coordination model (centralised Planner vs. Envoy-based scheduler + sidecar) and how each project fits into a customer's Kubernetes and hardware strategy. For many customers, the decision is primarily operational: do they want a tightly NVIDIA-optimised coordination layer, or a Kubernetes-native, vendor-neutral blueprint they can extend?</div>
         </div>
       </div>
     </div>
@@ -585,35 +562,35 @@
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">What llm-d is</div>
-        <div class="cheat-def">Kubernetes-native distributed LLM inference framework. Red Hat + Google + IBM. Open-source (llm-d/llm-d). Uses vLLM as primary engine, Kubernetes Inference Gateway for routing, Envoy for data plane.</div>
+        <div class="cheat-def">Kubernetes-native distributed LLM inference framework. Created and driven by contributors from IBM Research, Red Hat, Google Cloud and the wider community. Open-source (llm-d/llm-d). Uses vLLM as the primary engine, the Gateway API Inference Extension for routing control, and Envoy as the data plane.</div>
       </div>
       <div class="cheat-item">
-        <div class="cheat-term">Inference Gateway (IGW)</div>
-        <div class="cheat-def">Official Kubernetes project. Extends Gateway API with LLM concepts: InferenceModel, InferencePool CRDs, serving priority. GA as of IGW v1.0 (Oct 2025). Control plane for llm-d's scheduler.</div>
+        <div class="cheat-term">Inference Gateway / extension</div>
+        <div class="cheat-def">An emerging Kubernetes Gateway API extension that adds LLM concepts like InferenceModel and InferencePool. Provides model-aware routing, serving priority and “smart” load-balancing hooks that llm-d uses as part of its control plane.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Endpoint Picker Protocol (EPP)</div>
-        <div class="cheat-def">llm-d's inference scheduler. Runs as Envoy plugin. Filter phase removes unavailable pods. Scoring phase ranks remaining by: KV cache hit, load, predicted latency, SLA priority, P/D assignment. Customisable with own scorers.</div>
+        <div class="cheat-def">llm-d's inference scheduler. Runs as an Envoy plugin. Filter phase removes unavailable or incompatible pods. Scoring phase ranks remaining pods by KV cache signal, load, predicted latency, SLA priority and P/D role. Exposes an interface for custom scorer plugins so organisations can add their own routing policies.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Disaggregation sidecar</div>
-        <div class="cheat-def">Container alongside each Decode pod. Receives x-prefiller-host-port header from scheduler. Proxies Prefill to designated Prefill worker. Coordinates KV transfer back. Kubernetes-native - no separate fleet coordinator needed.</div>
+        <div class="cheat-def">Container alongside each Decode pod. Receives the <code>x-prefiller-host-port</code> header from the scheduler. Proxies the Prefill portion of the request to the designated Prefill worker and coordinates KV transfer back. Uses Kubernetes-native deployment and lifecycle instead of a separate fleet coordinator process.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Well-lit paths</div>
-        <div class="cheat-def">Tested deployment blueprints: (1) Intelligent scheduling only - 3x TTFT, 2x throughput. (2) Disaggregated P/D - 40% TPOT reduction. (3) MoE wide-EP - 3,100 tok/s per B200 Decode GPU. Each independently deployable via Helm.</div>
+        <div class="cheat-def">Deployment blueprints that map to common goals: (1) Intelligent scheduling only - better latency and utilisation without changing model pods. (2) Disaggregated P/D - dedicated Prefill and Decode pools with networked KV transfer. (3) MoE / large models - expert-parallel and large-model serving backed by vLLM and inference-aware routing.</div>
       </div>
       <div class="cheat-item">
-        <div class="cheat-term">Hardware support</div>
-        <div class="cheat-def">NVIDIA A100+, AMD MI250, Google TPU v5e+, Intel GPU Max. The only framework in Part 5 supporting non-NVIDIA hardware. Critical differentiator for multi-cloud or mixed-vendor fleets.</div>
+        <div class="cheat-term">Hardware posture</div>
+        <div class="cheat-def">Designed to be vendor-neutral: built around open components (vLLM, Envoy, Gateway API Inference Extension, NIXL) with the goal of working across different accelerators and clouds, not only NVIDIA GPUs.</div>
       </div>
       <div class="cheat-item">
-        <div class="cheat-term">v0.5 highlights (Feb 2026)</div>
-        <div class="cheat-def">Hierarchical KV offload, active-active HA, cache-aware LoRA routing, scale-to-zero autoscaling, UCCL transport. Validated 3,100 tok/s per B200 Decode GPU and 50k output tok/s on 16x16 B200 P/D topology.</div>
+        <div class="cheat-term">Project status</div>
+        <div class="cheat-def">Donated as a CNCF sandbox project at KubeCon Europe 2026, giving it open governance and a path to broader standardisation while it continues to evolve technically and operationally.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Choose llm-d when</div>
-        <div class="cheat-def">Team already runs Kubernetes with standard tooling. vLLM is the inference engine. Non-NVIDIA hardware in the fleet. Operational simplicity is a priority. Prefer community-governed open-source over vendor-led project.</div>
+        <div class="cheat-def">The team already runs Kubernetes with standard tooling, vLLM is the inference engine (or will be), avoiding tight coupling to a single accelerator vendor is important, and operational simplicity via Kubernetes-native patterns is a priority.</div>
       </div>
     </div>
   </div>
@@ -621,23 +598,23 @@
   <!-- Quiz -->
   <div class="quiz-section">
     <div class="quiz-label">QUICK CHECK</div>
-    <div class="quiz-q">A customer's platform engineering team runs all their ML workloads on Kubernetes and has strong Kubernetes expertise. They serve Llama 3 70B on a mixed fleet - 12x NVIDIA H100 GPUs and 8x AMD MI300X GPUs. They are experiencing the same routing blindness and disaggregation coordination problems described in Module 5.1. A colleague recommends deploying NVIDIA Dynamo for its 30x performance claims. What is the most accurate assessment and recommendation?</div>
+    <div class="quiz-q">A customer's platform engineering team runs all their ML workloads on Kubernetes and has strong Kubernetes expertise. They serve Llama 3 70B on a mixed fleet - 12x NVIDIA H100 GPUs and 8x AMD MI300X GPUs. They are experiencing the same routing blindness and disaggregation coordination problems described in Module 5.1. A colleague recommends deploying NVIDIA Dynamo for its headline performance claims on NVIDIA-only fleets. What is the most accurate assessment and recommendation?</div>
     <div id="quiz-options">
       <div class="quiz-option" onclick="selectOption(this,'a')">
         <span class="opt-letter" id="lbl-a">A.</span>
-        Deploy Dynamo - the 30x performance improvement outweighs any hardware compatibility concern, and Dynamo's vLLM backend support means it will work on AMD GPUs.
+        Deploy Dynamo - the NVIDIA-side performance improvements justify adopting it even if AMD support is limited, and vLLM as a backend should allow it to handle the MI300X nodes with minimal trade-offs.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        llm-d is the right choice for three compounding reasons. First, the fleet includes AMD MI300X GPUs - Dynamo is NVIDIA-optimised and its maximum performance numbers assume NVIDIA hardware, particularly Blackwell; llm-d actively tests and supports AMD MI250+ and would serve the full mixed fleet. Second, the team has strong Kubernetes expertise and existing K8s tooling - llm-d's Helm chart deployment and IGW integration fits their operational model without introducing new processes to learn. Third, llm-d's Well-lit Path 1 (intelligent scheduling alone) already addresses the routing blindness problem with a 3x TTFT improvement and delivers comparable benefits to Dynamo's KV-aware router on H100 hardware. The correct recommendation is llm-d starting with Well-lit Path 1 (inference scheduling), migrating to Path 2 (disaggregated P/D) when the team is ready for additional complexity.
+        llm-d is the better strategic fit for three reasons. First, the fleet includes AMD MI300X GPUs - Dynamo is optimised for NVIDIA hardware and its strongest performance claims are for NVIDIA-only deployments, whereas llm-d is explicitly positioned as vendor-neutral and is designed to work across different accelerators via vLLM and open transports. Second, the team has strong Kubernetes expertise and existing K8s tooling - llm-d’s Helm chart deployment and Gateway API Inference Extension integration fit their operational model without introducing a separate coordination plane to learn. Third, llm-d’s “intelligent scheduling only” path already addresses routing blindness using KV cache-aware and load-aware routing, delivering many of the same benefits as Dynamo’s KV-aware router on the NVIDIA portion of the fleet while also covering the AMD nodes. The recommended starting point is llm-d with intelligent scheduling, adding disaggregation later if needed.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        Neither Dynamo nor llm-d is production-ready - both were announced in 2025 and lack the maturity for enterprise deployment. The customer should wait for more stable releases.
+        Neither Dynamo nor llm-d should be considered because they are both too immature for production - the customer should avoid them entirely until they reach a 1.0 GA release and rely on a simple round-robin load balancer instead.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
-        Separate the fleet - deploy Dynamo on the NVIDIA H100 nodes and a standalone vLLM with Triton on the AMD nodes, with a custom load balancer routing between them.
+        Separate the fleet - deploy Dynamo on the NVIDIA H100 nodes and a standalone vLLM stack on the AMD nodes, with a custom load balancer that treats each sub-fleet as an opaque endpoint.
       </div>
     </div>
     <button class="quiz-btn" id="check-btn" style="display:none;" onclick="checkAnswer()">Check Answer</button>
@@ -648,7 +625,7 @@
     <div>
       <div class="next-label">Up Next - Module 5.4</div>
       <div class="next-title">Dynamo vs LLM-d vs DIY</div>
-      <div class="next-sub">Side-by-side decision framework - when to recommend each, what the operational models look like, and how to handle the "we built our own" customer</div>
+      <div class="next-sub">Side-by-side decision framework - when to recommend each, what the operational models look like, and how to handle the "we built our own" customer.</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -668,27 +645,27 @@
   /* ── IGW explorer ── */
   var igwData={
     igw:{
-      name:'Kubernetes Inference Gateway (IGW)',
-      sub:'Official Kubernetes project - Gateway API inference extension',
-      body:'IGW extends the standard Kubernetes Gateway API with LLM-specific resource types and concepts. It reached GA with IGW v1.0 in October 2025. Being an official Kubernetes project means it will be maintained by the Kubernetes community, not just llm-d, and will evolve with the Kubernetes ecosystem. It integrates with any Gateway API-compatible implementation - Envoy (kgateway), Istio, and others.',
-      tags:[{c:'#BF360C',t:'Official K8s project'},{c:'#1565C0',t:'Gateway API extension'},{c:'#2E7D32',t:'v1.0 GA Oct 2025'}]
+      name:'Gateway API Inference Extension',
+      sub:'Emerging Kubernetes standard for inference-aware gateways',
+      body:'The inference extension to the Kubernetes Gateway API adds LLM-specific resource types and concepts such as InferenceModel and InferencePool. It is being developed in the open Kubernetes ecosystem with the goal of making distributed inference a first-class Kubernetes workload. It is designed to integrate with Gateway API-compatible implementations - including Envoy-based gateways and service meshes.',
+      tags:[{c:'#BF360C',t:'Kubernetes ecosystem'},{c:'#1565C0',t:'Gateway API extension'},{c:'#2E7D32',t:'Inference-aware routing'}]
     },
     epp:{
       name:'Endpoint Picker Protocol (EPP)',
       sub:'llm-d\'s inference-aware scoring and filtering logic',
-      body:'The EPP is an Envoy filter plugin that implements llm-d\'s smart scheduling logic. For each incoming request, EPP runs two phases: (1) Filter - removes pods that are overloaded, unhealthy, or lack the required model version. (2) Score - ranks remaining pods across dimensions: KV cache prefix match, current load, predicted latency, SLA serving priority, and P/D role assignment. The highest-scoring pod receives the request. Teams can implement custom scorer plugins to add organisation-specific routing logic without modifying the core EPP.',
-      tags:[{c:'#BF360C',t:'Filter + Score phases'},{c:'#7B1FA2',t:'Custom scorer plugins'},{c:'#E65100',t:'Predicted latency scoring'}]
+      body:'The EPP is an Envoy filter plugin that implements llm-d\'s smart scheduling logic. For each incoming request, EPP runs two phases: (1) Filter - removes pods that are overloaded, unhealthy, or lack the required model version or adapter. (2) Score - ranks remaining pods across dimensions: KV cache prefix match, current load, predicted latency (where enabled), SLA serving priority, and P/D role assignment. The highest-scoring pod receives the request. Teams can implement custom scorer plugins to add organisation-specific routing logic without modifying the core EPP.',
+      tags:[{c:'#BF360C',t:'Filter + score phases'},{c:'#7B1FA2',t:'Custom scorer plugins'},{c:'#E65100',t:'Predicted-latency aware'}]
     },
     envoy:{
       name:'Envoy Proxy',
       sub:'Data plane - production-grade traffic management',
-      body:'Envoy is the battle-hardened proxy used by Istio, AWS App Mesh, and most production service meshes. llm-d uses Envoy (via kgateway) as its data plane rather than building a custom HTTP server. This gives llm-d circuit breaking, connection management, flow control, TLS termination, and rich observability for free. Teams already running Istio or kgateway get llm-d\'s inference-aware routing by adding the EPP filter to their existing Envoy configuration - no new infrastructure.',
+      body:'Envoy is the battle-hardened proxy used by Istio, AWS App Mesh and many production service meshes. llm-d uses Envoy (via Gateway API implementations) as its data plane rather than building a custom HTTP server. This gives llm-d circuit breaking, connection management, flow control, TLS termination and rich observability out of the box. Teams already running Envoy-based gateways or meshes can adopt llm-d\'s inference-aware routing by adding the EPP filter to their existing Envoy configuration.',
       tags:[{c:'#546E7A',t:'Production-grade proxy'},{c:'#1565C0',t:'Istio compatible'},{c:'#2E7D32',t:'Flow control + circuit breaking'}]
     },
     crds:{
       name:'Custom Resource Definitions (CRDs)',
       sub:'Kubernetes-native model and pool configuration',
-      body:'llm-d defines two primary CRDs that extend the Kubernetes API. InferenceModel declares a model\'s name, serving priority (Critical, Standard, Sheddable), and which InferencePool serves it. InferencePool declares a set of vLLM pods that serve a given model, with target average load thresholds. These resources are managed like any other Kubernetes resource - kubectl, GitOps, RBAC. Model updates are rolling Kubernetes Deployment updates. No novel configuration system to learn.',
+      body:'llm-d defines CRDs that extend the Kubernetes API. InferenceModel declares a model\'s name, serving priority (for example Critical, Standard, Sheddable) and which InferencePool serves it. InferencePool declares a set of vLLM pods that serve a given model, with target average load thresholds and other policy. These resources are managed like any other Kubernetes resource - kubectl, GitOps, RBAC - so platform teams do not have to learn a new configuration system.',
       tags:[{c:'#BF360C',t:'InferenceModel CRD'},{c:'#D84315',t:'InferencePool CRD'},{c:'#546E7A',t:'Standard K8s management'}]
     }
   };
@@ -730,7 +707,7 @@
         {color:'rgba(46,125,50,0.85)',  label:'Pod B', stats:'LoRA: customer-b loaded\nKV hit: YES\nLoad: 50%', score:'Score: 96  SELECTED'},
         {color:'rgba(84,110,122,0.5)',  label:'Pod C', stats:'LoRA: customer-b loaded\nKV hit: NO\nLoad: 30%', score:'Score: 72  skipped'},
       ],
-      note:'LoRA adapter request for customer-b: Pod A is filtered out in the first phase because it has the wrong LoRA adapter loaded (customer-a) - serving the request would require an adapter swap, which is expensive. Among remaining pods, Pod B has both the right adapter AND a KV cache hit, winning despite slightly higher load than Pod C. The v0.5 cache-aware LoRA routing ensures adapter-compatible pods are always preferred, and cache hits within that set are a secondary optimisation.'
+      note:'LoRA adapter request for customer-b: Pod A is filtered out in the first phase because it has the wrong LoRA adapter loaded (customer-a) - serving the request would require an adapter swap, which is expensive. Among remaining pods, Pod B has both the right adapter AND a KV cache hit, winning despite slightly higher load than Pod C. Cache-aware LoRA routing ensures adapter-compatible pods are preferred, with cache hits within that set providing a further optimisation.'
     }
   };
   function showSched(key){
@@ -765,10 +742,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct - and the AMD hardware detail is the deciding factor that many people miss.</strong><br><br><strong>Why not Dynamo:</strong> Dynamo is NVIDIA-optimised. While it supports vLLM as a backend and vLLM does run on AMD, Dynamo\'s performance optimisations - NIXL\'s GPUDirect RDMA, the Planner\'s GPU-topology-aware scheduling, and the headline performance numbers - are built around NVIDIA hardware. The 30x claim requires NVIDIA Blackwell. On AMD MI300X, Dynamo would work with vLLM as the backend but would not provide its full performance benefits and would require the team to manage a new coordination layer they cannot easily debug on non-NVIDIA hardware. More fundamentally, recommending a tool primarily because of performance numbers that apply to different hardware than the customer has is a credibility risk.<br><br><strong>Why llm-d:</strong> llm-d actively tests and validates on AMD MI250+ (covering MI300X), and v0.4 added Intel XPU and Google TPU disaggregation support. It is the only framework in Part 5 designed for hardware-agnostic operation across the full fleet - NVIDIA and AMD together, managed through the same Kubernetes resources. The team\'s existing Kubernetes expertise means adoption through a Helm chart fits their operational model exactly, with no new processes to learn. Well-lit Path 1 (intelligent scheduling alone) addresses the routing blindness problem with documented 3x TTFT improvement - the same root cause fix as Dynamo\'s KV-aware router.<br><br><strong>Why not Option A:</strong> Dynamo\'s vLLM backend support does not mean it is optimised for AMD. The GPU-topology-aware features, NIXL\'s RDMA path, and performance claims are NVIDIA-specific. Recommending it for a mixed fleet creates a two-tier system where half the GPUs are underserved.<br><br><strong>Why not Option C:</strong> llm-d v0.5 (February 2026) and Dynamo (March 2025) are both active, production-validated projects. llm-d v0.4 demonstrated 40% TPOT reduction on H200 in December 2025. Enterprise readiness is not a concern.<br><br><strong>Why not Option D:</strong> Splitting the fleet between Dynamo (NVIDIA) and standalone Triton (AMD) creates two separate operational models, two separate monitoring systems, and a custom load balancer with no intelligence about either system\'s internal state. This is precisely the bespoke orchestration problem that both Dynamo and llm-d exist to avoid.';
+      r.innerHTML='<strong>Correct - and the mixed hardware detail is the deciding factor that many people miss.</strong><br><br><strong>Why not Dynamo alone:</strong> Dynamo is optimised for NVIDIA hardware. While it supports vLLM as a backend, its most compelling performance claims assume NVIDIA-only fleets and NVIDIA-specific capabilities such as NIXL\'s GPUDirect RDMA path and topology-aware scheduling. Relying on those numbers to justify a choice for a mixed NVIDIA+AMD fleet would overstate what Dynamo can safely promise for the AMD nodes.<br><br><strong>Why llm-d:</strong> llm-d is explicitly positioned as a vendor-neutral, Kubernetes-native framework that builds on open components like vLLM, Envoy and the Gateway API Inference Extension. It is designed to be applied consistently across different accelerators and clouds. For this customer, that means a single routing and coordination layer that covers both the H100 and MI300X nodes. The team\'s Kubernetes expertise makes Helm-based deployment and CRD-driven configuration a natural fit, and the “intelligent scheduling only” path directly addresses routing blindness without forcing an immediate move to full disaggregation.<br><br><strong>Why not Option A:</strong> Assuming Dynamo will handle AMD GPUs with “minimal trade-offs” because it can talk to vLLM understates how NVIDIA-centric its optimisations and testing are. The AMD part of the fleet would likely not see the same benefits, and operational complexity would increase as the team reasons about NVIDIA-only features.<br><br><strong>Why not Option C:</strong> Both Dynamo and llm-d are active, evolving projects with real users and strong backers. Treating them as categorically “too immature” and defaulting to round-robin ignores the concrete gains available from inference-aware routing.<br><br><strong>Why not Option D:</strong> Splitting the fleet into two unrelated stacks and hiding them behind a simple load balancer recreates the bespoke orchestration problem that both Dynamo and llm-d exist to solve. The balancer would have no insight into cache state, queue depth or per-pod health inside each sub-fleet.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The AMD MI300X GPUs are the decisive factor. Dynamo is NVIDIA-optimised - its NIXL RDMA transfers, Planner topology-awareness, and 30x performance numbers all assume NVIDIA hardware. llm-d actively validates on AMD MI250+ and provides a unified Kubernetes-native management layer across the full mixed fleet. The team\'s Kubernetes expertise means llm-d\'s Helm chart adoption is straightforward, and Well-lit Path 1 (intelligent scheduling) directly addresses the routing blindness problem with documented 3x TTFT improvement. Option A overstates Dynamo\'s AMD compatibility. Option C incorrectly treats both projects as immature - llm-d v0.5 and Dynamo are both production-validated. Option D reintroduces exactly the bespoke operational complexity that both frameworks exist to eliminate.';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The key is that Dynamo is tuned for NVIDIA-only fleets, whereas llm-d is designed to be vendor-neutral and Kubernetes-native. For a mixed NVIDIA + AMD cluster run by a strong Kubernetes platform team, llm-d provides a single routing and coordination layer that can cover the whole fleet and plug cleanly into existing tooling. Option A overstates how seamless Dynamo will be on AMD. Option C understates the maturity and backing of both projects. Option D reintroduces bespoke operational complexity that llm-d specifically aims to remove.';
     }
     document.getElementById('check-btn').style.display='none';
   }
