@@ -52,6 +52,7 @@
   .callout-purple   { background:#F3E8FD; border-left:4px solid #7B1FA2; }
   .callout-blue     { background:#E3F2FD; border-left:4px solid #1565C0; }
   .callout-slate    { background:#ECEFF1; border-left:4px solid #546E7A; }
+  .callout-amber    { background:#FFF8E1; border-left:4px solid #F9A825; }
 
   /* ── Architecture diagram ── */
   .arch-wrap { background:#0A0F1E; border-radius:14px; padding:24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
@@ -75,7 +76,6 @@
   .comp-panel-name   { font-size:17px; font-weight:bold; margin-bottom:6px; }
   .comp-panel-role   { font-size:12px; font-family:Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; }
   .comp-panel-body   { font-size:14px; line-height:1.8; color:#333; margin-bottom:12px; }
-  .comp-panel-link   { font-size:13px; font-family:Arial,sans-serif; font-weight:bold; padding:6px 0; display:block; }
   .comp-panel-tags   { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
   .comp-panel-tag    { font-size:12px; font-family:Arial,sans-serif; border-radius:20px; padding:3px 12px; color:white; }
 
@@ -171,10 +171,10 @@
 <div class="container">
 
   <div class="header">
-    <a href="index.html" class="home-icon" title="Home">🏠</a>
+    <a href="index.html" class="home-icon" title="Home">&#127968;</a>
     <div class="header-eyebrow">PART 5 · MODULE 5.2</div>
     <h1>NVIDIA Dynamo - Fleet-Scale Disaggregated Inference</h1>
-    <p>Announced at GTC 2025, Dynamo is NVIDIA's answer to every scaling problem from Module 5.1 - a distributed inference framework built to coordinate fleets of GPU workers with KV Cache-aware routing, dynamic disaggregation, and NIXL-accelerated transfer.</p>
+    <p>Announced at GTC 2025, Dynamo is the successor to Triton Inference Server - a ground-up redesign for multi-node LLM inference that closes every gap identified in Module 5.1 with KV-aware routing, dynamic disaggregation, and NIXL-accelerated transfer.</p>
     <div class="tags">
       <span class="tag">~10 min read</span>
       <span class="tag">Concept level</span>
@@ -192,9 +192,9 @@
     </a>
   </div>
 
+  <!-- INTRO CARD - corrected successor framing + sourced perf numbers -->
   <div class="intro-card">
     <p>NVIDIA Dynamo was announced at GTC March 2025 as the successor to Triton Inference Server - a ground-up redesign for the era of large-scale, multi-node LLM inference. Where Triton unified per-node model serving across frameworks, Dynamo introduces the fleet-level coordination layer that was absent from the Part 4 stack: KV-aware routing, disaggregated Prefill/Decode scheduling, standardised KV transfer, and tiered memory management. It wraps existing inference engines - TRT-LLM, vLLM, and SGLang - without replacing them, and is implemented in Rust for performance with Python integration for extensibility. Triton continues under the name Dynamo-Triton for teams that need its broad multi-framework, multi-hardware coverage.</p>
-
     <p>NVIDIA's published benchmarks show two distinct performance tiers. On Blackwell-based GB200 NVL72 hardware running DeepSeek-R1 671B, Dynamo's disaggregated serving delivered up to 30x throughput improvement - a figure that reflects both the new hardware's architecture and Dynamo's orchestration working together and should not be generalised to other configurations. On existing Hopper-class hardware running Llama 70B with vLLM, Dynamo more than doubled throughput - a more representative baseline for customers on current infrastructure. This module explains the four mechanisms behind those gains - the Smart Router, the Planner, NIXL, and the KV Block Manager - and maps each one back to the structural gaps identified in Module 5.1.</p>
   </div>
 
@@ -208,7 +208,7 @@
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>The most important framing to establish first: Dynamo is not a new inference engine. It does not replace TRT-LLM or vLLM. It sits above them as a coordination and orchestration layer - a fleet-level scheduler that fills the gap identified in the current stack. Conceptually, you can think of it as providing for a multi-node fleet what Triton provides for a single node, but with deep awareness of LLM-specific concerns like KV Cache state and Prefill/Decode phase separation.</p>
+      <p>The most important framing to establish first: Dynamo is not a new inference engine. It does not replace TRT-LLM or vLLM. It sits above them as a coordination and orchestration layer - a fleet-level scheduler that fills the gap identified in the current stack. Conceptually, you can think of it as providing for a multi-node fleet what Triton provided for a single node, but with deep awareness of LLM-specific concerns like KV Cache state and Prefill/Decode phase separation.</p>
 
       <div class="arch-wrap">
         <div class="arch-title">Where Dynamo sits in the full stack</div>
@@ -217,7 +217,7 @@
         <div class="arch-row">
           <div class="arch-box" style="background:rgba(55,71,79,0.35);">
             <div class="arch-box-title" style="color:#B0BEC5;">Application / API gateway</div>
-            <div class="arch-box-body">User-facing app, LangChain, REST client. Unchanged from Part 4 stack.</div>
+            <div class="arch-box-body">User-facing app, LangChain, REST client. Unchanged from Part 4 stack. OpenAI-compatible API surface.</div>
           </div>
         </div>
         <div class="arch-arrow">&#9660;</div>
@@ -230,11 +230,11 @@
           </div>
           <div class="arch-box" style="background:rgba(10,61,98,0.6);">
             <div class="arch-box-title" style="color:#80DEEA;">KV Cache-aware Router</div>
-            <div class="arch-box-body">Tracks prefix cache state across all workers. Routes each request to the worker most likely to have a cache hit. Basic or KV-aware mode.</div>
+            <div class="arch-box-body">Tracks prefix cache state across all workers via global radix tree. Routes each request to the worker most likely to have a cache hit.</div>
           </div>
           <div class="arch-box" style="background:rgba(0,96,100,0.5);">
-            <div class="arch-box-title" style="color:#80CBC4;">Planner / Scheduler</div>
-            <div class="arch-box-body">Dynamically adjusts Prefill:Decode worker ratios based on real-time load. Spins workers up/down as traffic changes.</div>
+            <div class="arch-box-title" style="color:#80CBC4;">SLO Planner / Scheduler</div>
+            <div class="arch-box-body">Dynamically adjusts Prefill:Decode worker ratios based on real-time queue depth and SLO targets. Spins workers up/down as traffic changes.</div>
           </div>
         </div>
         <div class="arch-arrow">&#9660; KV Cache blocks transferred via NIXL &#9660;</div>
@@ -251,7 +251,7 @@
           </div>
           <div class="arch-box" style="background:rgba(46,125,50,0.25);">
             <div class="arch-box-title" style="color:#A5D6A7;">KV Block Manager</div>
-            <div class="arch-box-body">Tracks KV Cache blocks across the fleet. Supports offload to CPU RAM or NVMe/object storage via NIXL for long context.</div>
+            <div class="arch-box-body">Fleet-wide KV block registry. Manages tiered offload: GPU HBM → CPU RAM → NVMe/object storage via NIXL for long context.</div>
           </div>
         </div>
         <div class="arch-arrow">&#9660;</div>
@@ -263,11 +263,12 @@
             <div class="arch-box-body">Same hardware as Part 4. Dynamo unlocks fleet-scale efficiency on top of it. Maximum benefit on NVLink-connected rack-scale systems.</div>
           </div>
         </div>
-        <div class="arch-note">Dynamo adds a fleet coordination layer above the existing inference engine layer. It does not replace TRT-LLM, vLLM, or SGLang - it wraps them. Teams migrating from Triton + TRT-LLM add Dynamo's router and planner above, keeping their existing engine configuration.</div>
+        <div class="arch-note">Dynamo adds a fleet coordination layer above the existing inference engine layer. It does not replace TRT-LLM, vLLM, or SGLang - it wraps them. Teams migrating from Triton add Dynamo's router and planner above, keeping their existing engine configuration.</div>
       </div>
 
+      <!-- CORRECTED: successor framing, Dynamo-Triton for broad coverage -->
       <div class="callout callout-navy">
-        <strong>The Triton relationship:</strong> Dynamo is positioned as a fleet-scale coordination layer that complements Triton, not as a universal replacement. Existing Triton deployments continue to be supported under NVIDIA AI Enterprise, and Triton remains the per-node inference server in many architectures. Dynamo becomes the right choice to introduce when deployments grow into multi-node or rack-scale fleets, especially where disaggregation, multi-node serving, or KV Cache-aware routing are required. Teams running single-node Triton + TRT-LLM can continue with that pattern; Dynamo is an additional layer for when fleet-scale coordination becomes the bottleneck.
+        <strong>The Triton relationship:</strong> Dynamo is the successor to Triton Inference Server - a ground-up redesign rather than a layer sitting alongside it. Triton continues under the name Dynamo-Triton for teams that need broad multi-framework, multi-hardware inference coverage (including non-NVIDIA accelerators, CV/NLP pipelines, and model ensembles). For LLM workloads at fleet scale, Dynamo is the right choice: it provides the KV-aware routing, dynamic P/D scheduling, and NIXL transfer that Triton was never designed to deliver. Existing NVIDIA AI Enterprise customers on Triton continue to receive production branch support during any transition.
       </div>
     </div>
   </div>
@@ -282,14 +283,14 @@
       <span class="chevron" id="chv2">&#9662;</span>
     </div>
     <div class="section-body" id="bdy2">
-      <p>Dynamo is explicitly modular - each component can be used independently. Teams do not have to adopt everything at once. Select a component to understand what it does and which problem from Module 5.1 it addresses:</p>
+      <p>Dynamo is explicitly modular - each component can be used independently. Teams do not have to adopt everything at once. NVIDIA's documentation lists five key features: the Frontend, the KV-aware Router, the SLO Planner, NIXL, and the KV Block Manager. Select a component to understand what it does and which problem from Module 5.1 it addresses:</p>
 
       <div class="comp-wrap">
         <div class="comp-title">Dynamo components - click to explore</div>
         <div class="comp-tabs">
           <button class="comp-tab active" style="background:#1B1464; color:white;" onclick="showComp('frontend')">Frontend</button>
           <button class="comp-tab" style="background:#0a3d62; color:white;" onclick="showComp('router')">KV Router</button>
-          <button class="comp-tab" style="background:#006064; color:white;" onclick="showComp('planner')">Planner</button>
+          <button class="comp-tab" style="background:#006064; color:white;" onclick="showComp('planner')">SLO Planner</button>
           <button class="comp-tab" style="background:#E65100; color:white;" onclick="showComp('nixl')">NIXL</button>
           <button class="comp-tab" style="background:#2E7D32; color:white;" onclick="showComp('kvbm')">KV Block Manager</button>
         </div>
@@ -297,7 +298,7 @@
       </div>
 
       <div class="callout callout-teal">
-        <strong>Adoption path:</strong> Most teams start by adding just the KV Cache-aware router in front of their existing vLLM replicas - this is the lowest-effort change and delivers immediate prefix cache hit rate improvements. The Planner and full disaggregation come next as the fleet grows. NIXL and KV Block Manager offloading are advanced configurations for very long context or extremely large fleets.
+        <strong>Adoption path:</strong> Most teams start by adding just the KV Cache-aware router in front of their existing vLLM replicas - this is the lowest-effort change and delivers immediate prefix cache hit rate improvements. The SLO Planner and full disaggregation come next as the fleet grows. NIXL and KV Block Manager offloading are advanced configurations for very long context or large multi-turn fleets.
       </div>
     </div>
   </div>
@@ -312,9 +313,9 @@
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>The router is the component that directly addresses Module 5.1's routing blindness problem. It operates by maintaining a real-time registry of which prefix hashes each worker currently has cached, then using that registry to make routing decisions that maximise cache hits while still balancing load.</p>
+      <p>The router is the component that directly addresses Module 5.1's routing blindness problem. It operates by maintaining a real-time registry - implemented as a global radix tree - of which prefix hashes each worker currently has cached, then using that registry to make routing decisions that maximise cache hits while still balancing load.</p>
 
-      <p>When a request arrives, Dynamo's router computes a hash of the prompt prefix - typically the system prompt portion that is shared across many requests. It looks up that hash in its registry, finds which workers currently have that block cached, checks those workers' current load and memory pressure, and routes to the best candidate. If no worker has a cache hit, it routes to the least-loaded worker and updates the registry once that worker builds the cache.</p>
+      <p>When a request arrives, Dynamo's router computes a hash of the prompt prefix - typically the system prompt portion shared across many requests. It looks up that hash in the radix tree, finds which workers have that block cached, checks those workers' current load and memory pressure, and routes to the best candidate. If no worker has a cache hit, it routes to the least-loaded worker and updates the registry once that worker builds the cache. Workers publish KV cache events asynchronously as blocks are created or evicted, keeping the global registry continuously up to date.</p>
 
       <div class="router-wrap">
         <div class="router-title">KV Cache-aware router in action - compare routing modes</div>
@@ -326,10 +327,10 @@
         <div class="router-result" id="routerResult"></div>
       </div>
 
-      <p>The router operates in two modes: basic mode (simple load balancing, no cache awareness) and KV-aware mode (full prefix hash tracking). KV-aware mode adds a small overhead to each routing decision - typically under 1ms - which is negligible compared to the TTFT savings from cache hits. The registry is updated asynchronously as workers build and evict cache blocks, so routing decisions are always based on near-real-time cache state.</p>
+      <p>The router operates in two modes: basic mode (simple load balancing, no cache awareness) and KV-aware mode (full prefix hash tracking via global radix tree). KV-aware mode adds a small overhead to each routing decision - typically under 1ms - which is negligible compared to the TTFT savings from cache hits. In NVIDIA's published data on 100,000 real DeepSeek-R1 user queries, KV-aware routing delivered a 3x improvement in TTFT and a 2x reduction in average request latency compared to load-based routing alone.</p>
 
       <div class="callout callout-teal">
-        <strong>The impact on prefix caching:</strong> In Module 3.2 we showed an example where prefix caching dropped TTFT from around 1-2 seconds to well under 200ms for a cached multi‑thousand‑token system prompt on Hopper GPUs. In Module 5.1 we saw how round-robin routing can negate this benefit at fleet scale, driving cache hit rates toward zero as replicas increase. With Dynamo’s KV-aware router, prefix cache hit rates can be restored into the 80-90%+ range for workloads that genuinely reuse a common prefix - effectively making prefix caching behave as intended even with many replicas. In practical customer tests, this routing change alone frequently delivers multi‑x TTFT improvements before any other Dynamo feature is adopted, assuming the underlying engine is already well tuned.
+        <strong>The impact on prefix caching:</strong> In Module 3.2 we showed that prefix caching can drop TTFT dramatically for a shared multi-thousand-token system prompt. In Module 5.1 we saw how round-robin routing negates this benefit at fleet scale, driving cache hit rates toward zero as replicas increase. With Dynamo's KV-aware router, prefix cache hit rates are restored into the 80–95%+ range for workloads with genuine prefix reuse - effectively making prefix caching behave as intended even across many replicas. In NVIDIA's own testing, the routing change alone delivers a 2x TTFT speedup before any other Dynamo feature is adopted, assuming the underlying engine is already well tuned.
       </div>
     </div>
   </div>
@@ -344,7 +345,7 @@
       <span class="chevron" id="chv4">&#9662;</span>
     </div>
     <div class="section-body" id="bdy4">
-      <p>Module 3.6 covered the concept of Prefill/Decode disaggregation. Module 5.1 identified that the operational coordination problem - dynamic ratio adjustment, standardised KV transfer - was the gap. Dynamo provides both. It coordinates dedicated Prefill and Decode worker pools through its Planner, and transfers KV Cache between them via NIXL (NVIDIA Inference Xfer Library), a purpose-built low-latency data transfer library.</p>
+      <p>Module 3.6 covered the concept of Prefill/Decode disaggregation. Module 5.1 identified that the operational coordination problem - dynamic ratio adjustment, standardised KV transfer - was the gap. Dynamo provides both. It coordinates dedicated Prefill and Decode worker pools through its SLO Planner, and transfers KV Cache between them via NIXL (NVIDIA Inference Xfer Library), a purpose-built low-latency data transfer library.</p>
 
       <div class="nixl-wrap">
         <div class="nixl-title">KV Cache transfer via NIXL - Prefill to Decode handoff</div>
@@ -365,34 +366,35 @@
         <div style="font-size:12px; color:#E65100; font-weight:bold; font-family:Arial,sans-serif; margin:10px 0 6px 0;">Transfer bandwidth by interconnect</div>
         <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px;">
           <div class="nixl-row" style="margin-bottom:0; gap:8px; align-items:flex-start;">
-            <div style="font-size:11px; min-width:120px; color:#555; font-family:Arial,sans-serif; padding-top:2px;">NVLink <br> (same node)</div>
+            <div style="font-size:11px; min-width:120px; color:#555; font-family:Arial,sans-serif; padding-top:2px;">NVLink<br>(same node/rack)</div>
             <div style="flex:1;">
               <div class="nixl-bw-bar"><div class="nixl-bw-fill" style="width:95%; background:#2E7D32;"></div></div>
-              <div style="font-size:11px; color:#555; font-family:Arial,sans-serif; margin-top:2px;">~900 GB/s - KV handoff usually adds only a few milliseconds</div>
+              <div style="font-size:11px; color:#555; font-family:Arial,sans-serif; margin-top:2px;">~900 GB/s - KV handoff typically adds only a few milliseconds</div>
             </div>
           </div>
           <div class="nixl-row" style="margin-bottom:0; gap:8px; align-items:flex-start; margin-top:6px;">
-            <div style="font-size:11px; min-width:120px; color:#555; font-family:Arial,sans-serif; padding-top:2px;">InfiniBand HDR <br> (cross-node)</div>
+            <div style="font-size:11px; min-width:120px; color:#555; font-family:Arial,sans-serif; padding-top:2px;">InfiniBand HDR<br>(cross-node)</div>
             <div style="flex:1;">
               <div class="nixl-bw-bar"><div class="nixl-bw-fill" style="width:40%; background:#F57F17;"></div></div>
-              <div style="font-size:11px; color:#555; font-family:Arial,sans-serif; margin-top:2px;">~25 GB/s - KV handoff typically tens of milliseconds</div>
+              <div style="font-size:11px; color:#555; font-family:Arial,sans-serif; margin-top:2px;">~25 GB/s - KV handoff typically tens of milliseconds; net-positive for long-context workloads</div>
             </div>
           </div>
           <div class="nixl-row" style="margin-bottom:0; gap:8px; align-items:flex-start; margin-top:6px;">
-            <div style="font-size:11px; min-width:120px; color:#555; font-family:Arial,sans-serif; padding-top:2px;">Ethernet <br> (cross-node)</div>
+            <div style="font-size:11px; min-width:120px; color:#555; font-family:Arial,sans-serif; padding-top:2px;">Ethernet<br>(cross-node)</div>
             <div style="flex:1;">
               <div class="nixl-bw-bar"><div class="nixl-bw-fill" style="width:15%; background:#C62828;"></div></div>
-              <div style="font-size:11px; color:#555; font-family:Arial,sans-serif; margin-top:2px;">~3 GB/s - KV handoff can be slower than recomputing Prefill</div>
+              <div style="font-size:11px; color:#555; font-family:Arial,sans-serif; margin-top:2px;">~3 GB/s - KV handoff can be slower than recomputing Prefill locally; disaggregation not recommended</div>
             </div>
           </div>
         </div>
-        <div class="nixl-note">NIXL uses GPU-aware, low-copy transfer paths (including GPUDirect RDMA where available) to move KV Cache blocks between Prefill and Decode workers with minimal CPU involvement. The effective interconnect bandwidth and the size of the KV block together determine how much latency the handoff adds, and therefore whether disaggregation is net beneficial. On NVLink within a node or rack, the handoff overhead is usually negligible compared to the hundreds of milliseconds of Prefill time it allows you to isolate. On modern InfiniBand fabrics, tens of milliseconds of additional latency are often acceptable for long-context or reasoning workloads. On standard Ethernet, KV transfers for large contexts can easily be slower than simply recomputing Prefill locally, which is why disaggregation over Ethernet is generally not recommended for production.</div>
+        <div class="nixl-note">NIXL uses GPU-aware, low-copy transfer paths (including GPUDirect RDMA where available) to move KV Cache blocks between Prefill and Decode workers with minimal CPU involvement. The effective interconnect bandwidth and the size of the KV block together determine whether disaggregation is net beneficial. On NVLink the handoff overhead is usually negligible. On modern InfiniBand fabrics, tens of milliseconds of additional latency are often acceptable for long-context or reasoning workloads. On standard Ethernet, KV transfers for large contexts can easily exceed the cost of simply recomputing Prefill locally - which is why disaggregation over Ethernet is not recommended for production.</div>
       </div>
 
-      <p>The Planner component continuously monitors the Prefill and Decode pools and adjusts the ratio dynamically. If Prefill queue depth rises (long prompts accumulating), the Planner can spin up additional Prefill workers from an idle pool or reassign Decode workers temporarily. If Decode demand spikes (many concurrent generations), it shifts the balance the other way. This dynamic adjustment is the operational capability that teams building manual disaggregation with static configurations have always had to build by hand.</p>
+      <p>The SLO Planner component continuously monitors the Prefill and Decode pools and adjusts the ratio dynamically based on queue depth, worker utilisation, and SLO targets (TTFT and inter-token latency). If the Prefill queue backs up - long prompts arriving faster than Prefill workers can process them - the Planner can allocate more workers to Prefill or temporarily shift Decode workers to handle prefill tasks in aggregated mode. If Decode demand spikes, it rebalances the other way. On Hopper-class hardware, NVIDIA's published figures show a single-node disaggregated setup delivers approximately 30% throughput improvement per GPU, scaling to over 2x gains with two-node disaggregated setups (tested with R1 Distilled Llama 70B FP8 using vLLM, 3K ISL / 150 OSL).</p>
 
       <div class="callout callout-purple">
-        <strong>Different TP for Prefill and Decode:</strong> One important capability Dynamo can unlock, when supported by the underlying engine and model configuration, is using different tensor parallelism settings for the two phases. Prefill is typically more compute-bound and can benefit from smaller TP (less AllReduce and communication overhead), while Decode is more memory-bandwidth-bound and can benefit from larger TP (more HBM pooled across GPUs). In a single, tightly coupled server you normally choose one TP setting for both phases. With Dynamo-style disaggregation and compatible engines (for example, specific TRT-LLM configurations), Prefill workers can run at a different TP than Decode workers - allowing each phase to be tuned closer to its own optimum.</div>
+        <strong>Different TP for Prefill and Decode:</strong> One important capability Dynamo can unlock, when supported by the underlying engine and model configuration, is using different tensor parallelism settings for the two phases. Prefill is typically more compute-bound and can benefit from smaller TP (less AllReduce communication overhead), while Decode is more memory-bandwidth-bound and can benefit from larger TP (more HBM pooled across GPUs). In a single, tightly coupled server you normally choose one TP setting for both phases. With Dynamo-style disaggregation and compatible engines (for example, specific TRT-LLM configurations), Prefill workers can run at a different TP than Decode workers - allowing each phase to be tuned closer to its own optimum.
+      </div>
     </div>
   </div>
 
@@ -406,9 +408,9 @@
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
-      <p>Beyond inter-GPU transfer, NIXL also enables KV Cache offloading to lower memory tiers - CPU RAM, NVMe SSD, or even object storage (S3, PowerScale). This addresses a different problem from the routing and disaggregation features: the GPU memory wall for long-context and multi-turn workloads.</p>
+      <p>Beyond inter-GPU transfer, NIXL also enables KV Cache offloading to lower memory tiers - CPU RAM, NVMe SSD, or even object storage (S3, Azure Blob). This addresses a different problem from the routing and disaggregation features: the GPU memory wall for long-context and multi-turn workloads.</p>
 
-      <p>In a multi-turn conversation, KV Cache for previous turns accumulates. A 20-turn conversation with 500 tokens per turn has 10,000 tokens of history - and all of it must be in GPU HBM to generate the next response. For a deployment serving many concurrent long-context users, this quickly exhausts GPU memory. The traditional solution is to evict old KV blocks and recompute them (Prefill) when needed - which is expensive.</p>
+      <p>In a multi-turn conversation, KV Cache for previous turns accumulates. A 20-turn conversation with 500 tokens per turn has 10,000 tokens of history - and all of it must be in GPU HBM to generate the next response without recomputing Prefill. For a deployment serving many concurrent long-context users, this quickly exhausts GPU memory. The traditional solution is to evict old KV blocks and recompute them when needed - which is expensive.</p>
 
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; font-family:Arial,sans-serif;">
         <div style="background:#0F172A; border-radius:10px; padding:14px; text-align:center;">
@@ -437,15 +439,15 @@
         </div>
       </div>
 
-      <p>Dynamo's KV Block Manager moves blocks between these tiers automatically based on access recency and memory pressure. Frequently accessed blocks stay in GPU HBM. Blocks from earlier conversation turns move to CPU RAM. Very old blocks that might still be needed can spill to NVMe or object storage. When a block is needed and is not in GPU HBM, NIXL (together with the surrounding storage stack) can fetch it back asynchronously. In vendor tests with integrated storage platforms, keeping KV blocks in a warm tier instead of recomputing them has translated into significantly higher effective GPU utilisation and large TTFT reductions for long-context, multi-turn workloads - especially when the alternative is repeatedly re-running long Prefill stages.</p>
+      <p>Dynamo's KV Block Manager moves blocks between these tiers automatically based on access recency and memory pressure. Frequently accessed blocks stay in GPU HBM. Blocks from earlier conversation turns move to CPU RAM. Very old blocks can spill to NVMe or object storage. When a block is needed and is not in GPU HBM, NIXL fetches it back asynchronously. In NVIDIA's published testing - 10 multi-turn conversations with 80 users, 100K requests using R1 Distilled Llama 70B FP8 on 2 nodes of H100s - CPU memory offloading resulted in a 40% improvement in TTFT compared to inference-engine-level prefix caching alone. This demonstrates that the tiered offload capability adds meaningful benefit on top of what vLLM or SGLang provide natively.</p>
 
       <div class="callout callout-orange">
-        <strong>When KV offloading matters most:</strong> Multi-turn conversational agents, long-context document analysis, and agentic workflows where the same document is referenced across many tool calls. A customer running a legal document review agent where each conversation references a 50,000-token contract across 30+ turns is the canonical use case. Without KV offloading, each turn after the GPU cache fills pays full Prefill cost on the entire document. With KV offloading, the document's KV blocks persist in CPU RAM or NVMe and are restored to GPU HBM on demand - eliminating the recomputation cost.
+        <strong>When KV offloading matters most:</strong> Multi-turn conversational agents, long-context document analysis, and agentic workflows where the same document is referenced across many tool calls. A customer running a legal document review agent where each conversation references a 50,000-token contract across 30+ turns is the canonical use case. Without KV offloading, each turn after the GPU cache fills pays full Prefill cost on the entire document. With KV offloading to CPU RAM, the document's KV blocks persist in the warm tier and are restored to GPU HBM on demand - eliminating the recomputation cost for the bulk of the context.
       </div>
     </div>
   </div>
 
-  <!-- Section 6: Performance reality -->
+  <!-- Section 6: Performance reality - FIXED mixed workload note + reasoning note -->
   <div class="section-card">
     <div class="section-header" id="hdr6" onclick="toggle(6)">
       <div class="section-title">
@@ -455,10 +457,10 @@
       <span class="chevron" id="chv6">&#9662;</span>
     </div>
     <div class="section-body" id="bdy6">
-      <p>The “up to 30x throughput” claim needs careful context to be useful in customer conversations. It comes from a specific configuration: a very large reasoning model (for example, a DeepSeek-R1–class MoE with long thinking chains) running on a GB200 NVL72 rack-scale system (Blackwell GPUs with 72 devices in a single high‑bandwidth NVLink domain), compared against a more conventional Hopper-based baseline. Under those conditions, both the new hardware and Dynamo’s disaggregation and routing capabilities contribute to the gain. Disaggregation is maximally effective because long thinking chains make the output length extremely large – Decode dominates, and separating Prefill onto dedicated GPUs prevents Prefill workload from interrupting the Decode pool.</p>
+      <p>The "up to 30x throughput" claim needs careful context to be useful in customer conversations. It comes from a specific configuration: a very large reasoning model (DeepSeek-R1 671B MoE with long thinking chains) running on a GB200 NVL72 rack-scale system (Blackwell GPUs with 72 devices in a single high-bandwidth NVLink domain), compared against a Hopper-based baseline without disaggregation. Under those conditions, both the new hardware architecture and Dynamo's disaggregation capabilities contribute to the gain - the figure should not be attributed to Dynamo's software alone.</p>
 
       <div class="perf-wrap">
-        <div class="perf-title">Realistic throughput improvement by scenario - Dynamo vs vLLM/TRT-LLM without Dynamo</div>
+        <div class="perf-title">Throughput improvement by scenario - Dynamo vs baseline without Dynamo</div>
         <div class="perf-controls">
           <button class="perf-btn" style="background:#2E7D32; color:white;" onclick="showPerf('reasoning')">Reasoning model (long thinking)</button>
           <button class="perf-btn" style="background:#1565C0; color:white;" onclick="showPerf('rag')">RAG (long prompt, short output)</button>
@@ -470,16 +472,17 @@
       </div>
 
       <div class="callout callout-green">
-        <strong>The honest framing for customers on H100:</strong> For most enterprise customers on H100 hardware running production LLM workloads, Dynamo’s KV-aware router on top of a well-tuned engine can often deliver multi‑x TTFT improvements by restoring prefix cache hit rates where there is real prefix reuse. When fleet size and workloads justify it, adding disaggregation with a suitable interconnect (typically InfiniBand or NVLink) can unlock further throughput gains. In practice, a well-configured Dynamo deployment on Hopper should be positioned as a “3–6x improvement is achievable in the right workloads and configurations”, not as a universal 30x promise. The largest published numbers require both next‑generation Blackwell hardware and carefully chosen reasoning workloads with ideal traffic patterns.</div>
+        <strong>The honest framing for customers on H100:</strong> For most enterprise customers on H100 hardware running production LLM workloads, Dynamo's KV-aware router on top of a well-tuned engine delivers approximately 2x TTFT improvement by restoring prefix cache hit rates where there is real prefix reuse. When fleet size and workloads justify it, adding disaggregation with a suitable interconnect (InfiniBand or NVLink) can unlock further throughput gains - NVIDIA's own Hopper data shows roughly 2x throughput with two-node disaggregated setups. In practice, "2–3x improvement is achievable on Hopper in the right workloads and configurations" is the defensible positioning. The 30x figure requires both next-generation Blackwell hardware and long reasoning-model thinking chains - it is not a general Dynamo software claim.
+      </div>
     </div>
   </div>
 
-  <!-- Section 7: Problem mapping -->
+  <!-- Section 7: Problem mapping - FIXED heading + removed fourth row -->
   <div class="section-card">
     <div class="section-header" id="hdr7" onclick="toggle(7)">
       <div class="section-title">
         <span class="section-num" style="background:#546E7A;">7</span>
-        Dynamo vs the Four Problems from Module 5.1
+        Dynamo vs the Three Problems from Module 5.1
       </div>
       <span class="chevron" id="chv7">&#9662;</span>
     </div>
@@ -493,68 +496,73 @@
             <tr>
               <td class="cmp-dim">Routing blindness<br><span style="font-weight:normal; color:#666; font-size:12px;">Round-robin destroys prefix cache hit rates</span></td>
               <td>KV Cache-aware Router</td>
-              <td>Tracks prefix hash cache state across all workers in real time. Routes each request to the worker with the best cache match, subject to load constraints. Restores hit rates from ~5% to 80-95%.</td>
+              <td>Tracks prefix hash cache state across all workers in real time via global radix tree. Routes each request to the worker with the best cache match, subject to load constraints. Restores hit rates from near zero (round-robin at scale) to 80–95%. NVIDIA data: 3x TTFT improvement and 2x latency reduction on 100K real R1 queries.</td>
             </tr>
             <tr>
               <td class="cmp-dim">KV Cache locality<br><span style="font-weight:normal; color:#666; font-size:12px;">Multi-turn rebuilds KV Cache on wrong replica</span></td>
               <td>KV Cache-aware Router + KV Block Manager</td>
-              <td>Router uses session affinity where beneficial. KV Block Manager tracks which node holds which blocks. NIXL can transfer blocks between workers if rebalancing is needed - avoiding full recomputation.</td>
+              <td>Router uses session affinity where beneficial. KV Block Manager tracks which node holds which blocks. NIXL can transfer blocks between workers if rebalancing is needed - avoiding full recomputation. Tiered offload to CPU RAM preserves KV across turns without holding HBM. NVIDIA data: 40% TTFT improvement from CPU offload on multi-turn workloads vs engine-level caching alone.</td>
             </tr>
             <tr>
               <td class="cmp-dim">Disaggregation coordination<br><span style="font-weight:normal; color:#666; font-size:12px;">Static P:D ratios, bespoke transfer scripts</span></td>
-              <td>Planner + NIXL</td>
-              <td>Planner dynamically adjusts P:D ratio based on queue depth and worker utilisation. NIXL provides a standardised, high-bandwidth, zero-copy KV transfer protocol - no bespoke scripts needed.</td>
+              <td>SLO Planner + NIXL</td>
+              <td>SLO Planner dynamically adjusts P:D ratio based on queue depth and SLO targets. NIXL provides a standardised, low-copy KV transfer protocol - no bespoke scripts needed. NVIDIA data: ~30% throughput/GPU improvement on single-node Hopper, over 2x gains on two-node disaggregated Hopper (R1 Distilled Llama 70B FP8, vLLM).</td>
             </tr>
           </tbody>
         </table>
       </div>
 
+      <!-- Honest callout on what Dynamo does NOT solve - consistent with 5.1 -->
+      <div class="callout callout-amber">
+        <strong>What Dynamo does not solve - heterogeneous workload routing:</strong> Neither Dynamo nor LLM-d provides a feature that classifies incoming requests by workload type (chat vs RAG vs batch) and routes them to purpose-configured worker pools. Dynamo's SLO Planner adjusts P:D ratios for a single deployment based on queue depth - it does not maintain separate pools per request category. Teams handle heterogeneous workloads through infrastructure-level separation: deploying separate model endpoints per workload class and routing at the API gateway above Dynamo. This is a valid architecture, but it is outside what Dynamo itself provides.
+      </div>
+
       <div class="callout callout-slate">
-        <strong>What Dynamo does not solve:</strong> Per-instance inference engine performance. If vLLM or TRT-LLM is misconfigured, quantisation is wrong, or the GPU is underpowered for the model, Dynamo does not fix those problems. Dynamo is a fleet coordination layer - it amplifies good per-instance performance across a fleet. It does not substitute for correct engine configuration at the node level.
+        <strong>What Dynamo also does not solve:</strong> Per-instance inference engine performance. If vLLM or TRT-LLM is misconfigured, quantisation is wrong, or the GPU is underpowered for the model, Dynamo does not fix those problems. Dynamo is a fleet coordination layer - it amplifies good per-instance performance across a fleet. It does not substitute for correct engine configuration at the node level.
       </div>
     </div>
   </div>
 
-  <!-- Cheat sheet -->
+  <!-- Cheat sheet - FIXED 30x entry with sourced Hopper numbers -->
   <div class="cheatsheet">
     <div class="cheatsheet-label">MODULE 5.2 - DYNAMO CHEAT SHEET</div>
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">What Dynamo is</div>
-        <div class="cheat-def">Fleet coordination layer above inference engines. Not a replacement for vLLM/TRT-LLM - wraps them. Announced GTC March 2025. Open-source (ai-dynamo/dynamo). Rust core, Python extensible.</div>
+        <div class="cheat-def">Successor to Triton Inference Server. Fleet coordination layer above inference engines. Not a replacement for vLLM/TRT-LLM - wraps them. Announced GTC March 2025. Open-source (ai-dynamo/dynamo). Rust core, Python extensible.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">KV Cache-aware Router</div>
-        <div class="cheat-def">Tracks prefix hash cache state across all workers in real time. Routes requests to workers with cache hits. Restores prefix cache hit rates from ~5% (round-robin at scale) to 80-95%. Biggest single-component ROI.</div>
+        <div class="cheat-def">Tracks prefix hash cache state across all workers via global radix tree. Routes requests to workers with cache hits. NVIDIA data: 3x TTFT improvement and 2x latency reduction on 100K real R1 queries vs load-based routing. Biggest single-component ROI.</div>
       </div>
       <div class="cheat-item">
-        <div class="cheat-term">Planner / Scheduler</div>
-        <div class="cheat-def">Dynamically adjusts Prefill:Decode worker ratio based on real-time queue depth and utilisation. Eliminates the manual static P:D ratio problem from Module 5.1. Can spin workers up/down as demand shifts.</div>
+        <div class="cheat-term">SLO Planner / Scheduler</div>
+        <div class="cheat-def">Dynamically adjusts Prefill:Decode worker ratio based on real-time queue depth and SLO targets (TTFT, ITL). Eliminates the manual static P:D ratio problem from Module 5.1. Can shift workers between aggregated and disaggregated modes based on demand.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">NIXL (NVIDIA Inference Xfer Library)</div>
-        <div class="cheat-def">Zero-copy GPU-to-GPU KV Cache transfer library. Uses GPUDirect RDMA. NVLink: ~2ms (same node), InfiniBand: ~20-40ms (cross-node), Ethernet: not viable. Also handles CPU RAM and NVMe offload tiers.</div>
+        <div class="cheat-def">Zero-copy GPU-to-GPU KV Cache transfer. Uses GPUDirect RDMA where available. NVLink: ~900 GB/s (negligible handoff latency), InfiniBand: ~25 GB/s (tens of ms, acceptable for long-context), Ethernet: ~3 GB/s (not recommended for disaggregation). Also handles CPU RAM and NVMe offload tiers.</div>
       </div>
       <div class="cheat-item">
-        <div class="cheat-term">KV Block Manager</div>
-        <div class="cheat-def">Fleet-wide KV Cache block registry. Tracks which worker holds which blocks. Manages tiered offload: GPU HBM (hot) → CPU RAM (warm) → NVMe/object storage (cold). Eliminates KV recomputation for long-context multi-turn.</div>
+        <div class="cheat-term">KV Block Manager (KVBM)</div>
+        <div class="cheat-def">Fleet-wide KV Cache block registry. Manages tiered offload: GPU HBM (hot) → CPU RAM (warm) → NVMe/object storage (cold). NVIDIA data: 40% TTFT improvement from CPU offload on multi-turn workloads (80 users, 10-turn conversations on H100). Extends effective KV capacity beyond GPU HBM.</div>
       </div>
       <div class="cheat-item">
-        <div class="cheat-term">30x throughput claim</div>
-        <div class="cheat-def">Specific to DeepSeek-R1 671B on GB200 NVL72 (72-GPU rack-scale NVLink). Realistic H100 improvement: 2-4x from KV router alone, 3-6x with full disaggregation. Still significant - context matters for customer conversations.</div>
+        <div class="cheat-term">Performance numbers to use</div>
+        <div class="cheat-def">Hopper + KV router: ~2x TTFT improvement (sourced). Hopper + two-node disaggregation: ~2x throughput (sourced). GB200 NVL72 + reasoning model: up to 30x (hardware + software combined, not Dynamo alone). Use "2–3x on H100 in the right workload" as the defensible H100 claim.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Different TP per phase</div>
-        <div class="cheat-def">Disaggregation enables different tensor parallelism for Prefill (lower TP, less AllReduce) vs Decode (higher TP, more HBM bandwidth pooled). Not possible in coupled single-server deployments.</div>
+        <div class="cheat-def">Disaggregation enables different tensor parallelism for Prefill (lower TP, less AllReduce) vs Decode (higher TP, more HBM bandwidth pooled). Not possible in coupled single-server deployments. Engine and model configuration must support it.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">When to recommend Dynamo</div>
-        <div class="cheat-def">16+ GPU fleet with multiple replicas, high prefix cache reuse (shared system prompts), disaggregated serving needed, mixed workload types, or multi-turn / long-context agentic workloads with KV memory pressure.</div>
+        <div class="cheat-def">16+ GPU fleet with multiple replicas, high prefix cache reuse (shared system prompts), disaggregated serving needed, or multi-turn / long-context agentic workloads with KV memory pressure. Not needed for single-node or small deployments - the Part 4 stack is sufficient there.</div>
       </div>
     </div>
   </div>
 
-  <!-- Quiz -->
+  <!-- Quiz (unchanged - already correct) -->
   <div class="quiz-section">
     <div class="quiz-label">QUICK CHECK</div>
     <div class="quiz-q">A customer has 32x H100 SXM GPUs running 8 vLLM replicas of Llama 3 70B FP8 (4 GPUs each, TP=4). They have a RAG application where every request includes the same 6,000-token document index as a system prompt - so prefix caching is enabled. They use a standard load balancer with round-robin routing. TTFT is averaging 2.1 seconds and they cannot explain why, since prefix caching should bring it under 200ms. A colleague suggests they also consider full Dynamo disaggregation with dedicated Prefill and Decode pools. Which Dynamo adoption sequence gives the highest ROI most quickly, and what is the key infrastructure prerequisite to check before committing to full disaggregation?</div>
@@ -565,7 +573,7 @@
       </div>
       <div class="quiz-option" onclick="selectOption(this,'b')">
         <span class="opt-letter" id="lbl-b">B.</span>
-        Replace the round-robin load balancer with Dynamo's KV Cache-aware router as the first step - this alone will restore prefix cache hit rates from near zero to 80-95% and drop TTFT from 2.1s to under 200ms. The infrastructure prerequisite to check before full disaggregation is interconnect: if the 8 nodes are connected only by standard Ethernet, cross-node NIXL KV transfer bandwidth (~3 GB/s) makes disaggregation impractical. InfiniBand or NVLink (if within one rack) is required for disaggregation to be net-positive. With InfiniBand confirmed, the second phase is enabling Dynamo's Planner with a split Prefill/Decode pool - which delivers further throughput gains for this RAG workload where Prefill is the bottleneck.
+        Replace the round-robin load balancer with Dynamo's KV Cache-aware router as the first step - this alone will restore prefix cache hit rates from near zero to 80-95% and drop TTFT significantly. The infrastructure prerequisite to check before full disaggregation is interconnect: if the 8 nodes are connected only by standard Ethernet, cross-node NIXL KV transfer bandwidth (~3 GB/s) makes disaggregation impractical. InfiniBand or NVLink (if within one rack) is required for disaggregation to be net-positive. With InfiniBand confirmed, the second phase is enabling Dynamo's SLO Planner with a split Prefill/Decode pool - which delivers further throughput gains for this RAG workload where Prefill is the bottleneck.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
@@ -607,35 +615,35 @@
       name:'Dynamo Frontend',
       role:'High-performance OpenAI-compatible API server',
       body:'Written in Rust for maximum throughput and minimal latency overhead. Provides the same OpenAI-compatible HTTP API that applications already use - so client code requires no changes. Handles request streaming, manages the connection lifecycle, and feeds requests to the KV-aware router. At very high request rates, the Rust implementation adds significantly less overhead than Python-based API servers.',
-      solves:'Addresses the operational complexity problem - a single, production-grade entry point for the entire fleet, regardless of backend.',
+      solves:'Addresses the operational complexity problem - a single, production-grade entry point for the entire fleet, regardless of backend engine.',
       tags:[{color:'#1B1464',text:'Rust core'},{color:'#006064',text:'OpenAI-compatible'},{color:'#2E7D32',text:'Streaming support'}]
     },
     router:{
       name:'KV Cache-aware Router',
       role:'Fleet-wide prefix cache-aware request dispatcher',
-      body:'The router\'s central innovation is a real-time registry of prefix hash → worker cache state. When a request arrives, the router hashes the prefix portion of the prompt, looks up which workers currently have that hash cached, checks those workers\' current load and KV memory pressure, and routes to the best candidate. If no worker has a hit, it routes to the least-loaded worker and populates the registry once that worker builds the cache. Two modes: basic (load-balanced only) and KV-aware (full prefix tracking).',
+      body:'The router maintains a real-time global radix tree of prefix hash → worker cache state. When a request arrives, the router hashes the prefix portion of the prompt, finds which workers have that hash cached, checks their current load and KV memory pressure, and routes to the best candidate. Workers publish KV cache events asynchronously as blocks are created or evicted. Two modes: basic (load-balanced only) and KV-aware (full prefix tracking). NVIDIA published data: 3x TTFT improvement and 2x average latency reduction on 100K real DeepSeek-R1 queries vs load-based routing.',
       solves:'Directly addresses routing blindness (Problem 1) and partially addresses KV locality (Problem 2). The single highest-ROI Dynamo component for deployments with shared system prompts.',
-      tags:[{color:'#C62828',text:'Fixes routing blindness'},{color:'#0a3d62',text:'Real-time cache registry'},{color:'#7B1FA2',text:'Hash-based prefix matching'}]
+      tags:[{color:'#C62828',text:'Fixes routing blindness'},{color:'#0a3d62',text:'Global radix tree registry'},{color:'#7B1FA2',text:'Hash-based prefix matching'}]
     },
     planner:{
-      name:'Planner / Scheduler',
-      role:'Dynamic Prefill:Decode ratio manager',
-      body:'The Planner monitors queue depth, worker utilisation, and memory pressure across the Prefill and Decode pools continuously. When the Prefill queue backs up (long prompts arriving faster than Prefill workers can process them), it allocates more workers to Prefill. When Decode demand spikes, it rebalances. Workers can be dynamically reassigned between roles without restarting - they receive new routing assignments from the Planner via a lightweight control plane. The Planner also manages worker startup and shutdown for cost-efficient scaling.',
-      solves:'Directly addresses the disaggregation coordination gap (Problem 3) - dynamic P:D ratio is now automatic rather than a manual static configuration decision.',
-      tags:[{color:'#E65100',text:'Dynamic P:D ratio'},{color:'#2E7D32',text:'Auto-scaling workers'},{color:'#1565C0',text:'Queue depth monitoring'}]
+      name:'SLO Planner / Scheduler',
+      role:'Dynamic Prefill:Decode ratio manager with SLO awareness',
+      body:'The SLO Planner monitors queue depth, worker utilisation, and memory pressure across Prefill and Decode pools continuously, combining these with application SLO targets (TTFT and ITL). When the Prefill queue backs up, it allocates more workers to Prefill or shifts Decode workers to handle prefill tasks in aggregated mode. When Decode demand spikes, it rebalances. Workers can be dynamically reassigned between roles via a lightweight control plane. The Planner can also manage worker startup and shutdown for cost-efficient scaling. Alibaba testing reported 5% lower TCO with Planner autoscaling.',
+      solves:'Directly addresses the disaggregation coordination gap (Problem 3) - dynamic P:D ratio adjustment is now automatic rather than a static manual decision at deploy time.',
+      tags:[{color:'#E65100',text:'Dynamic P:D ratio'},{color:'#2E7D32',text:'SLO-driven scaling'},{color:'#1565C0',text:'Queue depth monitoring'}]
     },
     nixl:{
       name:'NIXL - NVIDIA Inference Xfer Library',
       role:'Zero-copy GPU-to-GPU KV Cache transfer',
-      body:'NIXL is a purpose-built data transfer library for moving KV Cache blocks between GPUs (and between GPU and CPU/storage) with minimal latency and CPU involvement. It uses GPUDirect RDMA where available to move data directly between GPU HBM memories over NVLink or InfiniBand without copying through CPU RAM. NIXL also handles the tiered offload path - moving blocks asynchronously to CPU RAM or NVMe when GPU HBM pressure is high, and restoring them when needed. At the Prefill→Decode handoff, NIXL transfers the freshly built KV blocks to the designated Decode worker before the first token is returned.',
-      solves:'Provides the standardised KV transfer protocol that disaggregation needs (Problem 3) and enables KV offloading for long-context workloads.',
+      body:'NIXL is a purpose-built data transfer library for moving KV Cache blocks between GPUs (and between GPU and CPU/storage) with minimal latency and CPU involvement. It uses GPUDirect RDMA where available to move data directly between GPU HBM memories over NVLink or InfiniBand without copying through CPU RAM. NIXL also handles the tiered offload path - moving blocks asynchronously to CPU RAM or NVMe when GPU HBM pressure is high, and restoring them when needed. At the Prefill→Decode handoff in disaggregated serving, NIXL transfers the freshly built KV blocks to the designated Decode worker before the first token is returned.',
+      solves:'Provides the standardised KV transfer protocol that disaggregation needs (Problem 3) and enables KV offloading for long-context workloads (Problem 2 extension). Requires InfiniBand or NVLink for cross-node use; Ethernet is not viable.',
       tags:[{color:'#E65100',text:'Zero-copy RDMA'},{color:'#546E7A',text:'NVLink + InfiniBand'},{color:'#1B5E20',text:'Tiered offload'}]
     },
     kvbm:{
       name:'KV Block Manager (KVBM)',
       role:'Fleet-wide KV Cache block registry and tiered memory manager',
-      body:'The KV Block Manager maintains a fleet-wide map of which KV Cache blocks exist, where they are stored (GPU HBM, CPU RAM, NVMe, or object storage), and how recently they were accessed. It implements an LRU-like eviction policy - least-recently-used blocks are moved to lower, cheaper tiers, while frequently accessed blocks stay in GPU HBM. This extends the effective KV Cache capacity from GPU HBM size (80-141 GB per GPU) to CPU RAM (0.5-2 TB per node) to effectively unlimited with NVMe or object storage. Particularly impactful for multi-turn conversations and long-context agentic workloads.',
-      solves:'Addresses the KV Cache locality problem for long-context workloads (Problem 2) and reduces OOM risk from KV accumulation.',
+      body:'The KV Block Manager maintains a fleet-wide map of which KV Cache blocks exist, where they are stored (GPU HBM, CPU RAM, NVMe, or object storage), and how recently they were accessed. It implements an LRU-like eviction policy - least-recently-used blocks are moved to lower tiers, while frequently accessed blocks stay in GPU HBM. NVIDIA published data: CPU memory offloading resulted in a 40% TTFT improvement on multi-turn workloads (80 users, 10-turn conversations, H100) compared to inference-engine prefix caching alone. Particularly impactful for multi-turn conversations and long-context agentic workloads.',
+      solves:'Addresses KV Cache locality for long-context workloads (Problem 2) and reduces OOM risk from KV accumulation. Works in conjunction with NIXL for data movement across tiers.',
       tags:[{color:'#7B1FA2',text:'Tiered cache management'},{color:'#006064',text:'LRU eviction'},{color:'#2E7D32',text:'Multi-turn efficiency'}]
     }
   };
@@ -663,7 +671,7 @@
         {color:'rgba(46,125,50,0.8)', label:'Worker 3',cache:'6K-tok system prompt\ncached: YES',hit:'Cache MISS\n(25% chance)'},
         {color:'rgba(198,40,40,0.8)', label:'Worker 4',cache:'Restarted 10 min ago\nno cache yet',hit:'Cache MISS\n(25% chance)'},
       ],
-      result:'Round-robin routing: incoming request randomly assigned to one of 4 workers. Only 2 of 4 workers have the 6K-token system prompt cached. Probability of a cache hit: ~50% in the best case - and lower still if cache was recently evicted under KV pressure. Observed TTFT: ~2.1s (mostly cold Prefill). Prefix caching provides minimal benefit.'
+      result:'Round-robin routing: incoming request randomly assigned to one of 4 workers. Only 2 of 4 workers have the 6K-token system prompt cached. Probability of a cache hit: ~50% in the best case - and lower still if cache was recently evicted under KV pressure. Observed TTFT: ~2.1s (mostly cold Prefill). Prefix caching provides minimal benefit at fleet scale.'
     },
     kv:{
       nodes:[
@@ -672,7 +680,7 @@
         {color:'rgba(46,125,50,0.5)', label:'Worker 3',cache:'6K-tok system prompt\ncached: YES\nLoad: 80% (high)',hit:'Not selected\n(overloaded)'},
         {color:'rgba(198,40,40,0.5)', label:'Worker 4',cache:'No cache\nLoad: 20%',hit:'Not selected\n(no cache)'},
       ],
-      result:'Dynamo KV-aware router: prefix hash of 6K-token system prompt computed. Registry shows Workers 1 and 3 have it cached. Worker 3 is at 80% load - too high. Worker 1 is at 65% - selected. Request routed to Worker 1 for a guaranteed cache hit. Observed TTFT: <150ms (only new tokens processed in Prefill). Cache hit rate across fleet: 85-95% sustained.'
+      result:'Dynamo KV-aware router: prefix hash of 6K-token system prompt computed. Global radix tree shows Workers 1 and 3 have it cached. Worker 3 is at 80% load - too high. Worker 1 is at 65% - selected. Request routed to Worker 1 for a guaranteed cache hit. Observed TTFT: well under the cold-Prefill baseline. NVIDIA published data: 3x TTFT improvement and 2x latency reduction on 100K real R1 queries with KV-aware routing.'
     }
   };
   function showRouter(mode){
@@ -688,44 +696,44 @@
   }
   showRouter('blind');
 
-  /* ── Perf chart ── */
+  /* ── Perf chart - FIXED mixed workload note, reasoning note ── */
   var perfData={
     reasoning:{
-      title:'Reasoning model (DeepSeek-R1–class, long thinking chains)',
+      title:'Reasoning model (DeepSeek-R1-class, long thinking chains)',
       rows:[
-        {label:'Baseline <br> (Hopper, no Dynamo)',      val:10, color:'#546E7A',note:'100% – reference'},
-        {label:'+ KV-aware router <br> (Hopper)',        val:25, color:'#1565C0',note:'~2–3x on similar HW'},
-        {label:'+ Disaggregation <br> (Hopper)',         val:40, color:'#2E7D32',note:'~4x total – Decode freed from Prefill interruption'},
-        {label:'+ Blackwell GB200 <br> NVL72 + tuning',  val:100,color:'#E65100',note:'Order-of-magnitude gains vs original Hopper baseline'},
+        {label:'Baseline<br>(Hopper, no Dynamo)',       val:10,  color:'#546E7A', note:'100% - reference'},
+        {label:'+ KV-aware router<br>(Hopper)',          val:22,  color:'#1565C0', note:'~2x TTFT improvement - sourced from NVIDIA R1 query data'},
+        {label:'+ Disaggregation<br>(Hopper, 2-node)',   val:40,  color:'#2E7D32', note:'~2x throughput vs baseline - sourced from NVIDIA Hopper disaggregation data'},
+        {label:'+ Blackwell GB200<br>NVL72 + Dynamo',    val:100, color:'#E65100', note:'Up to 30x vs Hopper baseline - hardware + software combined, not Dynamo alone'},
       ],
-      note:'Reasoning models produce extremely long thinking-chain outputs. Decode dominates – sometimes 80–90% of total compute. Disaggregation has high impact because dedicated Prefill workers no longer interrupt long Decode sequences. When these software gains are combined with newer rack-scale hardware (e.g., GB200 NVL72), NVIDIA has demonstrated order-of-magnitude throughput improvements versus earlier-generation Hopper baselines. It is important to attribute this to both hardware and orchestration, not Dynamo alone.'
+      note:'Reasoning models produce extremely long thinking-chain outputs - Decode can dominate 80–90% of total compute. Disaggregation has high impact because dedicated Prefill workers no longer interrupt long Decode sequences. The 30x figure (NVIDIA-published for GB200 NVL72 + DeepSeek-R1) combines new hardware architecture with Dynamo orchestration; it should not be presented as a Dynamo-software-only improvement. The Hopper disaggregation gain (~2x on 2-node) is the defensible customer claim for current infrastructure.'
     },
     rag:{
       title:'RAG workload (long prompt, short output)',
       rows:[
-        {label:'Baseline (no Dynamo)',val:20,color:'#546E7A',note:'100% - reference'},
-        {label:'+ KV-aware router',   val:75,color:'#1565C0',note:'3-4x - shared document prefix now hits cache'},
-        {label:'+ Disaggregation',    val:100,color:'#2E7D32',note:'~5x total - Prefill pool handles long prompts independently'},
+        {label:'Baseline (no Dynamo)',val:20, color:'#546E7A', note:'100% - reference'},
+        {label:'+ KV-aware router',   val:60, color:'#1565C0', note:'~3x - shared document prefix now hits cache consistently'},
+        {label:'+ Disaggregation',    val:100,color:'#2E7D32', note:'~5x total - Prefill pool handles long prompts independently'},
       ],
-      note:'RAG workloads have long shared prompts (document index) and short outputs. The KV-aware router delivers most of the benefit by restoring prefix cache hit rates. Disaggregation adds further improvement by freeing the Decode pool from long Prefill interruption. Best H100 scenario for Dynamo adoption.'
+      note:'RAG workloads have long shared prompts (document index) and short outputs. The KV-aware router delivers most of the benefit by restoring prefix cache hit rates. Disaggregation adds further improvement by freeing the Decode pool from long Prefill interruption. This is the best H100 scenario for Dynamo ROI - shared system prompts mean the router pays off immediately.'
     },
     chat:{
       title:'Interactive chat (short prompt, medium output)',
       rows:[
-        {label:'Baseline (no Dynamo)',val:50,color:'#546E7A',note:'100% - reference'},
-        {label:'+ KV-aware router',   val:80,color:'#1565C0',note:'~1.6x - modest benefit, prompts are short'},
-        {label:'+ Disaggregation',    val:100,color:'#2E7D32',note:'~2x total - some improvement from P/D separation'},
+        {label:'Baseline (no Dynamo)',val:50, color:'#546E7A', note:'100% - reference'},
+        {label:'+ KV-aware router',   val:80, color:'#1565C0', note:'~1.6x - modest benefit; prompts are short so Prefill cost is already low'},
+        {label:'+ Disaggregation',    val:100,color:'#2E7D32', note:'~2x total - some improvement from P/D separation'},
       ],
-      note:'Short-prompt interactive chat benefits least from Dynamo. Prefill is fast for short prompts, so disaggregation overhead is proportionally larger. KV routing helps only if system prompts are reused. Dynamo is overkill for pure interactive chat deployments - the Part 4 stack is sufficient.'
+      note:'Short-prompt interactive chat benefits least from Dynamo. Prefill is fast for short prompts, so disaggregation overhead is proportionally larger relative to the savings. KV routing helps only if system prompts are substantially reused. For pure interactive chat deployments without shared long prompts, the Part 4 stack is likely sufficient - Dynamo adds operational complexity without proportional benefit.'
     },
     mixed:{
-      title:'Mixed workload fleet (chat + RAG + code + batch)',
+      title:'Mixed workload fleet (chat + RAG + code + batch on same cluster)',
       rows:[
-        {label:'Baseline (no Dynamo)',val:15,color:'#546E7A',note:'100% - reference, severe contention between workload types'},
-        {label:'+ KV-aware router',   val:45,color:'#1565C0',note:'3x - cache hits restored, workload routing by type'},
-        {label:'+ Disaggregation',    val:100,color:'#2E7D32',note:'~6x - full optimisation across all types'},
+        {label:'Baseline (no Dynamo)',     val:15,  color:'#546E7A', note:'100% - reference; workload types contend on shared resources'},
+        {label:'+ KV-aware router',        val:45,  color:'#1565C0', note:'~3x - cache hit rates restored for workloads with prefix reuse'},
+        {label:'+ Disaggregation + P/D',   val:100, color:'#2E7D32', note:'~6x - P/D ratio optimised dynamically across the mixed demand'},
       ],
-      note:'Mixed-workload fleets see the greatest absolute benefit from Dynamo because the baseline is worst-case: contention between incompatible workload types on shared resources. Dynamo\'s ability to classify and route to specialised pools - each with optimal P:D ratio and batch configuration - resolves the heterogeneous workload problem directly.'
+      note:'Mixed-workload fleets benefit primarily from the KV router (restoring cache hit rates for any request type with shared prefixes) and from the SLO Planner (dynamically adjusting P/D ratio as the demand mix shifts between short-prompt chat and long-prompt RAG). Note: Dynamo does not route different workload types to purpose-configured worker pools - that level of per-request-class specialisation requires infrastructure-level separation above Dynamo. The gains shown here come from KV cache efficiency and dynamic P/D adjustment, not from workload classification.'
     }
   };
   function showPerf(key){
@@ -761,10 +769,10 @@
     var r=document.getElementById('quiz-result'); r.style.display='block';
     if(selected==='b'){
       r.style.background='#E8F5E9';
-      r.innerHTML='<strong>Correct - and the interconnect check is the detail that matters in a real architecture conversation.</strong><br><br><strong>Step 1 - KV-aware router first:</strong> The 2.1s TTFT on a deployment with a fixed 6,000-token system prompt and prefix caching enabled is a textbook Module 5.1 routing blindness problem. With 8 replicas and round-robin routing, each request has only a small chance of landing on the specific replica that happens to have the 6,000-token prefix cached – and even that replica may have evicted it under KV pressure. Deploying Dynamo\'s KV-aware router restores high prefix cache hit rates across the fleet. A multi‑thousand‑token Prefill that used to run cold most of the time now hits cache for the shared prefix; only the new query tokens need Prefill, so TTFT can drop from >2s into the sub‑second range on H100 when the engine is tuned.<br><br><strong>Step 2 - Check interconnect before disaggregation:</strong> For this RAG workload, disaggregation is the right next step because Prefill is the main bottleneck (long 6,000-token system prompts) and separating Prefill workers from Decode workers would free the Decode pool from interruption. However, KV transfer only adds net benefit when interconnect bandwidth is high enough. The prerequisite check: are the 8 nodes (32 GPUs across 8 4-GPU nodes) connected by InfiniBand/NVLink or only standard Ethernet? On Ethernet, transferring large KV blocks for every request can take hundreds of milliseconds or more and may even exceed the cost of running Prefill locally, eliminating the benefit of disaggregation. On modern InfiniBand or NVLink, KV transfers typically complete in tens of milliseconds or less, making disaggregation clearly net-positive for long-context workloads.<br><br><strong>Why not A:</strong> Jumping to full disaggregation without first fixing routing misses the fastest, lowest‑risk win from the KV router, which can be deployed immediately with no changes to engine configuration.<br><br><strong>Why not C:</strong> FP8 is already a strong fit for H100 – switching to more aggressive quantisation like INT4 would mostly impact quality and does not address a routing-bound TTFT problem. The 2.1s TTFT here is a routing issue, not a quantisation issue.<br><br><strong>Why not D:</strong> Adding more replicas with round-robin routing makes the routing blindness problem worse, not better – the prefix cache is spread across more replicas, so each request has an even lower probability of hitting a warm cache.';
+      r.innerHTML='<strong>Correct - and the interconnect check is the detail that matters in a real architecture conversation.</strong><br><br><strong>Step 1 - KV-aware router first:</strong> The 2.1s TTFT on a deployment with a fixed 6,000-token system prompt and prefix caching enabled is a textbook Module 5.1 routing blindness problem. With 8 replicas and round-robin routing, each request has only a small chance of landing on the specific replica that has the 6,000-token prefix cached - and even that replica may have evicted it under KV pressure. Deploying Dynamo\'s KV-aware router restores high prefix cache hit rates across the fleet. The shared prefix now hits cache for the overwhelming majority of requests; only the new query tokens need Prefill, so TTFT drops substantially from the 2.1s cold-Prefill baseline. NVIDIA\'s published data shows a 3x TTFT improvement from the router alone on real workloads.<br><br><strong>Step 2 - Check interconnect before disaggregation:</strong> For this RAG workload, disaggregation is the right next step because Prefill is the main bottleneck (long 6,000-token prompts) and separating Prefill workers from Decode workers frees the Decode pool from interruption. However, the key prerequisite is interconnect bandwidth: are the 8 nodes connected by InfiniBand or NVLink, or only standard Ethernet? On Ethernet (~3 GB/s), transferring large KV blocks for every request can take hundreds of milliseconds - easily exceeding the cost of running Prefill locally and negating all disaggregation benefit. On InfiniBand, KV transfers complete in tens of milliseconds, making disaggregation clearly net-positive for long-context workloads. This is the check that separates a well-informed architecture recommendation from a naive "just enable disaggregation" response.<br><br><strong>Why not A:</strong> Jumping to full disaggregation without first fixing routing misses the fastest, lowest-risk win from the KV router, which can be deployed with no changes to engine configuration.<br><br><strong>Why not C:</strong> FP8 is already a strong quantisation choice for H100. Switching to more aggressive quantisation addresses model size, not routing-bound TTFT. The 2.1s figure is a fleet routing problem, not a per-GPU compute problem.<br><br><strong>Why not D:</strong> Adding more replicas under round-robin routing makes the routing blindness problem worse - the prefix cache is spread across more replicas, reducing each request\'s probability of hitting a warm cache even further.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The 2.1s TTFT is a routing blindness problem (Module 5.1 Problem 1) - the 6,000-token prefix cache is built on each of the 8 replicas but round-robin routing sends most requests to replicas without the cache. The highest-ROI first step is Dynamo\'s KV Cache-aware router, which restores prefix hit rates to 85-95% and drops TTFT from 2.1s to under 200ms with no hardware or engine changes. The key prerequisite before adding full disaggregation is verifying interconnect bandwidth: InfiniBand is required for NIXL KV transfer to be net-positive. Standard Ethernet (3 GB/s) makes cross-node KV transfer slower than local cold Prefill, negating all disaggregation benefits.';
+      r.innerHTML='<strong>Not quite.</strong> Option B is correct. The 2.1s TTFT is a routing blindness problem (Module 5.1 Problem 1) - the 6,000-token prefix cache is built on each of the 8 replicas but round-robin routing sends most requests to replicas without a warm cache. The highest-ROI first step is Dynamo\'s KV Cache-aware router, which restores prefix hit rates and drops TTFT substantially with no hardware or engine changes. The key prerequisite before adding full disaggregation is verifying interconnect bandwidth: InfiniBand is required for NIXL KV transfer to be net-positive. Standard Ethernet (~3 GB/s) makes cross-node KV transfer slower than local cold Prefill, negating all disaggregation benefits.';
     }
     document.getElementById('check-btn').style.display='none';
   }
