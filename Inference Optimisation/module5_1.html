@@ -52,6 +52,7 @@
   .callout-purple   { background:#F3E8FD; border-left:4px solid #7B1FA2; }
   .callout-red      { background:#FFEBEE; border-left:4px solid #C62828; }
   .callout-teal     { background:#E0F7FA; border-left:4px solid #006064; }
+  .callout-amber    { background:#FFF8E1; border-left:4px solid #F9A825; }
 
   /* ── Scaling wall visualiser ── */
   .wall-wrap { background:#0F172A; border-radius:14px; padding:24px; margin:18px 0; font-family:Arial,sans-serif; color:white; }
@@ -60,7 +61,7 @@
   .wall-btn { border:none; border-radius:6px; padding:6px 14px; font-size:12px; font-family:Arial,sans-serif; font-weight:bold; cursor:pointer; }
   .wall-chart { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
   .wall-row  { display:flex; align-items:center; gap:10px; }
-  .wall-label { font-size:11px; opacity:0.6; min-width:100px; text-align:right; font-family:Arial,sans-serif; }
+  .wall-label { font-size:11px; opacity:0.6; min-width:160px; text-align:right; font-family:Arial,sans-serif; }
   .wall-bar-bg { flex:1; background:rgba(255,255,255,0.08); border-radius:4px; height:22px; overflow:hidden; }
   .wall-bar-fill { height:22px; border-radius:4px; display:flex; align-items:center; padding-left:8px; font-size:11px; font-weight:bold; color:white; transition:width 0.4s; }
   .wall-note { font-size:12px; opacity:0.5; line-height:1.7; margin-top:6px; }
@@ -69,7 +70,6 @@
   .prob-card { border-radius:12px; padding:18px 20px; margin-bottom:10px; border-left:4px solid; }
   .prob-title { font-size:14px; font-weight:bold; font-family:Arial,sans-serif; margin-bottom:6px; }
   .prob-body  { font-size:13.5px; line-height:1.8; color:#333; }
-  .prob-impact { font-size:12.5px; font-family:Arial,sans-serif; margin-top:8px; font-weight:bold; }
 
   /* ── KV locality visual ── */
   .kv-wrap { background:#F3E8FD; border:1px solid #CE93D8; border-radius:12px; padding:20px 22px; margin:18px 0; font-family:Arial,sans-serif; }
@@ -82,16 +82,6 @@
   .kv-node-body  { font-size:11px; color:white; opacity:0.65; line-height:1.6; }
   .kv-node-cache { font-size:12px; font-weight:bold; color:white; margin-top:6px; font-family:monospace; }
   .kv-note { font-size:12.5px; color:#444; line-height:1.7; background:white; border-radius:6px; padding:10px 12px; }
-
-  /* ── Gap analysis table ── */
-  .gap-table { width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:13px; margin:16px 0; }
-  .gap-table th { background:#37474F; color:white; padding:10px 12px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
-  .gap-table td { padding:11px 12px; border-bottom:1px solid #F0F0F0; vertical-align:top; line-height:1.6; }
-  .gap-table tr:nth-child(even) td { background:#F8F8F8; }
-  .gap-table tr:last-child td { border-bottom:none; }
-  .gap-prob   { font-weight:bold; color:#37474F; }
-  .gap-limit  { color:#C62828; }
-  .gap-need   { color:#2E7D32; font-weight:bold; }
 
   /* Key items */
   .key-item  { display:flex; gap:16px; margin-bottom:16px; align-items:flex-start; }
@@ -163,7 +153,7 @@
 
   <div class="intro-card">
     <p>Part 4 ended with a production stack that works well for most teams: vLLM or TRT-LLM on a node, Triton in front, quantisation applied, parallelism configured. For a team serving thousands of requests per day on a handful of GPUs, this stack is close to optimal. The problems begin when the scale jumps by two orders of magnitude.</p>
-    <p>At the scale of inference deployments - hundreds of GPUs, millions of requests per day, dozens of model variants, mixed workloads with vastly different prompt and output lengths - the current stack exposes four structural limits that no amount of configuration tuning can fully overcome. These limits are not bugs in vLLM or TRT-LLM. They are architectural gaps between what single-node inference servers were designed to do and what fleet-scale inference actually requires. NVIDIA Dynamo and LLM-d exist specifically to close these gaps.</p>
+    <p>At the scale of large inference deployments - hundreds of GPUs, millions of requests per day, long-running conversations, and disaggregated Prefill/Decode pools - the current stack exposes three structural limits that no amount of configuration tuning can fully overcome. These limits are not bugs in vLLM or TRT-LLM. They are architectural gaps between what single-node inference servers were designed to do and what fleet-scale inference actually requires. NVIDIA Dynamo and LLM-d exist specifically to close these gaps.</p>
   </div>
 
   <!-- Section 1: The scale at which limits appear -->
@@ -176,9 +166,9 @@
       <span class="chevron" id="chv1">&#9662;</span>
     </div>
     <div class="section-body" id="bdy1">
-      <p>The issues in this module don’t usually show up when you are running a small, relatively simple deployment. They emerge gradually as you move from a handful of GPUs and one or two models to larger, more complex fleets: multiple replicas, multiple models, diverse workloads, and sustained traffic. The important nuance is that these are not “on/off” problems - they get worse as scale, workload diversity, and context length grow.</p>
+      <p>The issues in this module don't usually show up when you are running a small, relatively simple deployment. They emerge gradually as you move from a handful of GPUs and one or two models to larger, more complex fleets: multiple replicas, long-running conversations, and disaggregated Prefill/Decode pools. The important nuance is that these are not "on/off" problems - they get worse as scale and context length grow.</p>
 
-      <p>At the point where you have many replicas, high reuse of a few prompts, long‑running conversations, or a mix of very different request types, four structural limits start to dominate. Tuning per‑instance settings (batch size, max sequences, quantisation, etc.) helps at the margin, but cannot fully remove these limits because they live above any single vLLM or TRT‑LLM instance. NVIDIA Dynamo and LLM‑d exist specifically to introduce a fleet‑level coordination layer that addresses these issues.</p>
+      <p>At the point where you have many replicas, high reuse of a few prompts, long‑running conversations, or an active disaggregated deployment, three structural limits start to dominate. Tuning per‑instance settings (batch size, max sequences, quantisation, etc.) helps at the margin, but cannot fully remove these limits because they live above any single vLLM or TRT‑LLM instance. NVIDIA Dynamo and LLM‑d exist specifically to introduce a fleet‑level coordination layer that addresses these issues.</p>
 
       <div class="wall-wrap">
         <div class="wall-title">Problem severity by deployment scale (illustrative) - click a problem to see where it typically becomes painful</div>
@@ -186,14 +176,13 @@
           <button class="wall-btn" style="background:#546E7A; color:white;" onclick="showWall('routing')">Request routing inefficiency</button>
           <button class="wall-btn" style="background:#C62828; color:white;" onclick="showWall('kv')">KV Cache locality loss</button>
           <button class="wall-btn" style="background:#7B1FA2; color:white;" onclick="showWall('disagg')">Disaggregation coordination</button>
-          <button class="wall-btn" style="background:#E65100; color:white;" onclick="showWall('hetero')">Heterogeneous workloads</button>
         </div>
         <div class="wall-chart" id="wallChart"></div>
         <div class="wall-note" id="wallNote"></div>
       </div>
 
       <div class="callout callout-slate">
-        <strong>How to frame this with customers:</strong> When a customer with a growing deployment says that vLLM or TRT‑LLM “isn’t scaling well” or that P99 TTFT is unpredictable despite apparently sufficient GPU capacity, the root cause is very often one of these four structural problems at the fleet layer - not that the underlying inference server is misconfigured or fundamentally flawed. Knowing these problems by name and mechanism lets you move the conversation from “have you tuned <code>--max-num-seqs</code>?” to “you are running into a KV Cache locality and routing problem that requires a smarter, fleet‑aware router and scheduler.”
+        <strong>How to frame this with customers:</strong> When a customer with a growing deployment says that vLLM or TRT‑LLM "isn't scaling well" or that P99 TTFT is unpredictable despite apparently sufficient GPU capacity, the root cause is very often one of these three structural problems at the fleet layer - not that the underlying inference server is misconfigured or fundamentally flawed. Knowing these problems by name and mechanism lets you move the conversation from "have you tuned <code>--max-num-seqs</code>?" to "you are hitting a KV Cache locality and routing problem that requires a smarter, fleet‑aware router and scheduler."
       </div>
     </div>
   </div>
@@ -219,12 +208,12 @@
           As you add more replicas, more distinct prompts, and more variability in traffic, the fraction of requests that land on a replica with the right warm prefix drops. In practice, this means the theoretical TTFT benefit of prefix caching is often much smaller at fleet scale than what you see in single‑instance benchmarks - not because prefix caching is misconfigured, but because the routing layer is effectively random with respect to cache state.<br><br>
           The exact hit‑rate numbers depend heavily on workload, QPS, and cache configuration, but the pattern is consistent: the more replicas you add under a cache‑blind router, the more your effective prefix cache reuse tends to degrade.
           <br><br>
-          Typical impact at scale: a deployment that sees high prefix cache hit rates on a single node can see those hit rates drop sharply once traffic is spread across many replicas via round‑robin or least‑connections routing. TTFT for requests that “should” have been cache hits ends up much closer to cold‑prefill latency than expected.
+          Typical impact at scale: a deployment that sees high prefix cache hit rates on a single node can see those hit rates drop sharply once traffic is spread across many replicas via round‑robin or least‑connections routing. TTFT for requests that "should" have been cache hits ends up much closer to cold‑prefill latency than expected.
         </div>
       </div>
 
       <div class="callout callout-blue">
-        <strong>What is actually needed:</strong> A routing layer that is KV Cache‑aware - one that tracks, at fleet level, which replicas have which prefix hashes cached and uses that information when deciding where to send each request. This requires the router to maintain a view of cache state across replicas in addition to traditional metrics like queue depth and health. Dynamo’s smart router (Module 5.2) is an example of this kind of fleet‑aware routing: it is designed to preserve prefix cache benefits even as you scale out to many replicas.
+        <strong>What is actually needed:</strong> A routing layer that is KV Cache‑aware - one that tracks, at fleet level, which replicas have which prefix hashes cached and uses that information when deciding where to send each request. This requires the router to maintain a view of cache state across replicas in addition to traditional metrics like queue depth and health. Dynamo's KV-aware router (Module 5.2) is built precisely for this: it maintains a global radix tree registry of cached blocks across all workers and routes each request to the worker with the highest cache overlap score.
       </div>
     </div>
   </div>
@@ -241,7 +230,7 @@
     <div class="section-body" id="bdy3">
       <p>In Problem 1, the router was <em>blind</em> to cache state and sometimes sent requests to replicas with no relevant KV Cache at all. Now assume we fix that: the router tracks which replica owns a given prefix or conversation and deliberately sends follow‑up traffic back to that replica. This removes routing blindness, but it exposes a deeper issue: the KV Cache is still physically local to the GPU(s) that built it.</p>
 
-      <p>In a disaggregated design (Module 3.6), Prefill workers build KV Cache and can transfer it to Decode workers through an explicit handoff. In the more common multi‑replica setup without full disaggregation, the KV Cache built by Prefill on a given replica stays resident on that replica’s GPUs. If, for any reason, you want to move subsequent work for that request or conversation to a different replica - to relieve load, avoid memory pressure, or handle a failure - you either have to rebuild the KV on the new replica or implement some form of KV transfer between replicas.</p>
+      <p>In a disaggregated design (Module 3.6), Prefill workers build KV Cache and can transfer it to Decode workers through an explicit handoff. In the more common multi‑replica setup without full disaggregation, the KV Cache built by Prefill on a given replica stays resident on that replica's GPUs. If, for any reason, you want to move subsequent work for that request or conversation to a different replica - to relieve load, avoid memory pressure, or handle a failure - you either have to rebuild the KV on the new replica or implement some form of KV transfer between replicas.</p>
 
       <div class="kv-wrap">
         <div class="kv-title">KV Cache locality - request routing across 4 replicas</div>
@@ -253,10 +242,10 @@
         <div class="kv-note" id="kvNote"></div>
       </div>
 
-      <p>Multi‑turn conversations are where this becomes very visible. Imagine a chatbot where a user’s first turn builds a 200‑token KV Cache on replica A. A KV‑aware router will send the second turn to replica A again so it can extend that cache. But as more users and long conversations accumulate, a few replicas can end up “owning” many active histories and large KV footprints, while other replicas are relatively empty. If you keep routing strictly by locality, those hot replicas can become overloaded or memory‑constrained even though there is spare capacity elsewhere in the fleet.</p>
+      <p>Multi‑turn conversations are where this becomes very visible. Imagine a chatbot where a user's first turn builds a 200‑token KV Cache on replica A. A KV‑aware router will send the second turn to replica A again so it can extend that cache. But as more users and long conversations accumulate, a few replicas can end up "owning" many active histories and large KV footprints, while other replicas are relatively empty. If you keep routing strictly by locality, those hot replicas can become overloaded or memory‑constrained even though there is spare capacity elsewhere in the fleet.</p>
 
       <div class="callout callout-purple">
-        <strong>The locality-load balance tension:</strong> With a KV‑aware router, you can preserve locality by sending follow‑up turns and repeated prefixes back to the same replica. That maximises cache reuse but can create hotspots and uneven utilisation. If you instead spread traffic more evenly to balance load, you inevitably break locality and either redo Prefill work or need a way to move KV state between replicas. This trade‑off is the KV Cache locality problem: the cache being tied to specific GPUs makes it hard to optimise both locality and load balance without a fleet‑level scheduler and, in many designs, an explicit KV transfer/sharing mechanism across workers.
+        <strong>The locality-load balance tension:</strong> With a KV‑aware router, you can preserve locality by sending follow‑up turns and repeated prefixes back to the same replica. That maximises cache reuse but can create hotspots and uneven utilisation. If you instead spread traffic more evenly to balance load, you inevitably break locality and either redo Prefill work or need a way to move KV state between replicas. This trade‑off is the KV Cache locality problem: the cache being tied to specific GPUs makes it hard to optimise both locality and load balance without a fleet‑level scheduler and, in many designs, an explicit KV transfer mechanism across workers. Dynamo addresses this through its NIXL high-speed KV transfer library and the KV Block Manager, which together allow KV state to be moved between workers or offloaded to CPU/NVMe tiers when GPU HBM is under pressure.
       </div>
     </div>
   </div>
@@ -301,66 +290,31 @@
       <p>As you add more Prefill and Decode workers, the coordination problem grows quickly. For each incoming request or conversation, the system needs to decide which Prefill worker to use, which Decode worker or pool to target, how to move or reuse KV state between them, and how to react if any of those components are saturated or fail. No single off‑the‑shelf component in the current vLLM / TRT‑LLM / Triton stack owns this global coordination; teams typically stitch together routing rules, scripts, and control‑plane logic to fill the gap.</p>
 
       <div class="callout callout-orange">
-        <strong>The hidden cost of bespoke orchestration:</strong> Most teams that deploy large disaggregated systems today end up implementing their own coordination layer on top of existing inference servers – deciding how to place Prefill and Decode work, how to transfer KV, and how to observe and adjust P:D ratios over time. These solutions are often tailored to a specific cluster topology, cloud provider, or traffic pattern and can be difficult to evolve. NVIDIA Dynamo and LLM‑d both aim to standardise this coordination layer so that teams can rely on a supported, fleet‑aware framework instead of maintaining custom orchestration code indefinitely.
+        <strong>The hidden cost of bespoke orchestration:</strong> Most teams that deploy large disaggregated systems today end up implementing their own coordination layer on top of existing inference servers – deciding how to place Prefill and Decode work, how to transfer KV, and how to observe and adjust P:D ratios over time. These solutions are often tailored to a specific cluster topology, cloud provider, or traffic pattern and can be difficult to evolve. NVIDIA Dynamo addresses this through its SLO Planner, which dynamically adjusts P:D worker counts based on real-time queue depth and traffic forecasts. LLM‑d addresses it through Kubernetes-native scheduler extensions and Gateway API routing.
       </div>
     </div>
   </div>
 
-  <!-- Section 5: Problem 4 - Heterogeneous workloads -->
+  <!-- Section 5: A real problem Dynamo does NOT solve - heterogeneous workloads -->
   <div class="section-card">
     <div class="section-header" id="hdr5" onclick="toggle(5)">
       <div class="section-title">
-        <span class="section-num" style="background:#1565C0;">5</span>
-        Problem 4 - Heterogeneous Workloads: One Configuration Cannot Serve All Request Types
+        <span class="section-num" style="background:#546E7A;">5</span>
+        A Real Problem These Frameworks Don't Fully Solve: Heterogeneous Workloads
       </div>
       <span class="chevron" id="chv5">&#9662;</span>
     </div>
     <div class="section-body" id="bdy5">
-      <p>Real production deployments do not receive uniform traffic. A single customer-facing LLM service might simultaneously handle: short interactive chat (100-token prompt, 50-token output), long-context document analysis (8,000-token prompt, 200-token output), code generation (500-token prompt, 2,000-token output), and batch summarisation (2,000-token prompt, 300-token output). Each of these has a completely different optimal configuration.</p>
+      <p>It's worth being precise about what Dynamo and LLM-d actually address - because one commonly cited problem at fleet scale is <em>not</em> solved by either framework's documented feature set.</p>
 
-      <div style="overflow-x:auto; margin:16px 0;">
-        <table class="gap-table">
-          <thead>
-            <tr><th>Request type</th><th>Optimal Prefill config</th><th>Optimal Decode config</th><th>P:D ratio</th><th>Single-server compromise</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="gap-prob">Interactive chat</td>
-              <td>Small batch, fast dispatch</td>
-              <td>Many concurrent streams, low TPOT</td>
-              <td>1:4</td>
-              <td class="gap-limit">Over-allocates Prefill capacity; Decode pool too small</td>
-            </tr>
-            <tr>
-              <td class="gap-prob">Long-context RAG</td>
-              <td>Large batch, Flash Attention critical</td>
-              <td>Short outputs, fast turnaround</td>
-              <td>3:1</td>
-              <td class="gap-limit">Under-allocates Prefill; long prompts cause head-of-line blocking</td>
-            </tr>
-            <tr>
-              <td class="gap-prob">Code generation</td>
-              <td>Medium batch size</td>
-              <td>Long outputs, sustained decode throughput</td>
-              <td>1:3</td>
-              <td class="gap-limit">Decode pool saturates; code requests queue behind chat</td>
-            </tr>
-            <tr>
-              <td class="gap-prob">Batch summarisation</td>
-              <td>Maximum batch, latency flexible</td>
-              <td>Medium outputs, throughput-first</td>
-              <td>1:2</td>
-              <td class="gap-limit">Competes with interactive traffic; unpredictable latency</td>
-            </tr>
-          </tbody>
-        </table>
+      <p>Real production deployments often serve fundamentally different request types simultaneously: short interactive chat (100-token prompt, 50-token output), long-context document analysis (8,000-token prompt, 200-token output), code generation (500-token prompt, 2,000-token output), and batch summarisation (2,000-token prompt, 300-token output). Each of these has a different optimal P:D ratio, batch size, and memory configuration. A single vLLM or TRT-LLM instance with one configuration must serve all of them as a compromise.</p>
+
+      <div class="callout callout-amber">
+        <strong>Why this isn't solved by Dynamo or LLM-d:</strong> Neither framework provides a feature that classifies incoming requests by workload type and routes them to purpose-configured worker pools. Dynamo's SLO Planner dynamically adjusts P:D ratios for a <em>single</em> model deployment based on queue depth - it doesn't maintain separate pools for "chat traffic" vs "batch traffic." The router makes decisions based on KV cache overlap and load, not request category.<br><br>
+        In practice, teams address heterogeneous workloads through infrastructure-level separation: deploying separate model endpoints per workload class and routing at the API gateway or application layer before traffic reaches Dynamo or LLM-d. This is a valid architecture, but it's outside the fleet coordination layer these frameworks provide.
       </div>
 
-      <p>A single vLLM or TRT-LLM instance with one configuration must serve all of these simultaneously. The configuration is necessarily a compromise that under-serves every request type. At small scale this is acceptable. At large scale - where each request type represents thousands of requests per minute - the inefficiency compounds into significant wasted GPU capacity and missed SLAs.</p>
-
-      <div class="callout callout-teal">
-        <strong>What fleet-scale inference actually needs here:</strong> A routing layer that classifies incoming requests by type and directs them to specialised worker pools - a pool optimised for long-context Prefill, a pool optimised for high-concurrency Decode, a pool for batch workloads. This is the concept of heterogeneous worker pools, and it requires a global scheduler with visibility across the entire fleet, not a single per-instance scheduler inside vLLM or TRT-LLM.
-      </div>
+      <p>This distinction matters when positioning these frameworks with customers. The three structural problems Dynamo and LLM-d genuinely address - routing blindness, KV Cache locality, and disaggregation coordination - are well-evidenced by their documented features. Heterogeneous workload management requires a separate architectural decision above the inference tier.</p>
     </div>
   </div>
 
@@ -374,7 +328,7 @@
       <span class="chevron" id="chv6">&#9662;</span>
     </div>
     <div class="section-body" id="bdy6">
-      <p>The four problems above point to a single missing layer in the current stack - a fleet-level coordination and scheduling layer that sits above the individual inference servers and provides:</p>
+      <p>The three problems above point to a single missing layer in the current stack - a fleet-level coordination and scheduling layer that sits above the individual inference servers and provides:</p>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0;">
         <div style="background:#ECEFF1; border-radius:10px; padding:16px; border-left:3px solid #546E7A;">
@@ -394,14 +348,14 @@
             KV Cache-aware routing across replicas<br>
             Dynamic P:D ratio adjustment<br>
             Standardised KV transfer protocol<br>
-            Request classification and pool routing<br>
             Global scheduler with fleet-wide visibility<br>
-            Unified observability across all workers
+            Unified observability across all workers<br>
+            Worker failure detection and retry handling
           </div>
         </div>
       </div>
 
-      <p>NVIDIA Dynamo addresses this gap with a purpose-built disaggregated inference framework. LLM-d addresses it through Kubernetes-native scheduler extensions and Gateway API. Both are covered in the following modules. The conceptual through-line from this module to those: everything Dynamo and LLM-d do is, at its core, a solution to one of these four specific problems.</p>
+      <p>NVIDIA Dynamo addresses this gap with a purpose-built disaggregated inference framework: KV-aware router, SLO Planner for dynamic P:D scaling, NIXL for high-speed KV transfer, and a tiered KV Block Manager. LLM-d addresses it through Kubernetes-native scheduler extensions and Gateway API. Both are covered in the following modules. The conceptual through-line from this module to those: everything Dynamo and LLM-d do is, at its core, a solution to one of these three specific structural problems.</p>
 
       <div class="callout callout-green">
         <strong>Why this matters right now:</strong> As of 2025, most enterprise LLM deployments are still in the single-node or small multi-node stage where these problems are manageable. But as models get larger, context windows extend to 128k+, and usage scales, these problems will surface in every significant deployment. Understanding them now positions you to recognise them early in a customer's growth curve - before they are deep in bespoke orchestration code - and recommend the right framework at the right time.
@@ -414,7 +368,7 @@
     <div class="section-header" id="hdr7" onclick="toggle(7)">
       <div class="section-title">
         <span class="section-num" style="background:#37474F;">7</span>
-        4 Key Ideas to Carry into Module 5.2
+        3 Key Ideas to Carry into Module 5.2
       </div>
       <span class="chevron" id="chv7">&#9662;</span>
     </div>
@@ -423,28 +377,21 @@
         <div class="key-num" style="color:#546E7A;">01</div>
         <div>
           <div class="key-title">Routing blindness destroys prefix cache hit rates at scale - a KV Cache-aware router is not a nice-to-have, it is a prerequisite for prefix caching to work across a fleet</div>
-          <div class="key-desc">Prefix caching (Module 3.2) delivers its TTFT savings only when the request reaches the replica that already built the cache. Round-robin routing negates this entirely. At 16+ replicas with diverse system prompts, cache hit rates under blind routing drop to near zero - eliminating the single highest-ROI optimisation from Part 3.</div>
+          <div class="key-desc">Prefix caching (Module 3.2) delivers its TTFT savings only when the request reaches the replica that already built the cache. Round-robin routing negates this entirely. At 16+ replicas with diverse system prompts, cache hit rates under blind routing drop to near zero - eliminating the single highest-ROI optimisation from Part 3. Dynamo's KV-aware router solves this by tracking cached block state globally across all workers.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#C62828;">02</div>
         <div>
           <div class="key-title">KV Cache locality and load balancing are in direct tension - resolving it requires global fleet-state visibility, not local per-instance decisions</div>
-          <div class="key-desc">Sticky routing maximises cache hits but creates load imbalance. Round-robin routing balances load but destroys cache locality. The only way to serve both objectives simultaneously is a central scheduler that sees cache state, load, and memory pressure across every replica simultaneously - something no component in the current stack provides.</div>
+          <div class="key-desc">Sticky routing maximises cache hits but creates load imbalance. Round-robin routing balances load but destroys cache locality. The only way to serve both objectives simultaneously is a central scheduler that sees cache state, load, and memory pressure across every replica simultaneously. Dynamo's router balances these using a weighted combination of KV overlap score and worker queue depth. NIXL provides the transfer mechanism when KV state must move between workers.</div>
         </div>
       </div>
       <div class="key-item">
         <div class="key-num" style="color:#E65100;">03</div>
         <div>
           <div class="key-title">Disaggregation at fleet scale requires a coordination layer that today's teams build by hand - every large deployment reinvents the same bespoke orchestration</div>
-          <div class="key-desc">The P/D split concept works. The operational problem is that dynamic ratio adjustment, KV transfer routing, and Prefill-to-Decode handoff coordination are not provided by any standard component. Teams with large disaggregated deployments have all written custom versions of this logic. Dynamo and LLM-d exist to standardise it.</div>
-        </div>
-      </div>
-      <div class="key-item">
-        <div class="key-num" style="color:#1565C0;">04</div>
-        <div>
-          <div class="key-title">Heterogeneous workloads need specialised worker pools routed by request type - a single configuration serving all request types always under-serves each one</div>
-          <div class="key-desc">Interactive chat, long-context RAG, code generation, and batch summarisation have fundamentally different optimal P:D ratios, batch sizes, and memory configurations. A global scheduler that classifies requests and routes to specialised pools can serve each type at its optimum simultaneously - something a single vLLM or TRT-LLM instance with one configuration cannot do.</div>
+          <div class="key-desc">The P/D split concept works. The operational problem is that dynamic ratio adjustment, KV transfer routing, and Prefill-to-Decode handoff coordination are not provided by any standard component in the current vLLM / TRT-LLM / Triton stack. Teams with large disaggregated deployments have all written custom versions of this logic. Dynamo's SLO Planner and LLM-d's Kubernetes scheduler extensions both exist specifically to standardise this coordination layer.</div>
         </div>
       </div>
     </div>
@@ -456,19 +403,19 @@
     <div class="cheat-grid">
       <div class="cheat-item">
         <div class="cheat-term">Routing blindness</div>
-        <div class="cheat-def">Standard load balancers route by connection count or round-robin, with no knowledge of which replica has which KV Cache blocks. Negates prefix caching benefits at fleet scale. Fix: KV Cache-aware routing.</div>
+        <div class="cheat-def">Standard load balancers route by connection count or round-robin, with no knowledge of which replica has which KV Cache blocks. Negates prefix caching benefits at fleet scale. Fix: KV Cache-aware routing (Dynamo's smart router).</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">KV Cache locality</div>
-        <div class="cheat-def">KV Cache built by Prefill on one GPU stays on that GPU. Multi-turn conversations pay full Prefill cost on each turn if routed to a different replica. Sticky routing conflicts with load balancing - needs global state to resolve.</div>
+        <div class="cheat-def">KV Cache built by Prefill on one GPU stays on that GPU. Multi-turn conversations pay full Prefill cost on each turn if routed to a different replica. Sticky routing conflicts with load balancing. Fix: global fleet-state scheduler + NIXL KV transfer.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Disaggregation coordination gap</div>
-        <div class="cheat-def">Static P:D ratios, ad-hoc KV transfer scripts, and no standard protocol for Prefill-Decode handoff. At fleet scale, teams build bespoke orchestration. Dynamo and LLM-d standardise this layer.</div>
+        <div class="cheat-def">Static P:D ratios, ad-hoc KV transfer scripts, and no standard protocol for Prefill-Decode handoff. At fleet scale, teams build bespoke orchestration. Fix: Dynamo SLO Planner (dynamic P:D scaling) and LLM-d scheduler extensions.</div>
       </div>
       <div class="cheat-item">
-        <div class="cheat-term">Heterogeneous workloads</div>
-        <div class="cheat-def">Chat, RAG, code gen, and batch have different optimal P:D ratios. One server config cannot serve all optimally. Fleet-level solution: request classification + specialised worker pools routed by a global scheduler.</div>
+        <div class="cheat-term">Heterogeneous workloads (out of scope)</div>
+        <div class="cheat-def">Chat, RAG, code gen, and batch have different optimal P:D configs. Neither Dynamo nor LLM-d provides request-type-based pool routing. Teams solve this above the inference tier - separate deployments per workload class, routed at the API gateway.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">What the current stack covers</div>
@@ -476,15 +423,15 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">What the current stack is missing</div>
-        <div class="cheat-def">Fleet-level: KV Cache-aware routing, dynamic P:D adjustment, standardised KV transfer, request classification, global scheduler, unified cross-fleet observability.</div>
+        <div class="cheat-def">Fleet-level: KV Cache-aware routing, dynamic P:D adjustment, standardised KV transfer, global scheduler with fleet-wide visibility, unified cross-fleet observability, worker failure handling.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Scale threshold</div>
-        <div class="cheat-def">Problems become significant at ~16+ GPU replicas, high prefix cache reuse, disaggregated deployments, or mixed workload types. Below this threshold, the Part 4 stack is sufficient and adding a coordination layer adds complexity without benefit.</div>
+        <div class="cheat-def">Problems become significant at ~16+ GPU replicas, high prefix cache reuse, or active disaggregated deployments. Below this threshold, the Part 4 stack is sufficient and adding a coordination layer adds complexity without meaningful benefit.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">What comes next</div>
-        <div class="cheat-def">NVIDIA Dynamo (5.2): disaggregated inference framework with smart KV-aware router and dynamic worker coordination. LLM-d (5.3): Kubernetes-native scheduling extensions for fleet-scale LLM inference.</div>
+        <div class="cheat-def">NVIDIA Dynamo (5.2): KV-aware router, SLO Planner, NIXL KV transfer, tiered KV Block Manager. LLM-d (5.3): Kubernetes-native scheduler extensions and Gateway API routing for fleet-scale LLM inference.</div>
       </div>
     </div>
   </div>
@@ -519,15 +466,15 @@
     <div>
       <div class="next-label">Up Next - Module 5.2</div>
       <div class="next-title">NVIDIA Dynamo</div>
-      <div class="next-sub">How Dynamo's smart router, disaggregated worker pools, and KV Cache transfer protocol solve the four problems identified in this module</div>
+      <div class="next-sub">How Dynamo's KV-aware router, SLO Planner, NIXL transfer, and KV Block Manager solve the three structural problems identified in this module</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
 
 </div>
 <script>
-  var sColors={1:'#546E7A',2:'#C62828',3:'#7B1FA2',4:'#E65100',5:'#1565C0',6:'#283593',7:'#37474F'};
-  var sBgs   ={1:'#ECEFF1',2:'#FFEBEE',3:'#F3E8FD',4:'#FFF3E0',5:'#E3F2FD',6:'#E8EAF6',7:'#ECEFF1'};
+  var sColors={1:'#546E7A',2:'#C62828',3:'#7B1FA2',4:'#E65100',5:'#546E7A',6:'#283593',7:'#37474F'};
+  var sBgs   ={1:'#ECEFF1',2:'#FFEBEE',3:'#F3E8FD',4:'#FFF3E0',5:'#ECEFF1',6:'#E8EAF6',7:'#ECEFF1'};
   function toggle(n){
     var b=document.getElementById('bdy'+n),c=document.getElementById('chv'+n),h=document.getElementById('hdr'+n);
     var open=b.classList.contains('open');
@@ -567,16 +514,6 @@
         {scale:'100+ worker fleet',                  val:97, color:'#C62828', note:'Impossible to manage manually. Requires a purpose-built coordination layer - which does not exist in vLLM or TRT-LLM.'},
       ],
       note:'Static disaggregation configuration does not scale. The coordination problem is non-linear - it grows faster than the fleet.'
-    },
-    hetero:{
-      label:'Heterogeneous workload inefficiency',
-      rows:[
-        {scale:'Single workload type',             val:5,  color:'#2E7D32', note:'One request type, one optimal config. Single-instance server handles this well.'},
-        {scale:'2 workload types (chat + RAG)',    val:30, color:'#F57F17', note:'Config compromise between two optima. Meaningful but manageable inefficiency.'},
-        {scale:'3-4 workload types mixed',         val:65, color:'#E65100', note:'Config satisfies none fully. Chat latency spikes when long RAG prompts queue. Batch steals capacity from interactive.'},
-        {scale:'5+ types at high volume each',     val:90, color:'#C62828', note:'Consistent SLA violations across most workload types. GPU utilisation high but effective throughput low due to contention.'},
-      ],
-      note:'Heterogeneous workload problems compound with variety and volume. They are the primary driver of GPU underutilisation at large AI platform deployments.'
     }
   };
   function showWall(key){
