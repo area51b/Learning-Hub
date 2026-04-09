@@ -489,28 +489,28 @@
       label:'Request routing inefficiency (prefix cache blindness)',
       rows:[
         {scale:'1-4 GPUs / 1 replica',val:5,  color:'#2E7D32', note:'Single replica - all requests hit the same cache. Not a problem.'},
-        {scale:'8-16 GPUs / 2-4 replicas', val:35, color:'#F57F17', note:'Cache spread across replicas. Hit rate degrading.'},
-        {scale:'32-64 GPUs / 8-16 replicas',val:75, color:'#E65100', note:'Round-robin distributes requests randomly. Cache hit rate near zero.'},
-        {scale:'128+ GPUs / 32+ replicas',  val:95, color:'#C62828', note:'Effectively no prefix caching benefit. TTFT = full Prefill cost for almost every request.'},
+        {scale:'8-16 GPUs / <br> 2-4 replicas', val:35, color:'#F57F17', note:'Cache spread across replicas. Hit rate degrading.'},
+        {scale:'32-64 GPUs / <br> 8-16 replicas',val:75, color:'#E65100', note:'Round-robin distributes requests randomly. Cache hit rate near zero.'},
+        {scale:'128+ GPUs / <br> 32+ replicas',  val:95, color:'#C62828', note:'Effectively no prefix caching benefit. TTFT = full Prefill cost for almost every request.'},
       ],
       note:'Routing blindness is benign at single-node scale and catastrophic at fleet scale. The problem is not prefix caching configuration - it is that the load balancer has no cache state visibility.'
     },
     kv:{
       label:'KV Cache locality loss (multi-turn / sticky routing conflict)',
       rows:[
-        {scale:'Short single-turn conversations',val:10, color:'#2E7D32', note:'No multi-turn history - locality is irrelevant for single-turn requests.'},
-        {scale:'2-5 turn conversations',         val:40, color:'#F57F17', note:'Moderate penalty. Each new turn rebuilds some history if routed to different replica.'},
-        {scale:'10+ turn conversations',          val:80, color:'#E65100', note:'Severe. A 10-turn conversation routed randomly rebuilds up to 10x the KV Cache work needed.'},
-        {scale:'Long-context agents (50+ turns)', val:98, color:'#C62828', note:'Practically all KV Cache work is wasted rebuild. Agents effectively cannot scale under blind routing.'},
+        {scale:'Short single-turn <br> conversations',val:10, color:'#2E7D32', note:'No multi-turn history - locality is irrelevant for single-turn requests.'},
+        {scale:'2-5 turn <br> conversations',         val:40, color:'#F57F17', note:'Moderate penalty. Each new turn rebuilds some history if routed to different replica.'},
+        {scale:'10+ turn <br> conversations',          val:80, color:'#E65100', note:'Severe. A 10-turn conversation routed randomly rebuilds up to 10x the KV Cache work needed.'},
+        {scale:'Long-context agents <br> (50+ turns)', val:98, color:'#C62828', note:'Practically all KV Cache work is wasted rebuild. Agents effectively cannot scale under blind routing.'},
       ],
       note:'KV locality loss scales with conversation length and turn count. Agentic workloads - which are the fastest-growing LLM use case - are the most affected.'
     },
     disagg:{
       label:'Disaggregation coordination overhead',
       rows:[
-        {scale:'Single P/D pair (1:2 ratio, static)',val:15, color:'#2E7D32', note:'Simple configuration. Manual ratio setting works at this scale.'},
-        {scale:'4 Prefill + 8 Decode workers',     val:45, color:'#F57F17', note:'Coordination complexity grows. Traffic spikes cause Prefill queue backup. Manual rebalancing needed.'},
-        {scale:'16 Prefill + 48 Decode workers',   val:78, color:'#E65100', note:'Ad-hoc scripts fail under dynamic load. Bespoke orchestration required. High operational burden.'},
+        {scale:'Single P/D pair <br> (1:2 ratio, static)',val:15, color:'#2E7D32', note:'Simple configuration. Manual ratio setting works at this scale.'},
+        {scale:'4 Prefill + <br> 8 Decode workers',     val:45, color:'#F57F17', note:'Coordination complexity grows. Traffic spikes cause Prefill queue backup. Manual rebalancing needed.'},
+        {scale:'16 Prefill + <br> 48 Decode workers',   val:78, color:'#E65100', note:'Ad-hoc scripts fail under dynamic load. Bespoke orchestration required. High operational burden.'},
         {scale:'100+ worker fleet',                  val:97, color:'#C62828', note:'Impossible to manage manually. Requires a purpose-built coordination layer - which does not exist in vLLM or TRT-LLM.'},
       ],
       note:'Static disaggregation configuration does not scale. The coordination problem is non-linear - it grows faster than the fleet.'
