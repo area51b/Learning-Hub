@@ -608,7 +608,7 @@
      body:'Prefill\'s output is a logit distribution over the vocabulary (for example, ~128k values). Sampling (greedy, top-p, or top-k) selects the first output token. This token is sent immediately to the streaming response - the user sees the first character. TTFT is recorded.',
      concept:'From the user\'s perspective, the response has started. From the operator\'s perspective, the compute-bound phase is done and the memory-bandwidth-bound phase is about to begin. The system switches from running one large batch to running one token per decode step.', conceptBg:'#E3F2FD'},
     {num:'Step 6 of 10', title:'Decode loop - generating tokens one by one', layer:'TRT-LLM engine (GPU - Decode phase)', layerColor:'#2E7D32',
-     body:'Each decode step: (1) read all model weights from HBM into Tensor Cores - this read dominates TPOT, (2) compute attention using the new token as Q against the cached K/V from Paged Attention blocks, (3) run FFN, (4) sample next token, (5) append new K/V to the KV Cache. Repeat 200 times for a 200-token output.',
+     body:'Each decode step: (1) read all model weights from HBM into Tensor Cores - this read dominates TPOT, (2) Compute Q, K, V for the new input token; append new K/V to the KV Cache (Paged Attention blocks), (3) Compute attention using the new token\'s Q against ALL cached K/V(which now includes the current token\'s own K/V), (4) Run FFN, (5) Sample next token. Repeat 200 times for a 200-token output.',
      concept:'This is the memory-bandwidth-bound phase. The TPOT floor is set by (model bytes) ÷ (effective HBM bandwidth). For a 70B-class FP8 model on H100, this back-of-the-envelope works out to on the order of tens of milliseconds per token. The TRT-LLM in-flight batching engine processes other requests\' decode steps in the same GPU pass.', conceptBg:'#E8F5E9'},
     {num:'Step 7 of 10', title:'KV Cache management throughout Decode', layer:'Paged Attention block manager', layerColor:'#3949AB',
      body:'As each new token is generated, its K and V vectors are appended to the request\'s Paged Attention block sequence. When a block fills (for example, 16 tokens), a new block is allocated from the free pool. The block table maps the logical sequence of token positions to scattered physical GPU memory blocks. No contiguous reservation, no fragmentation.',
@@ -685,10 +685,10 @@
         {bg:'rgba(0,96,100,0.8)',name:'Triton Inference Server',detail:'Sequence batching with max_queue_delay for maximum batch fill rate'},
         {bg:'rgba(230,81,0,0.8)',name:'TRT-LLM FP8 engine',detail:'Maximum throughput - compiled engine, large batch size (for example, 256+)'},
         {bg:'rgba(21,101,192,0.8)',name:'Parallelism: TP=4, Data Parallel x2',detail:'Two identical 4x H100 sets serving the same model - doubles throughput  <br/>nearly linearly'},
-        {bg:'rgba(27,94,32,0.8)',name:'8x H100 SXM (2x nodes)',detail:'Two H100 nodes, InfiniBand between nodes for DP coordination'},
+        {bg:'rgba(27,94,32,0.8)',name:'4x H100 SXM (2x nodes)',detail:'Two H100 nodes, Standard network between nodes - <br/> DP replicas are independent, no tensor communication required.'},
       ];
       why='Batch workloads care only about tokens per second per dollar - not TTFT or per-user TPOT. TRT-LLM with large max batch size (for example, 256+) and a non-zero queue_delay_microseconds fills every GPU cycle. Data Parallelism across two nodes increases throughput with minimal coordination overhead (each DP replica is largely independent). The async job queue decouples submission from processing, allowing the GPUs to run continuously at high utilisation. Speculative decoding is explicitly excluded here - at very large batch sizes, draft-model overhead typically outweighs acceptance-rate gains.';
-      tags=['8x H100 SXM','TRT-LLM FP8','Data Parallelism','Batch size 256+','Maximum tokens/sec','Async queue'];
+      tags=['4x H100 SXM','TRT-LLM FP8','Data Parallelism','Batch size 256+','Maximum tokens/sec','Async queue'];
     }
     var layerHtml=stack.map(function(l){
       return '<div class="arch-result-layer" style="background:'+l.bg+';"><div class="arch-result-layer-name">'+l.name+'</div><div class="arch-result-layer-detail">'+l.detail+'</div></div>';
