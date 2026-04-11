@@ -192,7 +192,7 @@
           <div style="display:flex; flex-direction:column; gap:6px;">
             <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:0.4; margin-bottom:4px; text-align:center;">NVIDIA Dynamo</div>
             <div style="background:rgba(27,20,100,0.6); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">Rust frontend (high perf HTTP)</div>
-            <div style="background:rgba(27,20,100,0.6); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">Centralised Planner &#8594; llm-d</div>
+            <div style="background:rgba(27,20,100,0.6); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">Centralised Planner (planned &#8594; llm-d)</div>
             <div style="background:rgba(27,20,100,0.6); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">Custom KV-aware router</div>
             <div style="background:rgba(27,20,100,0.6); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.85;">TRT-LLM + SGLang backend</div>
             <div style="background:rgba(27,20,100,0.4); border-radius:6px; padding:9px 12px; font-size:11.5px; opacity:0.7; margin-top:4px;">Blackwell-optimised perf</div>
@@ -203,7 +203,7 @@
             <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:0.4; margin-bottom:4px;">Shared</div>
             <div style="background:rgba(46,125,50,0.5); border-radius:6px; padding:8px 6px; font-size:10.5px; text-align:center; width:100%; opacity:0.9;">NIXL</div>
             <div style="background:rgba(46,125,50,0.5); border-radius:6px; padding:8px 6px; font-size:10.5px; text-align:center; width:100%; opacity:0.9;">vLLM engine</div>
-            <div style="background:rgba(46,125,50,0.5); border-radius:6px; padding:8px 6px; font-size:10.5px; text-align:center; width:100%; opacity:0.9;">KV Cache Mgr &#8594; llm-d</div>
+            <div style="background:rgba(46,125,50,0.5); border-radius:6px; padding:8px 6px; font-size:10.5px; text-align:center; width:100%; opacity:0.9;">KV Cache Mgr (planned &#8594; llm-d)</div>
             <div style="background:rgba(46,125,50,0.5); border-radius:6px; padding:8px 6px; font-size:10.5px; text-align:center; width:100%; opacity:0.9;">Open source (GitHub)</div>
           </div>
           <!-- llm-d column -->
@@ -647,7 +647,7 @@
   var objData = {
     maturity: {
       q: '"These frameworks were just announced in 2025 - they\'re not mature enough for production."',
-      a: 'llm-d reached v0.5 in February 2026 with validated benchmark results: 3,100 tokens per second per B200 Decode GPU and 40% TPOT reduction on H200 in production-representative configurations. Dynamo was announced at GTC March 2025 and is available today under NVIDIA AI Enterprise with enterprise support, SLAs, and security patching. Both projects have active engineering teams from major organisations - Red Hat, Google, IBM, and NVIDIA - with committed roadmaps. The more relevant maturity question is: is your bespoke routing script or static Triton configuration more reliable than a tested, benchmarked framework backed by major vendors?',
+      a: 'llm-d reached v0.5 in February 2026 with validated, reproducible benchmark results: ~3,100 output tokens per second per B200 Decode GPU in a 16×16 disaggregated Prefill/Decode topology - figures the project explicitly requires to be reproducible from version-controlled configurations. Dynamo was announced at GTC March 2025 and is available today under NVIDIA AI Enterprise with enterprise support, SLAs, and security patching. Both projects have active engineering teams from major organisations - Red Hat, Google, IBM, and NVIDIA - with committed roadmaps. The more relevant maturity question is: is your bespoke routing script or static Triton configuration more reliable than a tested, benchmarked framework backed by major vendors?',
       key: 'Counter: ask what "maturity" means for their bespoke alternative. Framework maturity is measurable; bespoke script maturity is not.',
       keyColor: '#4A148C'
     },
