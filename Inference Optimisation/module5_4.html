@@ -259,22 +259,22 @@
       <span class="chevron" id="chv3">&#9662;</span>
     </div>
     <div class="section-body" id="bdy3">
-      <p>Many teams at large-scale deployments arrive at the fleet coordination problem and solve it in-house - a custom router, some scripts for KV transfer, a homegrown Prefill/Decode coordinator. This is understandable: both Dynamo and llm-d were announced in 2025, and teams with 2023–2024 scale problems had no standard framework to adopt. But the cost of maintaining bespoke orchestration compounds over time in ways that are not obvious at the start.</p>
+      <p>Many teams at large-scale deployments arrive at the fleet coordination problem and solve it in-house - a custom router, some scripts for KV transfer, a homegrown Prefill/Decode coordinator. This is understandable: both Dynamo and llm-d were announced in 2025, and teams with 2023-2024 scale problems had no standard framework to adopt. But the cost of maintaining bespoke orchestration compounds over time in ways that are not obvious at the start.</p>
 
       <div class="diy-wrap">
         <div class="diy-title">True cost of bespoke fleet orchestration - typical large-scale deployment</div>
         <div class="diy-stages">
           <div class="diy-stage" style="background:#37474F;">
             <div class="diy-stage-name">Initial build</div>
-            <div class="diy-stage-cost">2–4 senior engineers, 3–6 months<br>Custom router + KV transfer scripts</div>
+            <div class="diy-stage-cost">2-4 senior engineers, 3-6 months<br>Custom router + KV transfer scripts</div>
           </div>
           <div class="diy-stage" style="background:#455A64;">
             <div class="diy-stage-name">Hardware topology changes</div>
-            <div class="diy-stage-cost">1–2 engineers, 4–8 weeks each time<br>Add nodes, change GPU types, adjust NVLink topology</div>
+            <div class="diy-stage-cost">1-2 engineers, 4-8 weeks each time<br>Add nodes, change GPU types, adjust NVLink topology</div>
           </div>
           <div class="diy-stage" style="background:#546E7A;">
             <div class="diy-stage-name">Model updates</div>
-            <div class="diy-stage-cost">1 engineer, 1–3 weeks each<br>Re-validate routing, KV block sizes change, engine recompile</div>
+            <div class="diy-stage-cost">1 engineer, 1-3 weeks each<br>Re-validate routing, KV block sizes change, engine recompile</div>
           </div>
           <div class="diy-stage" style="background:#607D8B;">
             <div class="diy-stage-name">Traffic pattern shifts</div>
@@ -291,13 +291,13 @@
         </div>
         <div class="diy-total">
           <div class="diy-total-label">Ongoing engineering cost vs framework adoption</div>
-          <div class="diy-total-val">3–5 eng-years/year</div>
+          <div class="diy-total-val">3-5 eng-years/year</div>
         </div>
-        <div class="diy-note">This estimate reflects the experience of teams that have built bespoke fleet orchestration at hyperscaler scale. The initial build cost is visible and planned for. The ongoing maintenance, topology adaptation, and ecosystem feature gap costs are the ones that make DIY uncompetitive over a 2–3 year horizon. By contrast, adopting Dynamo or llm-d means these improvements are contributed upstream - KV offload tiers, predicted latency scheduling, LoRA routing were added by the project communities at zero marginal cost to adopters.</div>
+        <div class="diy-note">This estimate reflects the experience of teams that have built bespoke fleet orchestration at hyperscaler scale. The initial build cost is visible and planned for. The ongoing maintenance, topology adaptation, and ecosystem feature gap costs are the ones that make DIY uncompetitive over a 2-3 year horizon. By contrast, adopting Dynamo or llm-d means these improvements are contributed upstream - KV offload tiers, predicted latency scheduling, LoRA routing were added by the project communities at zero marginal cost to adopters.</div>
       </div>
 
       <div class="callout callout-slate">
-        <strong>The migration conversation framing:</strong> When a customer says "we already built our own," the productive question is not "was that a mistake?" but "how does your solution compare to what Dynamo/llm-d now provides out of the box, and what is your plan to keep pace as these frameworks add capabilities?" Most teams find that their bespoke solution handles 60–70% of what the frameworks now provide - but the remaining 30–40% (predicted latency scheduling, KV offload tiers, LoRA routing, active-active HA) would take significant engineering to build, and the frameworks already have it. The ROI of migration becomes clear when mapped against the roadmap delta.
+        <strong>The migration conversation framing:</strong> When a customer says "we already built our own," the productive question is not "was that a mistake?" but "how does your solution compare to what Dynamo/llm-d now provides out of the box, and what is your plan to keep pace as these frameworks add capabilities?" Most teams find that their bespoke solution handles 60-70% of what the frameworks now provide - but the remaining 30-40% (predicted latency scheduling, KV offload tiers, LoRA routing, active-active HA) would take significant engineering to build, and the frameworks already have it. The ROI of migration becomes clear when mapped against the roadmap delta.
       </div>
     </div>
   </div>
@@ -320,7 +320,7 @@
           <div class="mig-body">
             <div class="mig-title">From: vLLM + round-robin LB &rarr; To: llm-d Well-lit Path 1 (intelligent scheduling)</div>
             <div class="mig-desc">Deploy the Kubernetes Inference Gateway and EPP in front of existing vLLM pods. No changes to vLLM configuration, no new GPU provisioning, no disaggregation. The EPP becomes the new routing layer - existing vLLM pods register with the InferencePool CRD. Existing Kubernetes tooling (Helm, Prometheus, Grafana) continues to work. Lowest risk migration available.</div>
-            <div class="mig-gain" style="color:#2E7D32;">Expected gain: 2–3x TTFT improvement from prefix cache hit restoration. Timeline: 1–2 weeks for a Kubernetes-experienced team.</div>
+            <div class="mig-gain" style="color:#2E7D32;">Expected gain: 2-3x TTFT improvement from prefix cache hit restoration. Timeline: 1-2 weeks for a Kubernetes-experienced team.</div>
           </div>
         </div>
         <div class="mig-row">
@@ -328,7 +328,7 @@
           <div class="mig-body">
             <div class="mig-title">From: vLLM + Triton &rarr; To: Dynamo (router + planner, keep vLLM backend)</div>
             <div class="mig-desc">Deploy Dynamo's frontend and KV-aware router in front of existing vLLM pods. Triton's serving role is replaced by Dynamo's frontend - existing model configuration moves to Dynamo's backend definitions. vLLM configuration is unchanged. Once stable, add the Planner and enable disaggregation by splitting pods into Prefill and Decode roles. Requires InfiniBand validation before enabling NIXL transfer.</div>
-            <div class="mig-gain" style="color:#1565C0;">Expected gain: 3–4x TTFT (KV router) + 1.5–2x throughput (disaggregation). Timeline: 2–4 weeks for Dynamo router; add 4–6 weeks for disaggregation with testing.</div>
+            <div class="mig-gain" style="color:#1565C0;">Expected gain: 3-4x TTFT (KV router) + 1.5-2x throughput (disaggregation). Timeline: 2-4 weeks for Dynamo router; add 4-6 weeks for disaggregation with testing.</div>
           </div>
         </div>
         <div class="mig-row">
@@ -336,15 +336,15 @@
           <div class="mig-body">
             <div class="mig-title">From: TRT-LLM + Triton &rarr; To: TRT-LLM + Dynamo (full stack)</div>
             <div class="mig-desc">TRT-LLM stays as the inference engine - Dynamo is positioned as the fleet coordination layer above it, replacing Triton's routing role. TRT-LLM compiled engines are unchanged. Dynamo's router handles multi-replica routing with KV awareness. Planner manages dynamic P:D allocation across engine replicas. This is the highest-performance path but has the most operational change - new frontend process, new routing configuration, new monitoring to set up.</div>
-            <div class="mig-gain" style="color:#7B1FA2;">Expected gain: highest possible throughput on NVIDIA hardware. Timeline: 4–8 weeks. Requires dedicated ML platform engineer with Dynamo familiarity.</div>
+            <div class="mig-gain" style="color:#7B1FA2;">Expected gain: highest possible throughput on NVIDIA hardware. Timeline: 4-8 weeks. Requires dedicated ML platform engineer with Dynamo familiarity.</div>
           </div>
         </div>
         <div class="mig-row">
           <div class="mig-step" style="background:#546E7A;">4</div>
           <div class="mig-body">
             <div class="mig-title">From: Bespoke DIY orchestration &rarr; To: Framework (either)</div>
-            <div class="mig-desc">The highest-friction migration because the team has existing custom code that the organisation depends on. Best approach: run the framework in shadow mode alongside the bespoke system for 2–4 weeks, comparing routing decisions and validating latency parity. Once the framework matches or exceeds bespoke performance, cut over one replica group at a time. Document the capability delta (what the framework provides that the bespoke system does not) to justify the migration to stakeholders.</div>
-            <div class="mig-gain" style="color:#546E7A;">Expected gain: elimination of ongoing maintenance burden + access to framework roadmap features. Timeline: 6–12 weeks including shadow validation and staged cutover.</div>
+            <div class="mig-desc">The highest-friction migration because the team has existing custom code that the organisation depends on. Best approach: run the framework in shadow mode alongside the bespoke system for 2-4 weeks, comparing routing decisions and validating latency parity. Once the framework matches or exceeds bespoke performance, cut over one replica group at a time. Document the capability delta (what the framework provides that the bespoke system does not) to justify the migration to stakeholders.</div>
+            <div class="mig-gain" style="color:#546E7A;">Expected gain: elimination of ongoing maintenance burden + access to framework roadmap features. Timeline: 6-12 weeks including shadow validation and staged cutover.</div>
           </div>
         </div>
       </div>
@@ -399,11 +399,11 @@
           </div>
         </div>
         <div style="background:#E3F2FD; border-radius:12px; padding:18px 20px; border-left:4px solid #1565C0;">
-          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#1565C0; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Question 2 - Do you already run Kubernetes for your ML workloads?</div>
+          <div style="font-size:13px; font-weight:bold; font-family:Arial,sans-serif; color:#1565C0; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Question 2 - What does your existing routing and gateway layer look like?</div>
           <div style="font-size:14px; line-height:1.8; color:#333;">
-            <strong>Yes, with active K8s operations:</strong> llm-d fits their existing tooling - Helm, CRDs, Prometheus, GitOps. Lowest adoption friction.<br>
-            <strong>No, or K8s is minimal:</strong> Dynamo may be simpler to deploy as a new fleet coordination system without fitting into existing K8s workflows.<br>
-            <strong>Yes, but also want TRT-LLM:</strong> Dynamo is stronger here - native TRT-LLM support, Blackwell optimisation, NVIDIA AI Enterprise support.
+            <strong>Yes, with existing Envoy/Gateway API routing layer:</strong> llm-d slots directly into it - the EPP is just a filter added to Envoy. Zero new routing infrastructure needed.<br>
+            <strong>Yes K8s, but no existing Envoy/Gateway API layer:</strong> Both Dynamo and llm-d deploy via Helm with CRDs and operators. Go to hardware and workload criteria to decide.<br>
+            <strong>TRT-LLM in stack or NVIDIA AI Enterprise required:</strong> Dynamo is stronger - native TRT-LLM support, Blackwell optimisation, enterprise support contract.
           </div>
         </div>
         <div style="background:#E8F5E9; border-radius:12px; padding:18px 20px; border-left:4px solid #2E7D32;">
@@ -477,8 +477,8 @@
         <div class="cheat-def">Any AMD, Intel, or Google TPU in the fleet = llm-d only. Dynamo is NVIDIA-optimised. This is a constraint, not a preference. Mixed fleets have no Dynamo option.</div>
       </div>
       <div class="cheat-item">
-        <div class="cheat-term">Kubernetes expertise rule</div>
-        <div class="cheat-def">Strong K8s operations + vLLM = llm-d fits naturally. No K8s or minimal K8s = Dynamo may be simpler as a new system. TRT-LLM + NVIDIA focus = Dynamo stronger.</div>
+        <div class="cheat-term">Routing layer rule</div>
+        <div class="cheat-def">Both Dynamo and llm-d are K8s-native - Helm, CRDs, operators, Prometheus. The real differentiator: existing Envoy/Gateway API layer = llm-d slots in with zero new routing infra. No existing gateway layer = both equally valid; decide on hardware and engine criteria instead.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Convergence reality</div>
@@ -494,7 +494,7 @@
       </div>
       <div class="cheat-item">
         <div class="cheat-term">When 30x is real</div>
-        <div class="cheat-def">DeepSeek-R1 671B, NVIDIA GB200 NVL72, full disaggregation enabled. H100 realistic range: 3–6x with KV router + disaggregation. Still significant - but context matters in customer conversations.</div>
+        <div class="cheat-def">DeepSeek-R1 671B, NVIDIA GB200 NVL72, full disaggregation enabled. H100 realistic range: 3-6x with KV router + disaggregation. Still significant - but context matters in customer conversations.</div>
       </div>
       <div class="cheat-item">
         <div class="cheat-term">Migration order</div>
@@ -518,7 +518,7 @@
       </div>
       <div class="quiz-option" onclick="selectOption(this,'c')">
         <span class="opt-letter" id="lbl-c">C.</span>
-        This fleet crosses every threshold where a framework is justified: 64 GPUs, mixed vLLM and TRT-LLM, manual P:D adjustment, and demonstrated breakage on engine updates. The bespoke script is exactly the DIY problem described in this module - functional for 60–70% of the job, but with compounding maintenance cost and a growing gap against framework capabilities. The question is which framework. Since this is an all-NVIDIA fleet with both vLLM and TRT-LLM in use, Dynamo is the stronger fit: it natively supports both engines, its Planner provides the dynamic P:D adjustment that currently requires manual intervention, and NVIDIA AI Enterprise provides the enterprise support contract that justifies replacing production-critical bespoke code. The migration path: deploy Dynamo's KV-aware router in shadow mode alongside the existing script for 2–4 weeks, validate parity, then cut over. Add the Planner for dynamic P:D after the router is stable.
+        This fleet crosses every threshold where a framework is justified: 64 GPUs, mixed vLLM and TRT-LLM, manual P:D adjustment, and demonstrated breakage on engine updates. The bespoke script is exactly the DIY problem described in this module - functional for 60-70% of the job, but with compounding maintenance cost and a growing gap against framework capabilities. The question is which framework. Since this is an all-NVIDIA fleet with both vLLM and TRT-LLM in use, Dynamo is the stronger fit: it natively supports both engines, its Planner provides the dynamic P:D adjustment that currently requires manual intervention, and NVIDIA AI Enterprise provides the enterprise support contract that justifies replacing production-critical bespoke code. The migration path: deploy Dynamo's KV-aware router in shadow mode alongside the existing script for 2-4 weeks, validate parity, then cut over. Add the Planner for dynamic P:D after the router is stable.
       </div>
       <div class="quiz-option" onclick="selectOption(this,'d')">
         <span class="opt-letter" id="lbl-d">D.</span>
@@ -533,7 +533,7 @@
     <div>
       <div class="next-label">Up Next - Module 5.5</div>
       <div class="next-title">The Full Modern Stack</div>
-      <div class="next-sub">End-to-end architecture walkthrough incorporating the frontier frameworks - every component from Parts 1–5 in its correct position, with a real customer scenario from API request to final token</div>
+      <div class="next-sub">End-to-end architecture walkthrough incorporating the frontier frameworks - every component from Parts 1-5 in its correct position, with a real customer scenario from API request to final token</div>
     </div>
     <div class="next-arrow">&#8594;</div>
   </a>
@@ -556,7 +556,7 @@
       question: 'Q1 - What is the size of the GPU fleet?',
       options: [
         { text: 'Fewer than 16 GPUs / single replica', next: 'r_small' },
-        { text: '16–64 GPUs / 4–16 replicas', next: 'q2' },
+        { text: '16-64 GPUs / 4-16 replicas', next: 'q2' },
         { text: '64+ GPUs / fleet-scale deployment', next: 'q2' }
       ]
     },
@@ -571,7 +571,7 @@
     q3: {
       question: 'Q3 - What is the team\'s infrastructure context?',
       options: [
-        { text: 'Strong Kubernetes ops - Helm, GitOps, Prometheus already in use', next: 'q4_llmd' },
+        { text: 'Existing Envoy / Gateway API routing layer already deployed', next: 'q4_llmd' },
         { text: 'TRT-LLM in stack + NVIDIA-focused team', next: 'r_dynamo' },
         { text: 'New deployment - no strong existing tooling preference', next: 'q4_either' }
       ]
@@ -594,10 +594,10 @@
     },
     r_small:       { rec:'Current stack is right - no fleet coordination needed yet', color:'#2E7D32', why:'Below ~16 GPUs with a single replica, the Part 4 stack (vLLM or TRT-LLM + Triton) provides everything needed. Adding Dynamo or llm-d adds operational complexity without addressing any real problem at this scale. Revisit when concurrency, replica count, or prefix cache hit rates become issues.', tags:['vLLM or TRT-LLM','Triton or vLLM API','No coordination layer needed'] },
     r_llmd_hw:     { rec:'llm-d - hardware-agnostic fleet coordination', color:'#BF360C', why:'Any non-NVIDIA hardware in the fleet makes llm-d the only viable option. Dynamo is NVIDIA-optimised and its performance technology (NIXL GPUDirect, Planner topology awareness) is designed for NVIDIA hardware. llm-d supports NVIDIA A100+, AMD MI250+, Intel GPU Max, and Google TPU v5e+ in a single fleet with consistent operational tooling.', tags:['llm-d','Hardware-agnostic','K8s-native','vLLM engine'] },
-    r_llmd_p1:     { rec:'llm-d Well-lit Path 1 - intelligent scheduling first', color:'#BF360C', why:'Deploy the Kubernetes Inference Gateway and EPP scheduler in front of existing vLLM pods. This directly fixes routing blindness, restores prefix cache hit rates to 85–95%, and delivers 2–3x TTFT improvement with zero changes to vLLM configuration or GPU provisioning. Lowest-risk migration available. Add Path 2 (disaggregation) when ready.', tags:['llm-d WLP1','IGW + EPP','2–3x TTFT gain','vLLM unchanged'] },
+    r_llmd_p1:     { rec:'llm-d Well-lit Path 1 - intelligent scheduling first', color:'#BF360C', why:'Deploy the Kubernetes Inference Gateway and EPP scheduler in front of existing vLLM pods. If the team already runs an Envoy-based gateway or service mesh, the EPP is simply a new filter - zero new routing infrastructure. This directly fixes routing blindness, restores prefix cache hit rates to 85-95%, and delivers 2-3x TTFT improvement with zero changes to vLLM configuration or GPU provisioning. Lowest-risk migration available. Add Path 2 (disaggregation) when ready.', tags:['llm-d WLP1','IGW + EPP','2-3x TTFT gain','vLLM unchanged'] },
     r_llmd_p2:     { rec:'llm-d Well-lit Path 2 - disaggregated P/D with sidecar', color:'#BF360C', why:'The disaggregated serving sidecar and IGW scheduler provide automatic P:D routing without the static ratio management that characterises manual configurations. Validate InfiniBand bandwidth before enabling NIXL transfer. This replaces bespoke P:D coordination scripts with a tested, Kubernetes-native implementation.', tags:['llm-d WLP2','Disagg sidecar','Dynamic P/D routing','NIXL validated'] },
     r_dynamo:      { rec:'Dynamo - full fleet coordination for NVIDIA-focused deployments', color:'#1B1464', why:'TRT-LLM support, Blackwell optimisation, dynamic Planner, NIXL transfer, and NVIDIA AI Enterprise support all point to Dynamo for NVIDIA-first teams. Deploy the KV-aware router first, validate performance, then add the Planner for dynamic P:D. Best-in-class throughput on NVIDIA hardware, especially for reasoning models.', tags:['Dynamo','TRT-LLM native','Planner P/D','NVIDIA AI Enterprise'] },
-    r_dynamo_consider: { rec:'Consider Dynamo - but validate reasoning model workload first', color:'#1B1464', why:'Dynamo\'s 30x throughput claim is specific to reasoning models (DeepSeek-R1, o-series) on Blackwell hardware with very long thinking chains. On H100 with standard chat or RAG workloads, the improvement is 3–6x - still significant but not differentiated enough from llm-d to override Kubernetes operational preference. If the workload is reasoning-model-heavy with H100+ hardware, Dynamo is the stronger choice.', tags:['Dynamo (if H100+)','Reasoning models','Validate workload type'] },
+    r_dynamo_consider: { rec:'Consider Dynamo - but validate reasoning model workload first', color:'#1B1464', why:'Dynamo\'s 30x throughput claim is specific to reasoning models (DeepSeek-R1, o-series) on Blackwell hardware with very long thinking chains. On H100 with standard chat or RAG workloads, the improvement is 3-6x - still significant but not differentiated enough from llm-d to override Kubernetes operational preference. If the workload is reasoning-model-heavy with H100+ hardware, Dynamo is the stronger choice.', tags:['Dynamo (if H100+)','Reasoning models','Validate workload type'] },
     r_either:      { rec:'Either framework - choose based on operational model', color:'#4A148C', why:'Both Dynamo and llm-d handle mixed workload routing with specialised pools. For Kubernetes teams, llm-d\'s operational simplicity wins. For teams building new NVIDIA-optimised infrastructure, Dynamo\'s performance ceiling is higher. Remember: NVIDIA is contributing Dynamo components into llm-d, so the technology gap is closing.', tags:['llm-d (K8s teams)','Dynamo (NVIDIA-focused)','Either viable'] }
   };
 
@@ -659,13 +659,13 @@
     },
     perf: {
       q: '"The 30x number is marketing - what are the real performance gains?"',
-      a: 'Correct: 30x is specific to DeepSeek-R1 671B on NVIDIA GB200 NVL72 with full disaggregation. This is a real result for that specific configuration, not fabricated. For H100 hardware with typical RAG or chat workloads: the KV-aware router alone restores prefix cache hit rates from near zero to 85–95%, delivering 2–4x TTFT improvement. Adding disaggregation typically adds 1.5–2x throughput on top of that. Combined realistic improvement on H100: 3–6x versus vanilla vLLM with round-robin routing. These are still significant and translate directly to either better SLAs at the same cost or the same SLAs at lower GPU cost. The 30x number is a ceiling for optimal conditions, not a floor for all conditions.',
-      key: 'Acknowledge the 30x ceiling is hardware-specific. Lead with H100 realistic range: 3–6x. Anchor to cost-per-token reduction, not just throughput claims.',
+      a: 'Correct: 30x is specific to DeepSeek-R1 671B on NVIDIA GB200 NVL72 with full disaggregation. This is a real result for that specific configuration, not fabricated. For H100 hardware with typical RAG or chat workloads: the KV-aware router alone restores prefix cache hit rates from near zero to 85-95%, delivering 2-4x TTFT improvement. Adding disaggregation typically adds 1.5-2x throughput on top of that. Combined realistic improvement on H100: 3-6x versus vanilla vLLM with round-robin routing. These are still significant and translate directly to either better SLAs at the same cost or the same SLAs at lower GPU cost. The 30x number is a ceiling for optimal conditions, not a floor for all conditions.',
+      key: 'Acknowledge the 30x ceiling is hardware-specific. Lead with H100 realistic range: 3-6x. Anchor to cost-per-token reduction, not just throughput claims.',
       keyColor: '#2E7D32'
     },
     diy: {
       q: '"We already built our own routing and disaggregation layer - migration is too disruptive."',
-      a: 'The question is not whether to migrate immediately, but whether the bespoke system can be maintained at parity with the frameworks\' roadmaps going forward. In 2025 alone, Dynamo and llm-d added: predicted latency scheduling, KV Cache tiered offload (GPU → CPU RAM → NVMe), cache-aware LoRA routing, active-active HA, and scale-to-zero autoscaling. How much engineering did your team spend implementing equivalent features - and what is the plan for the next set? The migration conversation works best in shadow mode: run the framework alongside the existing system for 2–4 weeks, compare routing decisions and latency, and let the data justify the migration to stakeholders. The goal is not to say the bespoke system was wrong - it was the right decision when built. The question is whether it remains the right decision going forward.',
+      a: 'The question is not whether to migrate immediately, but whether the bespoke system can be maintained at parity with the frameworks\' roadmaps going forward. In 2025 alone, Dynamo and llm-d added: predicted latency scheduling, KV Cache tiered offload (GPU → CPU RAM → NVMe), cache-aware LoRA routing, active-active HA, and scale-to-zero autoscaling. How much engineering did your team spend implementing equivalent features - and what is the plan for the next set? The migration conversation works best in shadow mode: run the framework alongside the existing system for 2-4 weeks, compare routing decisions and latency, and let the data justify the migration to stakeholders. The goal is not to say the bespoke system was wrong - it was the right decision when built. The question is whether it remains the right decision going forward.',
       key: 'Never challenge the original build decision. Frame it as: "What is your maintenance plan going forward, given the framework roadmap velocity?"',
       keyColor: '#E65100'
     },
@@ -711,7 +711,7 @@
       r.innerHTML='<strong>Correct - and the framework choice reasoning is the part that matters most.</strong><br><br><strong>Why a framework is clearly justified:</strong> 64 GPUs crosses the scale threshold. Manual P:D ratio adjustment is the textbook disaggregation coordination gap from Module 5.1. The script breaking twice on TRT-LLM updates is the DIY maintenance cost becoming visible. These three signals together make the case for framework adoption unambiguous.<br><br><strong>Why Dynamo specifically:</strong> This is an all-NVIDIA fleet, which makes both Dynamo and llm-d viable - so the tie-breaker is the second question: the fleet runs both vLLM and TRT-LLM. Dynamo supports both as backends natively. llm-d\'s primary engine is vLLM - while it can work with TRT-LLM through a custom integration, the mixed-engine fleet is a native Dynamo use case. The Planner directly solves the manual P:D ratio problem that is the customer\'s stated pain point - it dynamically adjusts the split based on real-time queue depth, eliminating the need for manual intervention. NVIDIA AI Enterprise provides the support contract that justifies replacing production-critical bespoke code with a new system.<br><br><strong>Why shadow mode first:</strong> The customer has existing production traffic depending on the bespoke script. A shadow mode deployment (running Dynamo in parallel, comparing routing decisions) de-risks the migration and generates the comparative data needed to justify the cutover to stakeholders. This is the migration path for bespoke DIY systems described in Section 4.<br><br><strong>Why not A:</strong> Fixing the existing script does not solve the manual P:D problem or the TRT-LLM update fragility - both are structural limitations of bespoke orchestration, not bugs in the script. The maintenance cost will compound.<br><br><strong>Why not B:</strong> llm-d is a valid recommendation for a Kubernetes team, but this fleet runs TRT-LLM as well as vLLM. Dynamo\'s native TRT-LLM support is the differentiator here. "K8s-native" is not the right primary criterion when the inference engine mix points to Dynamo.<br><br><strong>Why not D:</strong> Removing TRT-LLM to simplify the stack is a significant architecture decision that would degrade performance for the workloads currently served by TRT-LLM. The script breaking on TRT-LLM updates is a maintenance problem with the bespoke script, not a reason to remove the higher-performance inference engine from the stack.';
     } else {
       r.style.background='#FFF3E0';
-      r.innerHTML='<strong>Not quite.</strong> Option C is correct. The three signals - 64 GPU fleet, manual P:D ratio management, and bespoke script breaking on engine updates - all clearly justify framework adoption. The fleet is all-NVIDIA with both vLLM and TRT-LLM, which makes Dynamo the stronger fit: it natively supports both engines, and its Planner directly solves the manual P:D problem. The migration approach - shadow mode alongside the existing script for 2–4 weeks before cutover - is the standard path for replacing production-critical bespoke orchestration. Option A perpetuates the compounding maintenance problem. Option B is valid for K8s teams but misses the TRT-LLM differentiation. Option D removes the higher-performance inference engine to solve a routing script problem, which is the wrong layer to fix.';
+      r.innerHTML='<strong>Not quite.</strong> Option C is correct. The three signals - 64 GPU fleet, manual P:D ratio management, and bespoke script breaking on engine updates - all clearly justify framework adoption. The fleet is all-NVIDIA with both vLLM and TRT-LLM, which makes Dynamo the stronger fit: it natively supports both engines, and its Planner directly solves the manual P:D problem. The migration approach - shadow mode alongside the existing script for 2-4 weeks before cutover - is the standard path for replacing production-critical bespoke orchestration. Option A perpetuates the compounding maintenance problem. Option B is valid for K8s teams but misses the TRT-LLM differentiation. Option D removes the higher-performance inference engine to solve a routing script problem, which is the wrong layer to fix.';
     }
     document.getElementById('check-btn').style.display='none';
   }
